@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import type { ProblemIndexItem } from "./data/problemIndex";
 import { problemIndex } from "./data/problemIndex";
 import { protocolById, protocols } from "./data/protocols";
 
@@ -107,67 +106,8 @@ const computeBestRun = (
   return best;
 };
 
-const tokenize = (value: string) =>
-  value.toLowerCase().match(/[a-z0-9']+/g) ?? [];
-
-const scoreQueryAgainstPhrase = (
-  queryTokens: string[],
-  phrase: string,
-  normalizedQuery: string,
-) => {
-  const phraseLower = phrase.toLowerCase();
-  if (
-    phraseLower.includes(normalizedQuery) ||
-    normalizedQuery.includes(phraseLower)
-  ) {
-    return 1000 + phraseLower.length;
-  }
-  if (!queryTokens.length) {
-    return 0;
-  }
-  const phraseTokens = new Set(tokenize(phraseLower));
-  let hits = 0;
-  for (const token of queryTokens) {
-    if (phraseTokens.has(token)) {
-      hits += 1;
-    }
-  }
-  return hits;
-};
-
-const findProblemMatches = (query: string, limit = 3) => {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) {
-    return [];
-  }
-  const queryTokens = tokenize(normalizedQuery);
-  const scored = problemIndex
-    .map((item) => {
-      let score = 0;
-      for (const phrase of item.raw_phrases) {
-        const phraseScore = scoreQueryAgainstPhrase(
-          queryTokens,
-          phrase,
-          normalizedQuery,
-        );
-        if (phraseScore > score) {
-          score = phraseScore;
-        }
-      }
-      return { item, score };
-    })
-    .filter((result) => result.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit);
-
-  return scored.map((result) => result.item);
-};
-
 export default function Home() {
   const [step, setStep] = useState(1);
-  const [selectedProblemId, setSelectedProblemId] = useState<number | null>(
-    null,
-  );
   const [selectedProtocolId, setSelectedProtocolId] = useState<string | null>(
     null,
   );
@@ -190,9 +130,6 @@ export default function Home() {
     Record<string, { followed: boolean; note?: string }>
   >({});
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchAttempted, setSearchAttempted] = useState(false);
-  const [searchResults, setSearchResults] = useState<ProblemIndexItem[]>([]);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [showPricingPaymentsSoon, setShowPricingPaymentsSoon] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -304,8 +241,14 @@ export default function Home() {
       }
     }
 
-    setStep(1);
+    setStep(storedProtocolId ? 1 : 2);
   }, []);
+
+  useEffect(() => {
+    if (!activeProtocolId && step === 1) {
+      setStep(2);
+    }
+  }, [activeProtocolId, step]);
 
   useEffect(() => {
     if (typeof window === "undefined" || step !== 6) {
@@ -325,14 +268,6 @@ export default function Home() {
       setCheckInNote("");
     }
   }, [step, checkIns]);
-
-  useEffect(() => {
-    if (step === 1) {
-      return;
-    }
-    setSearchAttempted(false);
-    setSearchResults([]);
-  }, [step]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -386,9 +321,6 @@ export default function Home() {
     runHistory,
   ]);
 
-  const selectedProblem = problemIndex.find(
-    (problem) => problem.id === selectedProblemId,
-  );
   const selectedProtocol = selectedProtocolId
     ? protocolById[selectedProtocolId]
     : null;
@@ -497,9 +429,6 @@ export default function Home() {
     setRunStartDate(today);
     setStreak(0);
     setCheckIns({});
-    setSearchQuery("");
-    setSearchAttempted(false);
-    setSearchResults([]);
     setShowPaywall(false);
     setCheckInFollowed(null);
     setCheckInNote("");
@@ -515,20 +444,7 @@ export default function Home() {
       setShowPaywall(true);
       return;
     }
-    activateProtocol(selectedProtocol.id, selectedProblem?.id ?? null);
-  };
-
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const query = searchQuery.trim();
-    if (!query) {
-      setSearchAttempted(false);
-      setSearchResults([]);
-      return;
-    }
-    const matches = findProblemMatches(query, 3);
-    setSearchResults(matches);
-    setSearchAttempted(matches.length === 0);
+    activateProtocol(selectedProtocol.id, null);
   };
 
   const handleSwitchProtocol = () => {
@@ -541,10 +457,7 @@ export default function Home() {
   const handleConfirmSwitch = () => {
     setShowSwitchConfirm(false);
     clearActiveProtocol();
-    setSelectedProblemId(null);
     setSelectedProtocolId(null);
-    setSearchQuery("");
-    setSearchAttempted(false);
     setStep(2);
   };
 
@@ -554,10 +467,7 @@ export default function Home() {
       return;
     }
     clearActiveProtocol();
-    setSelectedProblemId(null);
     setSelectedProtocolId(null);
-    setSearchQuery("");
-    setSearchAttempted(false);
     setStep(2);
   };
 
@@ -636,8 +546,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       storageKeys.forEach((key) => localStorage.removeItem(key));
     }
-    setStep(1);
-    setSelectedProblemId(null);
+    setStep(2);
     setSelectedProtocolId(null);
     setActiveProblemId(null);
     setActiveProtocolId(null);
@@ -651,9 +560,6 @@ export default function Home() {
     setRunStartDate(null);
     setStreak(0);
     setCheckIns({});
-    setSearchQuery("");
-    setSearchAttempted(false);
-    setSearchResults([]);
     setShowPricingPaymentsSoon(false);
     setShowPaywall(false);
     setShowSwitchConfirm(false);
@@ -727,6 +633,9 @@ export default function Home() {
       : runEnded
         ? "Ended"
         : "—";
+  const totalSteps = 5;
+  const showStepCounter = step >= 2 && step <= 6;
+  const displayStep = step - 1;
   if (pathname === "/pricing") {
     return (
       <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
@@ -820,7 +729,11 @@ export default function Home() {
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
       <main className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10">
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
-          <span>Step {step} of 6</span>
+          <span>
+            {showStepCounter
+              ? `Step ${displayStep} of ${totalSteps}`
+              : "Dashboard"}
+          </span>
           <button
             type="button"
             className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
@@ -882,50 +795,7 @@ export default function Home() {
                                 ))}
                               </div>
                             </>
-                          ) : (
-                            <>
-                              <div className="text-sm font-semibold text-zinc-900">
-                                Progress: {freeProgressCount}/{RUN_LENGTH} clean
-                                trading days
-                              </div>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {Array.from(
-                                  { length: RUN_LENGTH },
-                                  (_, index) => {
-                                    const isFilled =
-                                      index < freeProgressCount;
-                                    const isFailed =
-                                      runFailed &&
-                                      index === freeProgressCount;
-                                    const symbol = isFilled
-                                      ? "✓"
-                                      : isFailed
-                                        ? "✕"
-                                        : "—";
-                                    return (
-                                      <div
-                                        key={`run-slot-${index + 1}`}
-                                        className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
-                                          isFailed
-                                            ? "border-red-200 bg-red-50 text-red-600"
-                                            : isFilled
-                                              ? "border-zinc-900 bg-zinc-900 text-white"
-                                              : "border-zinc-200 text-zinc-600"
-                                        }`}
-                                      >
-                                        <span className="text-sm">
-                                          {symbol}
-                                        </span>
-                                        <span className="text-[10px] tracking-wide">
-                                          Day {index + 1}
-                                        </span>
-                                      </div>
-                                    );
-                                  },
-                                )}
-                              </div>
-                            </>
-                          )}
+                          ) : null}
                           <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
                             <span>
                               Status:{" "}
@@ -1249,7 +1119,6 @@ export default function Home() {
                                         return;
                                       }
                                       setSelectedProtocolId(protocol.id);
-                                      setSelectedProblemId(null);
                                       setStep(5);
                                     }}
                                   >
@@ -1268,85 +1137,7 @@ export default function Home() {
                   </section>
                 </div>
               </>
-            ) : (
-              <>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-                  Quadrant
-                </h1>
-                <p className="text-base leading-7 text-zinc-600">
-                  Fix the behaviour that's costing you money. Quadrant helps
-                  traders identify recurring behavioural patterns and enforce one
-                  corrective protocol at a time.
-                </p>
-                <form onSubmit={handleSearchSubmit} className="space-y-3">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(event) => {
-                      setSearchQuery(event.target.value);
-                      setSearchAttempted(false);
-                      setSearchResults([]);
-                    }}
-                    placeholder="Describe the problem you're dealing with right now"
-                    className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </form>
-                {searchResults.length > 0 ? (
-                  <div className="space-y-3">
-                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                      Top matches
-                    </div>
-                    <div className="space-y-2">
-                      {searchResults.map((problem) => (
-                        <button
-                          key={problem.id}
-                          type="button"
-                          className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-left text-sm text-zinc-700 transition hover:border-zinc-400"
-                          onClick={() => {
-                            setSelectedProblemId(problem.id);
-                            setSelectedProtocolId(problem.protocol_id);
-                            setSearchAttempted(false);
-                            setStep(4);
-                          }}
-                        >
-                          <div className="font-semibold text-zinc-900">
-                            {problem.normalized_problem}
-                          </div>
-                          <div className="mt-2 space-y-1 text-xs text-zinc-500">
-                            {problem.raw_phrases
-                              .slice(0, 2)
-                              .map((phrase) => (
-                                <div key={phrase}>{phrase}</div>
-                              ))}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : searchAttempted ? (
-                  <div className="text-sm text-zinc-600">
-                    No clear match — browse protocols.
-                  </div>
-                ) : null}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                    onClick={() => setStep(2)}
-                  >
-                    Start
-                  </button>
-                </div>
-              </>
-            )}
+            ) : null}
           </section>
         )}
 
@@ -1361,8 +1152,6 @@ export default function Home() {
                     type="button"
                     onClick={() => {
                       setSelectedProtocolId(protocol.id);
-                      setSelectedProblemId(null);
-                      setSearchAttempted(false);
                     }}
                     className={`rounded-xl border px-5 py-4 text-left transition ${
                       isSelected
@@ -1448,77 +1237,14 @@ export default function Home() {
 
         {step === 4 && selectedProtocol ? (
           <section className="mt-10 space-y-6">
-            {selectedProblem ? (
-              <>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-                  Matched problem
-                </h1>
-                <p className="text-base leading-7 text-zinc-600">
-                  {selectedProblem.normalized_problem}
-                </p>
-                <div className="space-y-1">
-                  <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                    Recommended protocol
-                  </div>
-                  <div className="text-sm font-semibold text-zinc-900">
-                    {selectedProtocol.name}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                    Verbatim trader language
-                  </div>
-                  <div className="space-y-2 text-sm text-zinc-600">
-                    {selectedProblem.raw_phrases.map((phrase) => (
-                      <div key={phrase}>{phrase}</div>
-                    ))}
-                  </div>
-                </div>
-                {searchResults.length > 1 ? (
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                      See other matches
-                    </div>
-                    <div className="space-y-2">
-                      {searchResults
-                        .filter((result) => result.id !== selectedProblem.id)
-                        .slice(0, 2)
-                        .map((result) => (
-                          <button
-                            key={result.id}
-                            type="button"
-                            className="w-full rounded-xl border border-zinc-200 px-4 py-3 text-left text-sm text-zinc-700 transition hover:border-zinc-400"
-                            onClick={() => {
-                              setSelectedProblemId(result.id);
-                              setSelectedProtocolId(result.protocol_id);
-                            }}
-                          >
-                            <div className="font-semibold text-zinc-900">
-                              {result.normalized_problem}
-                            </div>
-                            <div className="text-xs text-zinc-500">
-                              {protocolById[result.protocol_id]?.name ??
-                                "Protocol"}
-                            </div>
-                          </button>
-                        ))}
-                    </div>
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-                  {selectedProtocol.name}
-                </h1>
-                {selectedProtocol.commonBehaviourRemoved ? (
-                  <p className="text-base leading-7 text-zinc-600">
-                    Common behaviour removed:{" "}
-                    {selectedProtocol.commonBehaviourRemoved}
-                  </p>
-                ) : null}
-              </>
-            )}
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+              {selectedProtocol.name}
+            </h1>
+            {selectedProtocol.commonBehaviourRemoved ? (
+              <p className="text-base leading-7 text-zinc-600">
+                Common behaviour removed: {selectedProtocol.commonBehaviourRemoved}
+              </p>
+            ) : null}
             <div className="flex justify-end">
               <button
                 type="button"
@@ -1706,7 +1432,7 @@ export default function Home() {
                 className="rounded-full border border-zinc-300 px-5 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={() => {
                   setShowPaywall(false);
-                  setStep(1);
+                  setStep(2);
                 }}
               >
                 Back to dashboard
@@ -1789,38 +1515,7 @@ export default function Home() {
                     ))}
                   </div>
                 </>
-              ) : (
-                <>
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Progress: {freeProgressCount}/{RUN_LENGTH} clean trading
-                    days
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {Array.from({ length: RUN_LENGTH }, (_, index) => {
-                      const isFilled = index < freeProgressCount;
-                      const isFailed = runFailed && index === freeProgressCount;
-                      const symbol = isFilled ? "✓" : isFailed ? "✕" : "—";
-                      return (
-                        <div
-                          key={`run-detail-slot-${index + 1}`}
-                          className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
-                            isFailed
-                              ? "border-red-200 bg-red-50 text-red-600"
-                              : isFilled
-                                ? "border-zinc-900 bg-zinc-900 text-white"
-                                : "border-zinc-200 text-zinc-600"
-                          }`}
-                        >
-                          <span className="text-sm">{symbol}</span>
-                          <span className="text-[10px] tracking-wide">
-                            Day {index + 1}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
+              ) : null}
             </div>
             {!isPro ? (
               <div className="mt-6 flex flex-wrap gap-3">
@@ -1850,5 +1545,6 @@ export default function Home() {
     </div>
   );
 }
+
 
 
