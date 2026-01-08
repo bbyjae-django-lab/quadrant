@@ -9,29 +9,10 @@ import { protocolById, protocols } from "./data/protocols";
 const PRO_PRICE = 19;
 const RUN_LENGTH = 5;
 
-const clarifierQuestions = [
-  {
-    id: "q1",
-    label: "When does this issue most often occur?",
-    options: ["Before entry", "During the trade", "After entry"],
-  },
-  {
-    id: "q2",
-    label: "Does this happen even when you feel calm and focused?",
-    options: ["Yes", "No"],
-  },
-  {
-    id: "q3",
-    label: "Does this behaviour change depending on market conditions?",
-    options: ["Yes", "No"],
-  },
-];
-
 const storageKeys = [
   "activeProblemId",
   "activeProtocolId",
   "activatedAt",
-  "clarifierAnswers",
   "runStatus",
   "runStartDate",
   "streak",
@@ -113,9 +94,6 @@ export default function Home() {
   );
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
   const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
-  const [clarifierAnswers, setClarifierAnswers] = useState<
-    Record<string, string>
-  >({});
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
   const [checkInFollowed, setCheckInFollowed] = useState<boolean | null>(null);
   const [checkInNote, setCheckInNote] = useState("");
@@ -160,7 +138,6 @@ export default function Home() {
     const storedActiveProblemId = localStorage.getItem("activeProblemId");
     const storedProtocolId = localStorage.getItem("activeProtocolId");
     const storedActivatedAt = localStorage.getItem("activatedAt");
-    const storedClarifiers = localStorage.getItem("clarifierAnswers");
     const storedRunStatus = localStorage.getItem("runStatus");
     const storedRunStartDate = localStorage.getItem("runStartDate");
     const storedStreak = localStorage.getItem("streak");
@@ -180,14 +157,6 @@ export default function Home() {
     }
     if (storedActivatedAt) {
       setActivatedAt(storedActivatedAt);
-    }
-    if (storedClarifiers) {
-      try {
-        const parsed = JSON.parse(storedClarifiers) as Record<string, string>;
-        setClarifierAnswers(parsed);
-      } catch {
-        setClarifierAnswers({});
-      }
     }
     if (
       storedRunStatus === "idle" ||
@@ -292,12 +261,6 @@ export default function Home() {
       localStorage.removeItem("activatedAt");
     }
 
-    if (Object.keys(clarifierAnswers).length > 0) {
-      localStorage.setItem("clarifierAnswers", JSON.stringify(clarifierAnswers));
-    } else {
-      localStorage.removeItem("clarifierAnswers");
-    }
-
     localStorage.setItem("runStatus", runStatus);
     if (runStartDate) {
       localStorage.setItem("runStartDate", runStartDate);
@@ -312,7 +275,6 @@ export default function Home() {
     activeProblemId,
     activeProtocolId,
     activatedAt,
-    clarifierAnswers,
     runStatus,
     runStartDate,
     streak,
@@ -349,10 +311,6 @@ export default function Home() {
       checkIns[key]?.followed ? "✓" : "✕",
     ),
   ];
-
-  const allClarifiersAnswered = clarifierQuestions.every(
-    (question) => clarifierAnswers[question.id],
-  );
 
   const runActive = runStatus === "active";
   const runComplete = runStatus === "completed";
@@ -550,7 +508,6 @@ export default function Home() {
     setSelectedProtocolId(null);
     setActiveProblemId(null);
     setActiveProtocolId(null);
-    setClarifierAnswers({});
     setActivatedAt(null);
     setCheckInFollowed(null);
     setCheckInNote("");
@@ -598,7 +555,6 @@ export default function Home() {
   };
 
   const canContinueFromStep2 = Boolean(selectedProtocolId);
-  const canContinueFromStep3 = allClarifiersAnswered;
   const canSaveCheckIn = runActive && checkInFollowed !== null;
   const runHistoryRows = runHistory.map((entry) => ({
     protocol: entry.protocolName,
@@ -633,8 +589,8 @@ export default function Home() {
       : runEnded
         ? "Ended"
         : "—";
-  const totalSteps = 5;
-  const showStepCounter = step >= 2 && step <= 6;
+  const totalSteps = 2;
+  const showStepCounter = step >= 2 && step <= 3;
   const displayStep = step - 1;
   if (pathname === "/pricing") {
     return (
@@ -1119,7 +1075,7 @@ export default function Home() {
                                         return;
                                       }
                                       setSelectedProtocolId(protocol.id);
-                                      setStep(5);
+                                      setStep(3);
                                     }}
                                   >
                                     {freeRunComplete
@@ -1184,81 +1140,19 @@ export default function Home() {
           </section>
         )}
 
-        {step === 3 && (
+        {step === 3 && selectedProtocol ? (
           <section className="mt-10 space-y-8">
-            <div className="space-y-6">
-              {clarifierQuestions.map((question) => (
-                <fieldset key={question.id} className="space-y-3">
-                  <legend className="text-sm font-semibold text-zinc-800">
-                    {question.label}
-                  </legend>
-                  <div className="flex flex-wrap gap-3">
-                    {question.options.map((option) => (
-                      <label
-                        key={option}
-                        className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                          clarifierAnswers[question.id] === option
-                            ? "border-zinc-900 bg-zinc-50"
-                            : "border-zinc-200 text-zinc-600 hover:border-zinc-400"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name={question.id}
-                          value={option}
-                          checked={clarifierAnswers[question.id] === option}
-                          onChange={() =>
-                            setClarifierAnswers((prev) => ({
-                              ...prev,
-                              [question.id]: option,
-                            }))
-                          }
-                          className="h-4 w-4 accent-zinc-900"
-                        />
-                        {option}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              ))}
+            <div className="space-y-4">
+              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+                {selectedProtocol.name}
+              </h1>
+              {selectedProtocol.commonBehaviourRemoved ? (
+                <p className="text-base leading-7 text-zinc-600">
+                  Common behaviour removed:{" "}
+                  {selectedProtocol.commonBehaviourRemoved}
+                </p>
+              ) : null}
             </div>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => setStep(4)}
-                disabled={!canContinueFromStep3}
-              >
-                Continue
-              </button>
-            </div>
-          </section>
-        )}
-
-        {step === 4 && selectedProtocol ? (
-          <section className="mt-10 space-y-6">
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
-              {selectedProtocol.name}
-            </h1>
-            {selectedProtocol.commonBehaviourRemoved ? (
-              <p className="text-base leading-7 text-zinc-600">
-                Common behaviour removed: {selectedProtocol.commonBehaviourRemoved}
-              </p>
-            ) : null}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                onClick={() => setStep(5)}
-              >
-                Continue
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-        {step === 5 && selectedProtocol && (
-          <section className="mt-10 space-y-8">
             <dl className="space-y-5">
               <div>
                 <dt className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -1295,7 +1189,7 @@ export default function Home() {
               </button>
             </div>
           </section>
-        )}
+        ) : null}
 
         {step === 6 && (
           <section className="mt-10 space-y-8">
