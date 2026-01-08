@@ -37,6 +37,7 @@ const storageKeys = [
   "runStartDate",
   "streak",
   "checkIns",
+  "runHistory",
   "lastCheckInDate",
   "lastCheckInFollowed",
   "lastCheckInNote",
@@ -181,7 +182,7 @@ export default function Home() {
   const [hasSaved, setHasSaved] = useState(false);
   const [checkInError, setCheckInError] = useState("");
   const [runStatus, setRunStatus] = useState<
-    "idle" | "active" | "failed" | "completed"
+    "idle" | "active" | "failed" | "completed" | "ended"
   >("idle");
   const [runStartDate, setRunStartDate] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
@@ -200,6 +201,18 @@ export default function Home() {
     null,
   );
   const [showRunDetail, setShowRunDetail] = useState(false);
+  const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
+  const [runHistory, setRunHistory] = useState<
+    Array<{
+      id: string;
+      protocolId: string;
+      protocolName: string;
+      startedAt: string | null;
+      endedAt: string;
+      result: "Completed" | "Failed" | "Ended";
+      cleanDays: number;
+    }>
+  >([]);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -217,6 +230,7 @@ export default function Home() {
     const storedCheckIns = localStorage.getItem("checkIns");
     const storedHasCompletedRun = localStorage.getItem("hasCompletedRun");
     const storedIsPro = localStorage.getItem("quadrant_isPro");
+    const storedRunHistory = localStorage.getItem("runHistory");
 
     if (storedActiveProblemId) {
       const parsedProblemId = Number.parseInt(storedActiveProblemId, 10);
@@ -242,7 +256,8 @@ export default function Home() {
       storedRunStatus === "idle" ||
       storedRunStatus === "active" ||
       storedRunStatus === "failed" ||
-      storedRunStatus === "completed"
+      storedRunStatus === "completed" ||
+      storedRunStatus === "ended"
     ) {
       setRunStatus(storedRunStatus);
     }
@@ -271,6 +286,22 @@ export default function Home() {
     }
     if (storedIsPro === "true") {
       setIsPro(true);
+    }
+    if (storedRunHistory) {
+      try {
+        const parsedHistory = JSON.parse(storedRunHistory) as Array<{
+          id: string;
+          protocolId: string;
+          protocolName: string;
+          startedAt: string | null;
+          endedAt: string;
+          result: "Completed" | "Failed" | "Ended";
+          cleanDays: number;
+        }>;
+        setRunHistory(parsedHistory);
+      } catch {
+        setRunHistory([]);
+      }
     }
 
     setStep(1);
@@ -341,6 +372,7 @@ export default function Home() {
     localStorage.setItem("streak", String(streak));
     localStorage.setItem("checkIns", JSON.stringify(checkIns));
     localStorage.setItem("hasCompletedRun", hasCompletedRun ? "true" : "false");
+    localStorage.setItem("runHistory", JSON.stringify(runHistory));
   }, [
     activeProblemId,
     activeProtocolId,
@@ -351,6 +383,7 @@ export default function Home() {
     streak,
     checkIns,
     hasCompletedRun,
+    runHistory,
   ]);
 
   const selectedProblem = problemIndex.find(
@@ -375,7 +408,15 @@ export default function Home() {
   const successfulDays = Object.values(checkIns).filter(
     (entry) => entry.followed,
   ).length;
-  const progressCount = Math.min(successfulDays, RUN_LENGTH);
+  const freeProgressCount = Math.min(successfulDays, RUN_LENGTH);
+  const progressCount = isPro ? successfulDays : freeProgressCount;
+  const recentCheckInKeys = Object.keys(checkIns).sort().slice(-14);
+  const recentCheckInSymbols = [
+    ...Array.from({ length: 14 - recentCheckInKeys.length }, () => "—"),
+    ...recentCheckInKeys.map((key) =>
+      checkIns[key]?.followed ? "✓" : "✕",
+    ),
+  ];
 
   const allClarifiersAnswered = clarifierQuestions.every(
     (question) => clarifierAnswers[question.id],
@@ -384,6 +425,7 @@ export default function Home() {
   const runActive = runStatus === "active";
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
+  const runEnded = runStatus === "ended";
   const canStartNewRun = isPro || !hasCompletedRun;
   const freeRunComplete = !isPro && hasCompletedRun && !runActive;
   const isFirstFreeRunActive = !isPro && runActive && !hasCompletedRun;
@@ -420,6 +462,29 @@ export default function Home() {
     setCheckInNote("");
     setHasSaved(false);
     setCheckInError("");
+    setShowEndRunConfirm(false);
+  };
+
+  const appendRunHistory = (
+    result: "Completed" | "Failed" | "Ended",
+    snapshot: Record<string, { followed: boolean; note?: string }>,
+  ) => {
+    if (!activeProtocolId || !activeProtocol) {
+      return;
+    }
+    const cleanDays = Object.values(snapshot).filter(
+      (entry) => entry.followed,
+    ).length;
+    const entry = {
+      id: `${activeProtocolId}-${Date.now()}`,
+      protocolId: activeProtocolId,
+      protocolName: activeProtocol.name,
+      startedAt: activatedAt,
+      endedAt: new Date().toISOString(),
+      result,
+      cleanDays,
+    };
+    setRunHistory((prev) => [entry, ...prev]);
   };
 
   const activateProtocol = (protocolId: string, problemId: number | null) => {
@@ -438,6 +503,7 @@ export default function Home() {
     setShowPaywall(false);
     setCheckInFollowed(null);
     setCheckInNote("");
+    setShowEndRunConfirm(false);
     setStep(1);
   };
 
@@ -547,14 +613,18 @@ export default function Home() {
     setStreak(newStreak);
     if (checkInFollowed === false) {
       setRunStatus("failed");
-      setHasCompletedRun(true);
+      if (!isPro) {
+        setHasCompletedRun(true);
+      }
+      appendRunHistory("Failed", updatedCheckIns);
       setHasSaved(true);
       setShowRunDetail(true);
       setStep(1);
       return;
-    } else if (newStreak >= RUN_LENGTH) {
+    } else if (!isPro && newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
       setHasCompletedRun(true);
+      appendRunHistory("Completed", updatedCheckIns);
       setShowRunDetail(true);
     }
     setHasSaved(true);
@@ -596,6 +666,17 @@ export default function Home() {
     setStep(6);
   };
 
+  const handleEndRun = () => {
+    if (!isPro || !runActive) {
+      return;
+    }
+    setRunStatus("ended");
+    appendRunHistory("Ended", checkIns);
+    setShowEndRunConfirm(false);
+    setShowRunDetail(true);
+    setStep(1);
+  };
+
   const handleTogglePro = () => {
     const next = !isPro;
     setIsPro(next);
@@ -613,21 +694,11 @@ export default function Home() {
   const canContinueFromStep2 = Boolean(selectedProtocolId);
   const canContinueFromStep3 = allClarifiersAnswered;
   const canSaveCheckIn = runActive && checkInFollowed !== null;
-  const runHistoryRows = activeProtocol
-    ? [
-        {
-          protocol: activeProtocol.name,
-          result: runComplete
-            ? "Complete"
-            : runFailed
-              ? "Failed"
-              : runActive
-                ? "Active"
-                : "Inactive",
-          days: progressCount,
-        },
-      ]
-    : [];
+  const runHistoryRows = runHistory.map((entry) => ({
+    protocol: entry.protocolName,
+    result: entry.result,
+    days: entry.cleanDays,
+  }));
   const visibleRunHistoryRows = isPro
     ? runHistoryRows
     : runHistoryRows.slice(0, 1);
@@ -649,7 +720,13 @@ export default function Home() {
       />
     </svg>
   );
-  const runResultLabel = runComplete ? "Completed" : runFailed ? "Failed" : "—";
+  const runResultLabel = runComplete
+    ? "Completed"
+    : runFailed
+      ? "Failed"
+      : runEnded
+        ? "Ended"
+        : "—";
   if (pathname === "/pricing") {
     return (
       <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
@@ -783,39 +860,72 @@ export default function Home() {
                       </div>
                       <div className="w-full max-w-sm space-y-4">
                         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-sm font-semibold text-zinc-900">
-                            Progress: {progressCount}/{RUN_LENGTH} clean trading
-                            days
-                          </div>
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {Array.from({ length: RUN_LENGTH }, (_, index) => {
-                              const isFilled = index < progressCount;
-                              const isFailed =
-                                runFailed && index === progressCount;
-                              const symbol = isFilled
-                                ? "✓"
-                                : isFailed
-                                  ? "✕"
-                                  : "—";
-                              return (
-                                <div
-                                  key={`run-slot-${index + 1}`}
-                                  className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
-                                    isFailed
-                                      ? "border-red-200 bg-red-50 text-red-600"
-                                      : isFilled
-                                        ? "border-zinc-900 bg-zinc-900 text-white"
-                                        : "border-zinc-200 text-zinc-600"
-                                  }`}
-                                >
-                                  <span className="text-sm">{symbol}</span>
-                                  <span className="text-[10px] tracking-wide">
-                                    Day {index + 1}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
+                          {isPro ? (
+                            <>
+                              <div className="text-sm font-semibold text-zinc-900">
+                                Current clean streak: {streak} days
+                              </div>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {recentCheckInSymbols.map((symbol, index) => (
+                                  <div
+                                    key={`recent-checkin-${index}`}
+                                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                                      symbol === "✕"
+                                        ? "border-red-200 bg-red-50 text-red-600"
+                                        : symbol === "✓"
+                                          ? "border-zinc-900 bg-zinc-900 text-white"
+                                          : "border-zinc-200 text-zinc-600"
+                                    }`}
+                                  >
+                                    {symbol}
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="text-sm font-semibold text-zinc-900">
+                                Progress: {freeProgressCount}/{RUN_LENGTH} clean
+                                trading days
+                              </div>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                {Array.from(
+                                  { length: RUN_LENGTH },
+                                  (_, index) => {
+                                    const isFilled =
+                                      index < freeProgressCount;
+                                    const isFailed =
+                                      runFailed &&
+                                      index === freeProgressCount;
+                                    const symbol = isFilled
+                                      ? "✓"
+                                      : isFailed
+                                        ? "✕"
+                                        : "—";
+                                    return (
+                                      <div
+                                        key={`run-slot-${index + 1}`}
+                                        className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
+                                          isFailed
+                                            ? "border-red-200 bg-red-50 text-red-600"
+                                            : isFilled
+                                              ? "border-zinc-900 bg-zinc-900 text-white"
+                                              : "border-zinc-200 text-zinc-600"
+                                        }`}
+                                      >
+                                        <span className="text-sm">
+                                          {symbol}
+                                        </span>
+                                        <span className="text-[10px] tracking-wide">
+                                          Day {index + 1}
+                                        </span>
+                                      </div>
+                                    );
+                                  },
+                                )}
+                              </div>
+                            </>
+                          )}
                           <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
                             <span>
                               Status:{" "}
@@ -825,7 +935,9 @@ export default function Home() {
                                   ? "Complete"
                                   : runFailed
                                     ? "Failed"
-                                    : "Inactive"}
+                                    : runEnded
+                                      ? "Ended"
+                                      : "Inactive"}
                             </span>
                             <span>Best run: {bestRun}</span>
                             {hasSaved ? <span>Today logged</span> : null}
@@ -840,6 +952,15 @@ export default function Home() {
                           >
                             Daily check-in
                           </button>
+                          {isPro && runActive ? (
+                            <button
+                              type="button"
+                              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                              onClick={() => setShowEndRunConfirm(true)}
+                            >
+                              End run
+                            </button>
+                          ) : null}
                           {isPro && runActive ? (
                             <button
                               type="button"
@@ -885,6 +1006,27 @@ export default function Home() {
                             onClick={handleConfirmSwitch}
                           >
                             Switch
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                    {showEndRunConfirm ? (
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                        <span>Ending locks this run in history.</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                            onClick={() => setShowEndRunConfirm(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                            onClick={handleEndRun}
+                          >
+                            End run
                           </button>
                         </div>
                       </div>
@@ -1616,42 +1758,69 @@ export default function Home() {
                 </div>
                 <div>
                   <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                    Days completed
+                    {isPro ? "Clean days" : "Days completed"}
                   </dt>
                   <dd className="mt-1 text-base text-zinc-800">
-                    {progressCount}/{RUN_LENGTH}
+                    {isPro ? progressCount : `${freeProgressCount}/${RUN_LENGTH}`}
                   </dd>
                 </div>
               </div>
             </dl>
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-              <div className="text-sm font-semibold text-zinc-900">
-                Progress: {progressCount}/{RUN_LENGTH} clean trading days
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {Array.from({ length: RUN_LENGTH }, (_, index) => {
-                  const isFilled = index < progressCount;
-                  const isFailed = runFailed && index === progressCount;
-                  const symbol = isFilled ? "✓" : isFailed ? "✕" : "—";
-                  return (
-                    <div
-                      key={`run-detail-slot-${index + 1}`}
-                      className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
-                        isFailed
-                          ? "border-red-200 bg-red-50 text-red-600"
-                          : isFilled
-                            ? "border-zinc-900 bg-zinc-900 text-white"
-                            : "border-zinc-200 text-zinc-600"
-                      }`}
-                    >
-                      <span className="text-sm">{symbol}</span>
-                      <span className="text-[10px] tracking-wide">
-                        Day {index + 1}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              {isPro ? (
+                <>
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Current clean streak: {streak} days
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {recentCheckInSymbols.map((symbol, index) => (
+                      <div
+                        key={`run-detail-recent-${index}`}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                          symbol === "✕"
+                            ? "border-red-200 bg-red-50 text-red-600"
+                            : symbol === "✓"
+                              ? "border-zinc-900 bg-zinc-900 text-white"
+                              : "border-zinc-200 text-zinc-600"
+                        }`}
+                      >
+                        {symbol}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Progress: {freeProgressCount}/{RUN_LENGTH} clean trading
+                    days
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {Array.from({ length: RUN_LENGTH }, (_, index) => {
+                      const isFilled = index < freeProgressCount;
+                      const isFailed = runFailed && index === freeProgressCount;
+                      const symbol = isFilled ? "✓" : isFailed ? "✕" : "—";
+                      return (
+                        <div
+                          key={`run-detail-slot-${index + 1}`}
+                          className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
+                            isFailed
+                              ? "border-red-200 bg-red-50 text-red-600"
+                              : isFilled
+                                ? "border-zinc-900 bg-zinc-900 text-white"
+                                : "border-zinc-200 text-zinc-600"
+                          }`}
+                        >
+                          <span className="text-sm">{symbol}</span>
+                          <span className="text-[10px] tracking-wide">
+                            Day {index + 1}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </div>
             {!isPro ? (
               <div className="mt-6 flex flex-wrap gap-3">
