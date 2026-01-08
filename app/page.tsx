@@ -386,6 +386,8 @@ export default function Home() {
   const runFailed = runStatus === "failed";
   const canStartNewRun = isPro || !hasCompletedRun;
   const freeRunComplete = !isPro && hasCompletedRun && !runActive;
+  const isFirstFreeRunActive = !isPro && runActive && !hasCompletedRun;
+  const canShowProtocolDetails = !isFirstFreeRunActive;
   const protocolOrder = [
     "emotional-state-trading-ban",
     "trade-count-and-exposure-cap",
@@ -1013,98 +1015,108 @@ export default function Home() {
                         Read-only
                       </span>
                     </div>
-                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                      <div className="space-y-3">
-                        {orderedProtocols.map((protocol) => {
-                          const isSelected =
-                            protocol.id === libraryProtocolId;
-                          return (
+                    {isFirstFreeRunActive ? (
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Protocol details unlock after your first run.
+                      </p>
+                    ) : null}
+                    <div className="mt-4 space-y-3">
+                      {orderedProtocols.map((protocol) => {
+                        const isExpanded =
+                          canShowProtocolDetails &&
+                          protocol.id === libraryProtocolId;
+                        return (
+                          <div
+                            key={protocol.id}
+                            className={`rounded-xl border transition ${
+                              isExpanded
+                                ? "border-zinc-900 bg-zinc-50"
+                                : "border-zinc-200"
+                            }`}
+                          >
                             <button
-                              key={protocol.id}
                               type="button"
-                              className={`w-full rounded-xl border px-4 py-3 text-left transition ${
-                                isSelected
-                                  ? "border-zinc-900 bg-zinc-50"
-                                  : "border-zinc-200 hover:border-zinc-400"
+                              className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${
+                                isFirstFreeRunActive
+                                  ? "cursor-not-allowed opacity-70"
+                                  : "hover:border-zinc-400"
                               }`}
-                              onClick={() =>
-                                setLibraryProtocolId(protocol.id)
-                              }
+                              onClick={() => {
+                                if (isFirstFreeRunActive) {
+                                  return;
+                                }
+                                setLibraryProtocolId(
+                                  isExpanded ? null : protocol.id,
+                                );
+                              }}
+                              disabled={isFirstFreeRunActive}
                             >
-                              <div className="text-sm font-semibold text-zinc-900">
-                                {protocol.name}
+                              <div>
+                                <div className="text-sm font-semibold text-zinc-900">
+                                  {protocol.name}
+                                </div>
+                                <div className="mt-1 text-xs text-zinc-500">
+                                  {protocol.commonBehaviourRemoved}
+                                </div>
                               </div>
-                              <div className="mt-1 text-xs text-zinc-500">
-                                {protocol.commonBehaviourRemoved}
-                              </div>
+                              {!isFirstFreeRunActive ? (
+                                <span className="text-sm text-zinc-500">
+                                  {isExpanded ? "▼" : "▶"}
+                                </span>
+                              ) : null}
                             </button>
-                          );
-                        })}
-                      </div>
-                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-                        {libraryProtocol ? (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                              <span>Read-only details</span>
-                              <span className="text-zinc-400">
-                                No activation
-                              </span>
-                            </div>
-                            <div className="text-lg font-semibold text-zinc-900">
-                              {libraryProtocol.name}
-                            </div>
-                            <dl className="space-y-4 text-sm text-zinc-700">
-                              <div>
-                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                  Rule
-                                </dt>
-                                <dd className="mt-1">
-                                  {libraryProtocol.rule}
-                                </dd>
+                            {isExpanded && canShowProtocolDetails ? (
+                              <div className="border-t border-zinc-200 px-4 py-4">
+                                <dl className="space-y-4 text-sm text-zinc-700">
+                                  <div>
+                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                      Rule
+                                    </dt>
+                                    <dd className="mt-1">
+                                      {protocol.rule}
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                      Duration
+                                    </dt>
+                                    <dd className="mt-1">
+                                      {protocol.duration}
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                      Failure
+                                    </dt>
+                                    <dd className="mt-1">
+                                      {protocol.failure}
+                                    </dd>
+                                  </div>
+                                </dl>
+                                <div className="flex flex-wrap gap-3 pt-4">
+                                  <button
+                                    type="button"
+                                    className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                                    onClick={() => {
+                                      if (freeRunComplete) {
+                                        setShowPaywall(true);
+                                        return;
+                                      }
+                                      setSelectedProtocolId(protocol.id);
+                                      setSelectedProblemId(null);
+                                      setStep(5);
+                                    }}
+                                  >
+                                    {freeRunComplete
+                                      ? "Upgrade to activate"
+                                      : "Activate protocol"}
+                                  </button>
+                                </div>
                               </div>
-                              <div>
-                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                  Duration
-                                </dt>
-                                <dd className="mt-1">
-                                  {libraryProtocol.duration}
-                                </dd>
-                              </div>
-                              <div>
-                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                                  Failure
-                                </dt>
-                                <dd className="mt-1">
-                                  {libraryProtocol.failure}
-                                </dd>
-                              </div>
-                            </dl>
-                            <div className="flex flex-wrap gap-3 pt-2">
-                              <button
-                                type="button"
-                                className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                                onClick={() => {
-                                  if (freeRunComplete) {
-                                    setShowPaywall(true);
-                                    return;
-                                  }
-                                  setSelectedProtocolId(libraryProtocol.id);
-                                  setSelectedProblemId(null);
-                                  setStep(5);
-                                }}
-                              >
-                                {freeRunComplete
-                                  ? "Upgrade to activate"
-                                  : "Activate protocol"}
-                              </button>
-                            </div>
+                            ) : null}
                           </div>
-                        ) : (
-                          <div className="text-sm text-zinc-500">
-                            Select a protocol to view details.
-                          </div>
-                        )}
-                      </div>
+                        );
+                      })}
                     </div>
                   </section>
                 </div>
