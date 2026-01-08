@@ -384,7 +384,7 @@ export default function Home() {
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
   const canStartNewRun = isPro || !hasCompletedRun;
-  const showFreeRunCompleteBlock = !isPro && hasCompletedRun && !runActive;
+  const freeRunComplete = !isPro && hasCompletedRun && !runActive;
   const protocolOrder = [
     "emotional-state-trading-ban",
     "trade-count-and-exposure-cap",
@@ -625,6 +625,12 @@ export default function Home() {
   const visibleRunHistoryRows = isPro
     ? runHistoryRows
     : runHistoryRows.slice(0, 1);
+  const patternInsights = [
+    { title: "Failure Day Distribution", value: "—" },
+    { title: "Longest Clean Run", value: "—" },
+    { title: "Time Between Failures", value: "—" },
+    { title: "Protocols Attempted", value: "—" },
+  ];
   const lockIcon = (
     <svg
       viewBox="0 0 24 24"
@@ -839,44 +845,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                    {showFreeRunCompleteBlock ? (
-                      <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-                        <div className="space-y-2">
-                          <div className="text-sm font-semibold text-zinc-900">
-                            Free run complete.
-                          </div>
-                          <p className="text-sm text-zinc-600">
-                            You can review your completed protocol. To start
-                            another run, upgrade.
-                          </p>
-                        </div>
-                        <div className="mt-4 flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                            onClick={() => {
-                              if (typeof window !== "undefined") {
-                                window.location.href = "/pricing";
-                              }
-                            }}
-                          >
-                            Upgrade
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                            onClick={() => {
-                              setSelectedProblemId(activeProblem?.id ?? null);
-                              setSelectedProtocolId(activeProtocol.id);
-                              setStep(5);
-                            }}
-                          >
-                            View completed protocol
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                    {!showFreeRunCompleteBlock && runComplete ? (
+                    {!freeRunComplete && runComplete ? (
                       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                         <span className="text-sm font-semibold text-zinc-700">
                           Run complete
@@ -964,34 +933,76 @@ export default function Home() {
                         Pattern insights
                       </h2>
                       <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                        Locked
+                        {isPro ? "Live" : "Locked"}
                       </span>
                     </div>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      {[
-                        "Failure Day Distribution",
-                        "Longest Clean Run",
-                        "Time Between Failures",
-                        "Protocols Attempted",
-                      ].map((title) => (
+                      {patternInsights.map((insight) => (
                         <div
-                          key={title}
-                          className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 text-zinc-400"
-                          aria-disabled="true"
+                          key={insight.title}
+                          className={`rounded-2xl border p-5 ${
+                            isPro
+                              ? "border-zinc-200 bg-white"
+                              : "border-zinc-200 bg-zinc-50 text-zinc-400"
+                          }`}
+                          aria-disabled={!isPro}
                         >
                           <div className="flex items-center justify-between">
-                            <div className="text-sm font-semibold text-zinc-500">
-                              {title}
+                            <div className="text-sm font-semibold text-zinc-700">
+                              {insight.title}
                             </div>
-                            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
-                              {lockIcon}
-                              <span>Pro</span>
-                            </div>
+                            {!isPro ? (
+                              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                                {lockIcon}
+                                <span>Pro</span>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="mt-4 text-2xl font-semibold text-zinc-900">
+                            {isPro ? insight.value : "—"}
                           </div>
                         </div>
                       ))}
                     </div>
                   </section>
+
+                  {freeRunComplete ? (
+                    <section className="rounded-2xl border border-zinc-200 bg-zinc-900 p-6 text-white shadow-sm">
+                      <div className="space-y-2">
+                        <h2 className="text-xl font-semibold">
+                          Free run complete.
+                        </h2>
+                        <p className="text-sm text-zinc-300">
+                          You can review your completed run. To start another
+                          run, upgrade.
+                        </p>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
+                        >
+                          Upgrade to Pro
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/70"
+                          onClick={() => {
+                            setSelectedProblemId(activeProblem?.id ?? null);
+                            setSelectedProtocolId(activeProtocol.id);
+                            setStep(5);
+                          }}
+                        >
+                          View completed run
+                        </button>
+                      </div>
+                    </section>
+                  ) : null}
 
                   <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
