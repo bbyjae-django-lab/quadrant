@@ -1079,6 +1079,25 @@ export default function Home() {
                                 </dd>
                               </div>
                             </dl>
+                            <div className="flex flex-wrap gap-3 pt-2">
+                              <button
+                                type="button"
+                                className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                                onClick={() => {
+                                  if (freeRunComplete) {
+                                    setShowPaywall(true);
+                                    return;
+                                  }
+                                  setSelectedProtocolId(libraryProtocol.id);
+                                  setSelectedProblemId(null);
+                                  setStep(5);
+                                }}
+                              >
+                                {freeRunComplete
+                                  ? "Upgrade to activate"
+                                  : "Activate protocol"}
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="text-sm text-zinc-500">
