@@ -1069,7 +1069,8 @@ export default function Home() {
                               ) : null}
                             </button>
                             {isExpanded && canShowProtocolDetails ? (
-                              <div className="border-t border-zinc-200 px-4 py-4">
+                              <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
+                                <div className="border-l border-zinc-200 pl-4">
                                 <dl className="space-y-4 text-sm text-zinc-700">
                                   <div>
                                     <dt className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -1114,6 +1115,7 @@ export default function Home() {
                                       ? "Upgrade to activate"
                                       : "Activate protocol"}
                                   </button>
+                                </div>
                                 </div>
                               </div>
                             ) : null}
