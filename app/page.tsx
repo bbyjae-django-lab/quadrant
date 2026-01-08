@@ -770,24 +770,24 @@ export default function Home() {
                       </div>
                       <div className="w-full max-w-sm space-y-4">
                         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                            Progress
-                          </div>
-                          <div className="mt-2 text-2xl font-semibold text-zinc-900">
-                            {progressCount}/{RUN_LENGTH}
-                            <span className="ml-2 text-sm font-medium text-zinc-500">
-                              clean trading days
-                            </span>
+                          <div className="text-sm font-semibold text-zinc-900">
+                            Progress: {progressCount}/{RUN_LENGTH} clean trading
+                            days
                           </div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {Array.from({ length: RUN_LENGTH }, (_, index) => {
                               const isFilled = index < progressCount;
                               const isFailed =
                                 runFailed && index === progressCount;
+                              const symbol = isFilled
+                                ? "✓"
+                                : isFailed
+                                  ? "✕"
+                                  : "—";
                               return (
                                 <div
                                   key={`run-slot-${index + 1}`}
-                                  className={`flex h-10 w-12 items-center justify-center rounded-lg border text-xs font-semibold ${
+                                  className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
                                     isFailed
                                       ? "border-red-200 bg-red-50 text-red-600"
                                       : isFilled
@@ -795,7 +795,10 @@ export default function Home() {
                                         : "border-zinc-200 text-zinc-600"
                                   }`}
                                 >
-                                  {index + 1}
+                                  <span className="text-sm">{symbol}</span>
+                                  <span className="text-[10px] uppercase tracking-wide">
+                                    Day {index + 1}
+                                  </span>
                                 </div>
                               );
                             })}
