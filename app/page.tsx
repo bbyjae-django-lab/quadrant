@@ -548,11 +548,14 @@ export default function Home() {
     if (checkInFollowed === false) {
       setRunStatus("failed");
       setHasCompletedRun(true);
-      setStep(7);
+      setHasSaved(true);
+      setShowRunDetail(true);
+      setStep(1);
       return;
     } else if (newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
       setHasCompletedRun(true);
+      setShowRunDetail(true);
     }
     setHasSaved(true);
     setCheckInNote(noteValue);
@@ -1648,6 +1651,28 @@ export default function Home() {
                 })}
               </div>
             </div>
+            {!isPro ? (
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.location.href = "/pricing";
+                    }
+                  }}
+                >
+                  Upgrade to Pro
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  onClick={() => setShowRunDetail(false)}
+                >
+                  Stay on dashboard
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
