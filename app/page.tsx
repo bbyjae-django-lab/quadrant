@@ -196,6 +196,9 @@ export default function Home() {
   const [showPricingPaymentsSoon, setShowPricingPaymentsSoon] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPro, setIsPro] = useState(false);
+  const [libraryProtocolId, setLibraryProtocolId] = useState<string | null>(
+    null,
+  );
   const pathname = usePathname();
 
   useEffect(() => {
@@ -357,6 +360,9 @@ export default function Home() {
     : null;
   const activeProtocol = activeProtocolId
     ? protocolById[activeProtocolId]
+    : null;
+  const libraryProtocol = libraryProtocolId
+    ? protocolById[libraryProtocolId]
     : null;
   const activeProblem = problemIndex.find(
     (problem) => problem.id === activeProblemId,
@@ -601,6 +607,36 @@ export default function Home() {
   const canContinueFromStep2 = Boolean(selectedProtocolId);
   const canContinueFromStep3 = allClarifiersAnswered;
   const canSaveCheckIn = runActive && checkInFollowed !== null;
+  const runHistoryRows = activeProtocol
+    ? [
+        {
+          protocol: activeProtocol.name,
+          result: runComplete
+            ? "Complete"
+            : runFailed
+              ? "Failed"
+              : runActive
+                ? "Active"
+                : "Inactive",
+          days: progressCount,
+        },
+      ]
+    : [];
+  const visibleRunHistoryRows = isPro
+    ? runHistoryRows
+    : runHistoryRows.slice(0, 1);
+  const lockIcon = (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="h-4 w-4 text-zinc-400"
+    >
+      <path
+        fill="currentColor"
+        d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
+      />
+    </svg>
+  );
   if (pathname === "/pricing") {
     return (
       <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
@@ -708,145 +744,137 @@ export default function Home() {
           <section className="mt-10 space-y-6">
             {activeProtocol ? (
               <>
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                      Your Active Protocol
-                    </p>
-                    <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                      {activeProtocol.name}
-                    </h1>
-                    {activeProblem ? (
-                      <p className="text-sm text-zinc-600">
-                        {activeProblem.normalized_problem}
-                      </p>
-                    ) : null}
-                    {activeProtocol.commonBehaviourRemoved ? (
-                      <p className="text-xs text-zinc-500">
-                        {activeProtocol.commonBehaviourRemoved}
-                      </p>
-                    ) : null}
-                  </div>
-                  <dl className="mt-6 space-y-5">
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Rule
-                      </dt>
-                      <dd className="mt-1 text-base text-zinc-800">
-                        {activeProtocol.rule}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Duration
-                      </dt>
-                      <dd className="mt-1 text-base text-zinc-800">
-                        {activeProtocol.duration}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                        Failure
-                      </dt>
-                      <dd className="mt-1 text-base text-zinc-800">
-                        {activeProtocol.failure}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-                <div className="space-y-2 text-sm text-zinc-600">
-                  <div>
-                    Status:{" "}
-                    {runActive
-                      ? "Active"
-                      : runComplete
-                        ? "Complete"
-                        : runFailed
-                          ? "Failed"
-                          : "Inactive"}
-                  </div>
-                  <div>
-                    Progress: {progressCount}/{RUN_LENGTH}
-                  </div>
-                  <div>Best run: {bestRun}</div>
-                  <div>
-                    {todayCheckIn ? (
-                      todayCheckIn.followed ? (
-                        <span>Today: Followed V</span>
-                      ) : (
-                        <span>Today: Deviated ?</span>
-                      )
-                    ) : (
-                      <span>Today: Not checked in</span>
-                    )}
-                  </div>
-                  {hasSaved ? (
-                    <div className="text-xs text-zinc-500">Today logged.</div>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    5-day run tracker
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {Array.from({ length: RUN_LENGTH }, (_, index) => {
-                      let value = "";
-                      if (index < progressCount) {
-                        value = "✓";
-                      } else if (runFailed && index === progressCount) {
-                        value = "×";
-                      }
-                      return (
-                        <div
-                          key={`run-slot-${index + 1}`}
-                          className="flex h-10 w-12 items-center justify-center rounded-lg border border-zinc-200 text-sm font-semibold text-zinc-700"
-                        >
-                          {value || `Day ${index + 1}`}
+                <div className="space-y-10">
+                  <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+                    <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+                      <div className="space-y-4 md:max-w-xl">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                          ACTIVE PROTOCOL
+                        </p>
+                        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+                          {activeProtocol.name}
+                        </h1>
+                        {activeProblem ? (
+                          <p className="text-sm text-zinc-500">
+                            Focus: {activeProblem.normalized_problem}
+                          </p>
+                        ) : null}
+                        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                            Rule
+                          </div>
+                          <p className="mt-2 text-base text-zinc-800">
+                            {activeProtocol.rule}
+                          </p>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {showFreeRunCompleteBlock ? (
-                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-                    <div className="space-y-2">
-                      <div className="text-sm font-semibold text-zinc-900">
-                        Free run complete.
                       </div>
-                      <p className="text-sm text-zinc-600">
-                        You can review your completed protocol. To start another
-                        run, upgrade.
-                      </p>
+                      <div className="w-full max-w-sm space-y-4">
+                        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                            Progress
+                          </div>
+                          <div className="mt-2 text-2xl font-semibold text-zinc-900">
+                            {progressCount}/{RUN_LENGTH}
+                            <span className="ml-2 text-sm font-medium text-zinc-500">
+                              clean trading days
+                            </span>
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {Array.from({ length: RUN_LENGTH }, (_, index) => {
+                              const isFilled = index < progressCount;
+                              const isFailed =
+                                runFailed && index === progressCount;
+                              return (
+                                <div
+                                  key={`run-slot-${index + 1}`}
+                                  className={`flex h-10 w-12 items-center justify-center rounded-lg border text-xs font-semibold ${
+                                    isFailed
+                                      ? "border-red-200 bg-red-50 text-red-600"
+                                      : isFilled
+                                        ? "border-zinc-900 bg-zinc-900 text-white"
+                                        : "border-zinc-200 text-zinc-600"
+                                  }`}
+                                >
+                                  {index + 1}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
+                            <span>
+                              Status:{" "}
+                              {runActive
+                                ? "Active"
+                                : runComplete
+                                  ? "Complete"
+                                  : runFailed
+                                    ? "Failed"
+                                    : "Inactive"}
+                            </span>
+                            <span>Best run: {bestRun}</span>
+                            {hasSaved ? <span>Today logged</span> : null}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            onClick={handleCheckInClick}
+                            disabled={!runActive}
+                          >
+                            Daily check-in
+                          </button>
+                          {isPro && runActive ? (
+                            <button
+                              type="button"
+                              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                              onClick={handleSwitchProtocol}
+                            >
+                              Switch protocol
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                        onClick={() => {
-                          if (typeof window !== "undefined") {
-                            window.location.href = "/pricing";
-                          }
-                        }}
-                      >
-                        Upgrade
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                        onClick={() => {
-                          setSelectedProblemId(activeProblem?.id ?? null);
-                          setSelectedProtocolId(activeProtocol.id);
-                          setStep(5);
-                        }}
-                      >
-                        View completed protocol
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {runComplete ? (
-                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                    {showFreeRunCompleteBlock ? (
+                      <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                        <div className="space-y-2">
+                          <div className="text-sm font-semibold text-zinc-900">
+                            Free run complete.
+                          </div>
+                          <p className="text-sm text-zinc-600">
+                            You can review your completed protocol. To start
+                            another run, upgrade.
+                          </p>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                            onClick={() => {
+                              if (typeof window !== "undefined") {
+                                window.location.href = "/pricing";
+                              }
+                            }}
+                          >
+                            Upgrade
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                            onClick={() => {
+                              setSelectedProblemId(activeProblem?.id ?? null);
+                              setSelectedProtocolId(activeProtocol.id);
+                              setStep(5);
+                            }}
+                          >
+                            View completed protocol
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                    {!showFreeRunCompleteBlock && runComplete ? (
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
                         <span className="text-sm font-semibold text-zinc-700">
                           Run complete
                         </span>
@@ -861,54 +889,192 @@ export default function Home() {
                         </div>
                       </div>
                     ) : null}
-                    <div className="flex flex-wrap items-center justify-end gap-3">
-                      {runActive ? (
-                        <button
-                          type="button"
-                          className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                          onClick={handleCheckInClick}
-                        >
-                          {todayCheckIn
-                            ? "View / edit check-in"
-                            : "Daily check-in"}
-                        </button>
-                      ) : null}
-                      {isPro && runActive ? (
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                          onClick={handleSwitchProtocol}
-                        >
-                          Switch protocol
-                        </button>
-                      ) : null}
+                    {showSwitchConfirm ? (
+                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                        <span>Switching protocols resets your current run.</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                            onClick={() => setShowSwitchConfirm(false)}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                            onClick={handleConfirmSwitch}
+                          >
+                            Switch
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-zinc-900">
+                        Run history
+                      </h2>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                        Recent
+                      </span>
                     </div>
-                  </>
-                )}
-                <div className="text-xs text-zinc-500">
-                  {isPro ? <span>Pro enabled</span> : <span>Free plan</span>}
+                    <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
+                      {visibleRunHistoryRows.length > 0 ? (
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                            <tr>
+                              <th className="px-4 py-3">Protocol</th>
+                              <th className="px-4 py-3">Result</th>
+                              <th className="px-4 py-3">Days</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-zinc-100">
+                            {visibleRunHistoryRows.map((row) => (
+                              <tr key={row.protocol}>
+                                <td className="px-4 py-3 text-zinc-900">
+                                  {row.protocol}
+                                </td>
+                                <td className="px-4 py-3 text-zinc-600">
+                                  {row.result}
+                                </td>
+                                <td className="px-4 py-3 text-zinc-600">
+                                  {row.days}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        <div className="px-4 py-6 text-sm text-zinc-500">
+                          No runs recorded yet.
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-zinc-900">
+                        Pattern insights
+                      </h2>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                        Locked
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      {[
+                        "Failure Day Distribution",
+                        "Longest Clean Run",
+                        "Time Between Failures",
+                        "Protocols Attempted",
+                      ].map((title) => (
+                        <div
+                          key={title}
+                          className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5 text-zinc-400"
+                          aria-disabled="true"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm font-semibold text-zinc-500">
+                              {title}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                              {lockIcon}
+                              <span>Pro</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-zinc-900">
+                        Protocol library
+                      </h2>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                        Read-only
+                      </span>
+                    </div>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      <div className="space-y-3">
+                        {orderedProtocols.map((protocol) => {
+                          const isSelected =
+                            protocol.id === libraryProtocolId;
+                          return (
+                            <button
+                              key={protocol.id}
+                              type="button"
+                              className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                                isSelected
+                                  ? "border-zinc-900 bg-zinc-50"
+                                  : "border-zinc-200 hover:border-zinc-400"
+                              }`}
+                              onClick={() =>
+                                setLibraryProtocolId(protocol.id)
+                              }
+                            >
+                              <div className="text-sm font-semibold text-zinc-900">
+                                {protocol.name}
+                              </div>
+                              <div className="mt-1 text-xs text-zinc-500">
+                                {protocol.commonBehaviourRemoved}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+                        {libraryProtocol ? (
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                              <span>Read-only details</span>
+                              <span className="text-zinc-400">
+                                No activation
+                              </span>
+                            </div>
+                            <div className="text-lg font-semibold text-zinc-900">
+                              {libraryProtocol.name}
+                            </div>
+                            <dl className="space-y-4 text-sm text-zinc-700">
+                              <div>
+                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                  Rule
+                                </dt>
+                                <dd className="mt-1">
+                                  {libraryProtocol.rule}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                  Duration
+                                </dt>
+                                <dd className="mt-1">
+                                  {libraryProtocol.duration}
+                                </dd>
+                              </div>
+                              <div>
+                                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                  Failure
+                                </dt>
+                                <dd className="mt-1">
+                                  {libraryProtocol.failure}
+                                </dd>
+                              </div>
+                            </dl>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-zinc-500">
+                            Select a protocol to view details.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </section>
                 </div>
-                {showSwitchConfirm ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                    <span>Switching protocols resets your current run.</span>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                        onClick={() => setShowSwitchConfirm(false)}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                        onClick={handleConfirmSwitch}
-                      >
-                        Switch
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
               </>
             ) : (
               <>
@@ -1363,3 +1529,4 @@ export default function Home() {
     </div>
   );
 }
+
