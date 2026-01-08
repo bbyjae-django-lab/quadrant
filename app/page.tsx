@@ -318,8 +318,6 @@ export default function Home() {
   const runEnded = runStatus === "ended";
   const canStartNewRun = isPro || !hasCompletedRun;
   const freeRunComplete = !isPro && hasCompletedRun && !runActive;
-  const isFirstFreeRunActive = !isPro && runActive && !hasCompletedRun;
-  const canShowProtocolDetails = !isFirstFreeRunActive;
   const protocolOrder = [
     "emotional-state-trading-ban",
     "trade-count-and-exposure-cap",
@@ -986,16 +984,9 @@ export default function Home() {
                         Read-only
                       </span>
                     </div>
-                    {isFirstFreeRunActive ? (
-                      <p className="mt-2 text-xs text-zinc-500">
-                        Protocol details unlock after your first run.
-                      </p>
-                    ) : null}
                     <div className="mt-4 space-y-3">
                       {orderedProtocols.map((protocol) => {
-                        const isExpanded =
-                          canShowProtocolDetails &&
-                          protocol.id === libraryProtocolId;
+                        const isExpanded = protocol.id === libraryProtocolId;
                         return (
                           <div
                             key={protocol.id}
@@ -1008,19 +999,13 @@ export default function Home() {
                             <button
                               type="button"
                               className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${
-                                isFirstFreeRunActive
-                                  ? "cursor-not-allowed opacity-70"
-                                  : "hover:border-zinc-400"
+                                "hover:border-zinc-400"
                               }`}
                               onClick={() => {
-                                if (isFirstFreeRunActive) {
-                                  return;
-                                }
                                 setLibraryProtocolId(
                                   isExpanded ? null : protocol.id,
                                 );
                               }}
-                              disabled={isFirstFreeRunActive}
                             >
                               <div>
                                 <div className="text-sm font-semibold text-zinc-900">
@@ -1030,16 +1015,14 @@ export default function Home() {
                                   {protocol.commonBehaviourRemoved}
                                 </div>
                               </div>
-                              {!isFirstFreeRunActive ? (
-                                <span className="text-sm text-zinc-500">
-                                  {isExpanded ? "▼" : "▶"}
-                                </span>
-                              ) : null}
+                              <span className="text-sm text-zinc-500">
+                                {isExpanded ? "▼" : "▶"}
+                              </span>
                             </button>
-                            {isExpanded && canShowProtocolDetails ? (
+                            {isExpanded ? (
                               <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
                                 <div className="border-l border-zinc-200 pl-4">
-                                <dl className="space-y-4 text-sm text-zinc-700">
+                                  <dl className="space-y-4 text-sm text-zinc-700">
                                   <div>
                                     <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                                       Rule
