@@ -199,6 +199,7 @@ export default function Home() {
   const [libraryProtocolId, setLibraryProtocolId] = useState<string | null>(
     null,
   );
+  const [showRunDetail, setShowRunDetail] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -643,6 +644,7 @@ export default function Home() {
       />
     </svg>
   );
+  const runResultLabel = runComplete ? "Completed" : runFailed ? "Failed" : "—";
   if (pathname === "/pricing") {
     return (
       <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
@@ -993,9 +995,7 @@ export default function Home() {
                           type="button"
                           className="rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/70"
                           onClick={() => {
-                            setSelectedProblemId(activeProblem?.id ?? null);
-                            setSelectedProtocolId(activeProtocol.id);
-                            setStep(5);
+                            setShowRunDetail(true);
                           }}
                         >
                           View completed run
@@ -1556,6 +1556,86 @@ export default function Home() {
             <p className="mt-3 text-xs text-zinc-500">
               Upgrades save your runs across devices.
             </p>
+          </div>
+        </div>
+      ) : null}
+      {showRunDetail && activeProtocol ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Run detail
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-zinc-900">
+                  {activeProtocol.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+                onClick={() => setShowRunDetail(false)}
+              >
+                Close
+              </button>
+            </div>
+            <dl className="mt-6 space-y-4 text-sm text-zinc-700">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Rule
+                </dt>
+                <dd className="mt-1 text-base text-zinc-800">
+                  {activeProtocol.rule}
+                </dd>
+              </div>
+              <div className="flex flex-wrap gap-6">
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    Result
+                  </dt>
+                  <dd className="mt-1 text-base text-zinc-800">
+                    {runResultLabel}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    Days completed
+                  </dt>
+                  <dd className="mt-1 text-base text-zinc-800">
+                    {progressCount}/{RUN_LENGTH}
+                  </dd>
+                </div>
+              </div>
+            </dl>
+            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="text-sm font-semibold text-zinc-900">
+                Progress: {progressCount}/{RUN_LENGTH} clean trading days
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {Array.from({ length: RUN_LENGTH }, (_, index) => {
+                  const isFilled = index < progressCount;
+                  const isFailed = runFailed && index === progressCount;
+                  const symbol = isFilled ? "✓" : isFailed ? "✕" : "—";
+                  return (
+                    <div
+                      key={`run-detail-slot-${index + 1}`}
+                      className={`flex h-12 w-16 flex-col items-center justify-center gap-1 rounded-lg border text-xs font-semibold ${
+                        isFailed
+                          ? "border-red-200 bg-red-50 text-red-600"
+                          : isFilled
+                            ? "border-zinc-900 bg-zinc-900 text-white"
+                            : "border-zinc-200 text-zinc-600"
+                      }`}
+                    >
+                      <span className="text-sm">{symbol}</span>
+                      <span className="text-[10px] uppercase tracking-wide">
+                        Day {index + 1}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
