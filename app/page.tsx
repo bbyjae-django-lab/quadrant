@@ -220,7 +220,7 @@ export default function Home() {
   }, [activeProtocolId, step]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || step !== 6) {
+    if (typeof window === "undefined" || step !== 4) {
       return;
     }
 
@@ -427,28 +427,6 @@ export default function Home() {
     setStep(2);
   };
 
-  const handleRestartSameProtocol = () => {
-    if (!activeProtocolId) {
-      return;
-    }
-    if (!canStartNewRun) {
-      setShowPaywall(true);
-      return;
-    }
-    const timestamp = new Date().toISOString();
-    const today = getLocalDateString();
-    setActivatedAt(timestamp);
-    setRunStatus("active");
-    setRunStartDate(today);
-    setStreak(0);
-    setCheckIns({});
-    setCheckInFollowed(null);
-    setCheckInNote("");
-    setHasSaved(false);
-    setShowPaywall(false);
-    setStep(1);
-  };
-
   const handleSaveCheckIn = () => {
     if (typeof window === "undefined") {
       return;
@@ -524,7 +502,7 @@ export default function Home() {
     if (!runActive) {
       return;
     }
-    setStep(6);
+    setStep(4);
   };
 
   const handleEndRun = () => {
@@ -1184,7 +1162,7 @@ export default function Home() {
           </section>
         ) : null}
 
-        {step === 6 && (
+        {step === 4 && (
           <section className="mt-10 space-y-8">
             <fieldset className="space-y-4">
               <legend className="text-base font-semibold text-zinc-800">
@@ -1252,42 +1230,6 @@ export default function Home() {
           </section>
         )}
 
-        {step === 7 && activeProtocol ? (
-          <section className="mt-10">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-8">
-              <div className="space-y-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                  Run ended.
-                </h1>
-                <p className="text-sm text-zinc-600">Protocol violated.</p>
-              </div>
-              <div className="mt-6 space-y-3 text-sm text-zinc-700">
-                <div className="font-semibold text-zinc-900">
-                  {activeProtocol.name}
-                </div>
-                <div className="text-xs text-zinc-500">
-                  {activeProtocol.failure}
-                </div>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                  onClick={handleRestartSameProtocol}
-                >
-                  Restart same protocol
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                  onClick={handleStartAnotherProtocol}
-                >
-                  Choose another protocol
-                </button>
-              </div>
-            </div>
-          </section>
-        ) : null}
       </main>
       {showPaywall ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
