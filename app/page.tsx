@@ -632,10 +632,10 @@ export default function Home() {
     ? runHistoryRows
     : runHistoryRows.slice(0, 1);
   const patternInsights = [
-    { title: "Failure Day Distribution", value: "—" },
-    { title: "Longest Clean Run", value: "—" },
-    { title: "Time Between Failures", value: "—" },
-    { title: "Protocols Attempted", value: "—" },
+    { title: "Failure day distribution", value: "—" },
+    { title: "Longest clean run", value: "—" },
+    { title: "Time between failures", value: "—" },
+    { title: "Protocols attempted", value: "—" },
   ];
   const lockIcon = (
     <svg
@@ -668,8 +668,8 @@ export default function Home() {
             <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
               Fix the behaviour that's costing you money.
             </h1>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              PRO = ${PRO_PRICE}/month
+            <p className="text-xs font-semibold tracking-wide text-zinc-500">
+              Pro = ${PRO_PRICE}/month
             </p>
             <p className="max-w-2xl text-base leading-7 text-zinc-600">
               Quadrant helps traders identify recurring behavioural patterns and
@@ -761,8 +761,8 @@ export default function Home() {
                   <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
                     <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-4 md:max-w-xl">
-                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
-                          ACTIVE PROTOCOL
+                        <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
+                          Active protocol
                         </p>
                         <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
                           {activeProtocol.name}
@@ -773,7 +773,7 @@ export default function Home() {
                           </p>
                         ) : null}
                         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          <div className="text-xs font-semibold tracking-wide text-zinc-500">
                             Rule
                           </div>
                           <p className="mt-2 text-base text-zinc-800">
@@ -809,7 +809,7 @@ export default function Home() {
                                   }`}
                                 >
                                   <span className="text-sm">{symbol}</span>
-                                  <span className="text-[10px] uppercase tracking-wide">
+                                  <span className="text-[10px] tracking-wide">
                                     Day {index + 1}
                                   </span>
                                 </div>
@@ -896,14 +896,14 @@ export default function Home() {
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Run history
                       </h2>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
                         Recent
                       </span>
                     </div>
                     <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
                       {visibleRunHistoryRows.length > 0 ? (
                         <table className="w-full text-left text-sm">
-                          <thead className="bg-zinc-50 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                          <thead className="bg-zinc-50 text-xs font-semibold tracking-wide text-zinc-500">
                             <tr>
                               <th className="px-4 py-3">Protocol</th>
                               <th className="px-4 py-3">Result</th>
@@ -939,7 +939,7 @@ export default function Home() {
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Pattern insights
                       </h2>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
                         {isPro ? "Live" : "Locked"}
                       </span>
                     </div>
@@ -1014,7 +1014,7 @@ export default function Home() {
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Protocol library
                       </h2>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
                         Read-only
                       </span>
                     </div>
@@ -1072,7 +1072,7 @@ export default function Home() {
                               <div className="border-t border-zinc-200 px-4 py-4">
                                 <dl className="space-y-4 text-sm text-zinc-700">
                                   <div>
-                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                                       Rule
                                     </dt>
                                     <dd className="mt-1">
@@ -1080,7 +1080,7 @@ export default function Home() {
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                                       Duration
                                     </dt>
                                     <dd className="mt-1">
@@ -1088,7 +1088,7 @@ export default function Home() {
                                     </dd>
                                   </div>
                                   <div>
-                                    <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                                       Failure
                                     </dt>
                                     <dd className="mt-1">
@@ -1157,7 +1157,7 @@ export default function Home() {
                 </form>
                 {searchResults.length > 0 ? (
                   <div className="space-y-3">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
                       Top matches
                     </div>
                     <div className="space-y-2">
@@ -1226,7 +1226,7 @@ export default function Home() {
                         : "border-zinc-200 hover:border-zinc-400"
                     }`}
                   >
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
                       {protocol.name}
                     </div>
                     {protocol.commonBehaviourRemoved ? (
@@ -1313,7 +1313,7 @@ export default function Home() {
                   {selectedProblem.normalized_problem}
                 </p>
                 <div className="space-y-1">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <div className="text-xs font-semibold tracking-wide text-zinc-500">
                     Recommended protocol
                   </div>
                   <div className="text-sm font-semibold text-zinc-900">
@@ -1321,7 +1321,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <div className="text-xs font-semibold tracking-wide text-zinc-500">
                     Verbatim trader language
                   </div>
                   <div className="space-y-2 text-sm text-zinc-600">
@@ -1332,7 +1332,7 @@ export default function Home() {
                 </div>
                 {searchResults.length > 1 ? (
                   <div className="space-y-2">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
                       See other matches
                     </div>
                     <div className="space-y-2">
@@ -1391,7 +1391,7 @@ export default function Home() {
           <section className="mt-10 space-y-8">
             <dl className="space-y-5">
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                   Rule
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
@@ -1399,7 +1399,7 @@ export default function Home() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                   Duration
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
@@ -1407,7 +1407,7 @@ export default function Home() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                   Failure
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
@@ -1579,7 +1579,7 @@ export default function Home() {
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <p className="text-xs font-semibold tracking-wide text-zinc-500">
                   Run detail
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-900">
@@ -1596,7 +1596,7 @@ export default function Home() {
             </div>
             <dl className="mt-6 space-y-4 text-sm text-zinc-700">
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                   Rule
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
@@ -1605,7 +1605,7 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap gap-6">
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                     Result
                   </dt>
                   <dd className="mt-1 text-base text-zinc-800">
@@ -1613,7 +1613,7 @@ export default function Home() {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                     Days completed
                   </dt>
                   <dd className="mt-1 text-base text-zinc-800">
@@ -1643,7 +1643,7 @@ export default function Home() {
                       }`}
                     >
                       <span className="text-sm">{symbol}</span>
-                      <span className="text-[10px] uppercase tracking-wide">
+                      <span className="text-[10px] tracking-wide">
                         Day {index + 1}
                       </span>
                     </div>
@@ -1679,4 +1679,5 @@ export default function Home() {
     </div>
   );
 }
+
 
