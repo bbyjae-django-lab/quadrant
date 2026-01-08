@@ -1143,6 +1143,9 @@ export default function Home() {
         {step === 3 && selectedProtocol ? (
           <section className="mt-10 space-y-8">
             <div className="space-y-4">
+              <p className="text-xs font-semibold tracking-wide text-zinc-500">
+                Confirm protocol
+              </p>
               <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
                 {selectedProtocol.name}
               </h1>
@@ -1179,7 +1182,14 @@ export default function Home() {
                 </dd>
               </div>
             </dl>
-            <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                onClick={() => setStep(2)}
+              >
+                Choose a different protocol
+              </button>
               <button
                 type="button"
                 className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
