@@ -29,6 +29,67 @@ type RunEndCopy = {
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
 
+type InsightCardProps = {
+  title: string;
+  value: string | null;
+  subtitle: string | null;
+  isLocked: boolean;
+  lockReason: string | null;
+  proBadge: boolean;
+};
+
+const InsightCard = ({
+  title,
+  value,
+  subtitle,
+  isLocked,
+  lockReason,
+  proBadge,
+}: InsightCardProps) => (
+  <div
+    className={`rounded-2xl border p-5 ${
+      isLocked ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white"
+    }`}
+    aria-disabled={isLocked}
+  >
+    <div className="flex items-center justify-between gap-3">
+      <div className="text-sm font-semibold text-zinc-700">{title}</div>
+      {proBadge ? (
+        <div className="flex items-center gap-2 rounded-full border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-500">
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            className="h-3.5 w-3.5 text-zinc-400"
+          >
+            <path
+              fill="currentColor"
+              d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
+            />
+          </svg>
+          <span>Pro</span>
+        </div>
+      ) : null}
+    </div>
+    {isLocked ? (
+      <div className="mt-4 space-y-1">
+        <div className="text-sm font-semibold text-zinc-700">
+          Upgrade to unlock
+        </div>
+        {lockReason ? (
+          <div className="text-xs text-zinc-500">{lockReason}</div>
+        ) : null}
+      </div>
+    ) : (
+      <div className="mt-4 space-y-1">
+        <div className="text-2xl font-semibold text-zinc-900">{value}</div>
+        {subtitle ? (
+          <div className="text-xs text-zinc-500">{subtitle}</div>
+        ) : null}
+      </div>
+    )}
+  </div>
+);
+
 const clampObservedBehaviours = (ids: string[] | null | undefined) => {
   if (!ids || !Array.isArray(ids)) {
     return [];
@@ -909,18 +970,6 @@ export default function QuadrantApp({
       value: `${uniqueProtocolsAttempted} protocols`,
     },
   ];
-  const lockIcon = (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="h-4 w-4 text-zinc-400"
-    >
-      <path
-        fill="currentColor"
-        d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
-      />
-    </svg>
-  );
   const latestRun = runHistory[0] ?? null;
   const runSummaryLine = RUN_END_INSIGHT_LINE;
   const runEndModalOpen =
@@ -1217,36 +1266,16 @@ export default function QuadrantApp({
                       {patternInsights.map((insight) => {
                         const isLocked = !isPro || !insight.isUnlocked;
                         return (
-                        <div
-                          key={insight.title}
-                          className={`rounded-2xl border p-5 ${
-                            !isLocked
-                              ? "border-zinc-200 bg-white"
-                              : "border-zinc-200 bg-zinc-50 text-zinc-400"
-                          }`}
-                          aria-disabled={isLocked}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm font-semibold text-zinc-700">
-                              {insight.title}
-                            </div>
-                            {isLocked ? (
-                              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
-                                {lockIcon}
-                                <span>Pro</span>
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="mt-4 text-2xl font-semibold text-zinc-900">
-                            {isLocked ? "Locked" : insight.value}
-                          </div>
-                          {isLocked ? (
-                            <div className="mt-2 text-xs font-semibold text-zinc-500">
-                              {insight.requirement}
-                            </div>
-                          ) : null}
-                        </div>
-                      );
+                          <InsightCard
+                            key={insight.title}
+                            title={insight.title}
+                            value={isLocked ? null : insight.value}
+                            subtitle={isLocked ? null : null}
+                            isLocked={isLocked}
+                            lockReason={insight.requirement}
+                            proBadge={isLocked}
+                          />
+                        );
                       })}
                     </div>
                   </section>
@@ -1518,19 +1547,11 @@ export default function QuadrantApp({
                   className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
                   onClick={() => {
                     setCheckInFollowed(true);
+                    handleSaveCheckIn(true);
                   }}
                 >
                   No — clean day
                 </button>
-                {checkInFollowed === true ? (
-                  <button
-                    type="button"
-                    className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                    onClick={() => handleSaveCheckIn(true)}
-                  >
-                    Save check-in
-                  </button>
-                ) : null}
                 <button
                   type="button"
                   className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
@@ -1542,9 +1563,7 @@ export default function QuadrantApp({
                   Yes — violated
                 </button>
               </div>
-              {isPro &&
-              checkInFollowed === true &&
-              availableObservedBehaviours.length > 0 ? (
+              {isPro && availableObservedBehaviours.length > 0 ? (
                 <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
                   <div className="text-sm font-semibold text-zinc-900">
                     Did any of these occur today?
