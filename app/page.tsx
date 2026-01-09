@@ -18,6 +18,16 @@ const hasRunHistory = (rawHistory: string | null) => {
 export default function LandingPage() {
   const router = useRouter();
 
+  const handleStartRun = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const activeProtocolId = localStorage.getItem("activeProtocolId");
+    const runStatus = localStorage.getItem("runStatus");
+    const hasActiveRun = Boolean(activeProtocolId) || runStatus === "active";
+    router.push(hasActiveRun ? "/dashboard" : "/protocols");
+  };
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -42,19 +52,30 @@ export default function LandingPage() {
             Quadrant
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-            One protocol. One run. Clear outcomes.
+            Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            Quadrant enforces a single corrective protocol with daily binary
-            check-ins and a clean, final run record.
+            One protocol at a time. Binary rule. Daily check-in. Run history.
           </p>
+          <ul className="space-y-2 text-sm text-zinc-600">
+            <li>Binary constraints</li>
+            <li>Daily check-in</li>
+            <li>Run history and pattern insights</li>
+          </ul>
         </div>
-        <div>
-          <a
-            href="/protocols"
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="button"
             className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            onClick={handleStartRun}
           >
             Start a run
+          </button>
+          <a
+            href="/pricing"
+            className="text-sm font-semibold text-zinc-600 hover:text-zinc-900"
+          >
+            Pricing
           </a>
         </div>
       </main>
