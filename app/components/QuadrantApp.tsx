@@ -579,6 +579,9 @@ export default function QuadrantApp({
       : runEnded
         ? "This run was ended. The record is complete."
         : "This run is complete.";
+  const failureInsightLine = runFailed
+    ? "Most traders need 5–10 runs before patterns become obvious."
+    : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
@@ -752,7 +755,7 @@ export default function QuadrantApp({
               <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-zinc-900">
-                        Run history
+                        Run history ({runHistoryRows.length})
                       </h2>
                       <span className="text-xs font-semibold tracking-wide text-zinc-400">
                         Recent
@@ -1240,6 +1243,11 @@ export default function QuadrantApp({
               <p className="text-sm text-zinc-600">
                 {runEndedMessage}
               </p>
+              {failureInsightLine ? (
+                <p className="text-sm text-zinc-600">
+                  {failureInsightLine}
+                </p>
+              ) : null}
             </div>
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
               <div className="text-sm font-semibold text-zinc-900">
