@@ -8,6 +8,95 @@ import { protocolById, protocols } from "../data/protocols";
 
 const RUN_LENGTH = 5;
 
+type RunEndContext = {
+  result: "Failed" | "Completed";
+  cleanDays: number;
+};
+
+type RunEndCopy = {
+  title: string;
+  outcomePrefix: string;
+  outcomeHighlight: string;
+  outcomeSuffix: string;
+  reframeLines: string[];
+  primaryLabel: string;
+  primarySubtext: string;
+  secondaryLabel: string;
+};
+
+const RUN_END_INSIGHT_LINE =
+  "Most traders need 5–10 runs before patterns become obvious.";
+
+const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
+  if (context.result === "Completed") {
+    return {
+      title: "Run complete",
+      outcomePrefix: "You completed ",
+      outcomeHighlight: String(RUN_LENGTH),
+      outcomeSuffix: " clean trading days under this protocol.",
+      reframeLines: [
+        "This proves you can follow rules when they’re enforced.",
+        "The question now is whether this repeats — or fades.",
+      ],
+      primaryLabel: "Continue tracking — $19/month",
+      primarySubtext: "Turn one run into a pattern.",
+      secondaryLabel: "Close",
+    };
+  }
+
+  const failureDay = Math.min(context.cleanDays + 1, RUN_LENGTH);
+
+  if (failureDay <= 1) {
+    return {
+      title: "Run ended",
+      outcomePrefix: "You violated the protocol on day ",
+      outcomeHighlight: String(failureDay),
+      outcomeSuffix: ` of ${RUN_LENGTH}.`,
+      reframeLines: [
+        "That’s common.",
+        "Early failures usually mean the rule exposed a real reflex.",
+        "That’s the point.",
+        RUN_END_INSIGHT_LINE,
+      ],
+      primaryLabel: "Continue with run history — $19/month",
+      primarySubtext: "See what keeps breaking first.",
+      secondaryLabel: "Close and reset",
+    };
+  }
+
+  if (failureDay <= 3) {
+    return {
+      title: "Run ended",
+      outcomePrefix: "You violated the protocol on day ",
+      outcomeHighlight: String(failureDay),
+      outcomeSuffix: ` of ${RUN_LENGTH}.`,
+      reframeLines: [
+        "This is where behaviour usually shows up.",
+        RUN_END_INSIGHT_LINE,
+      ],
+      primaryLabel: "Continue with run history — $19/month",
+      primarySubtext: "Keep this run.",
+      secondaryLabel: "Close and reset",
+    };
+  }
+
+  return {
+    title: "Run ended",
+    outcomePrefix: "You violated the protocol on day ",
+    outcomeHighlight: String(failureDay),
+    outcomeSuffix: ` of ${RUN_LENGTH}.`,
+    reframeLines: [
+      "You were close.",
+      "This is where patterns usually show up — right before completion.",
+      "What matters now is whether you let this reset silently…",
+      "or keep the evidence.",
+    ],
+    primaryLabel: "Keep run history — $19/month",
+    primarySubtext: "Don’t lose this run.",
+    secondaryLabel: "Close and start over",
+  };
+};
+
 const storageKeys = [
   "activeProblemId",
   "activeProtocolId",
@@ -59,13 +148,13 @@ const buildRunTracker = (
   checkIns: Record<string, { followed: boolean; note?: string }>,
 ) => {
   if (!startDate) {
-    return Array.from({ length }, () => "—");
+    return Array.from({ length }, () => "▢");
   }
   return Array.from({ length }, (_, index) => {
     const dateKey = getDateOffset(startDate, index);
     const entry = checkIns[dateKey];
     if (!entry) {
-      return "—";
+      return "▢";
     }
     return entry.followed ? "✓" : "✕";
   });
@@ -76,7 +165,7 @@ const buildHistoryStrip = (
   result: "Completed" | "Failed" | "Ended",
   length: number,
 ) => {
-  const symbols = Array.from({ length }, () => "—");
+  const symbols = Array.from({ length }, () => "▢");
   const filled = Math.min(cleanDays, length);
   for (let i = 0; i < filled; i += 1) {
     symbols[i] = "✓";
@@ -155,13 +244,15 @@ export default function QuadrantApp({
   >({});
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
-  const [showPaywall, setShowPaywall] = useState(false);
   const [isPro, setIsPro] = useState(false);
   const [libraryProtocolId, setLibraryProtocolId] = useState<string | null>(
     null,
   );
   const [showRunDetail, setShowRunDetail] = useState(false);
   const [showRunEndedModal, setShowRunEndedModal] = useState(false);
+  const [runEndContext, setRunEndContext] = useState<RunEndContext | null>(
+    null,
+  );
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<
@@ -346,7 +437,7 @@ export default function QuadrantApp({
   const runTrackerSymbols = buildRunTracker(runStartDate, RUN_LENGTH, checkIns);
   const recentCheckInKeys = Object.keys(checkIns).sort().slice(-14);
   const recentCheckInSymbols = [
-    ...Array.from({ length: 14 - recentCheckInKeys.length }, () => "—"),
+    ...Array.from({ length: 14 - recentCheckInKeys.length }, () => "▢"),
     ...recentCheckInKeys.map((key) =>
       checkIns[key]?.followed ? "✓" : "✕",
     ),
@@ -396,6 +487,7 @@ export default function QuadrantApp({
     setShowEndRunConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
+    setRunEndContext(null);
     setShowCheckInModal(false);
     setConfirmProtocolId(null);
   };
@@ -439,7 +531,6 @@ export default function QuadrantApp({
     setRunStartDate(today);
     setStreak(0);
     setCheckIns({});
-    setShowPaywall(false);
     setCheckInFollowed(null);
     setCheckInNote("");
     setShowEndRunConfirm(false);
@@ -451,7 +542,6 @@ export default function QuadrantApp({
       return;
     }
     if (!canStartNewRun) {
-      setShowPaywall(true);
       return;
     }
     activateProtocol(selectedProtocol.id, null);
@@ -495,6 +585,9 @@ export default function QuadrantApp({
       },
     };
     persistCheckIns(updatedCheckIns);
+    const cleanDays = Object.values(updatedCheckIns).filter(
+      (entry) => entry.followed,
+    ).length;
     const newStreak = computeCurrentRun(updatedCheckIns, dateStamp);
     setStreak(newStreak);
     if (!followed) {
@@ -502,6 +595,7 @@ export default function QuadrantApp({
       if (!isPro) {
         setHasCompletedRun(true);
       }
+      setRunEndContext({ result: "Failed", cleanDays });
       appendRunHistory("Failed", updatedCheckIns);
       setHasSaved(true);
       setShowRunEndedModal(true);
@@ -510,6 +604,7 @@ export default function QuadrantApp({
     } else if (!isPro && newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
       setHasCompletedRun(true);
+      setRunEndContext({ result: "Completed", cleanDays });
       appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
     }
@@ -534,10 +629,10 @@ export default function QuadrantApp({
     setRunStartDate(null);
     setStreak(0);
     setCheckIns({});
-    setShowPaywall(false);
     setShowSwitchConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
+    setRunEndContext(null);
     setShowCheckInModal(false);
   };
 
@@ -555,7 +650,7 @@ export default function QuadrantApp({
     setRunStatus("ended");
     appendRunHistory("Ended", checkIns);
     setShowEndRunConfirm(false);
-    setShowRunEndedModal(true);
+    setRunEndContext(null);
   };
 
   const runHistoryRows = runHistory.map((entry) => ({
@@ -593,30 +688,20 @@ export default function QuadrantApp({
       />
     </svg>
   );
-  const runResultLabel = runComplete
-    ? "Completed"
-    : runFailed
-      ? "Failed"
-      : runEnded
-        ? "Ended"
-        : "—";
-  const runEndedMessage = runComplete
-    ? "You completed the run. This run is complete."
-    : runFailed
-      ? "The protocol was violated. This run is complete."
-      : "This run is complete.";
-  const failureInsightLine = runFailed
-    ? "Most traders need 5–10 runs before patterns become obvious."
-    : null;
-  const latestRunResult = runHistory[0]?.result ?? null;
-  const failureInsightLineDashboard =
-    latestRunResult === "Failed"
-      ? "Most traders need 5–10 runs before patterns become obvious."
-      : null;
+  const latestRun = runHistory[0] ?? null;
+  const runSummaryLine = RUN_END_INSIGHT_LINE;
+  const runEndModalOpen =
+    showRunEndedModal && view === "dashboard" && runEndContext !== null;
+  const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
-      <main className="w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10">
+      <main
+        className={`w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10 ${
+          runEndModalOpen ? "pointer-events-none select-none" : ""
+        }`}
+        aria-hidden={runEndModalOpen}
+      >
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "protocols" ? "Protocol library" : "Dashboard"}</span>
           <div className="flex items-center gap-3">
@@ -784,6 +869,52 @@ export default function QuadrantApp({
                 ) : null}
 
             <div className="space-y-10">
+              {latestRun && !runActive ? (
+                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-zinc-900">
+                      Completed run summary
+                    </h2>
+                    <span className="text-xs font-semibold tracking-wide text-zinc-500">
+                      {latestRun.result}
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <div className="text-sm font-semibold text-zinc-900">
+                      {latestRun.protocolName}
+                    </div>
+                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                      This run
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {buildHistoryStrip(
+                        latestRun.cleanDays,
+                        latestRun.result,
+                        RUN_LENGTH,
+                      ).map((symbol, index) => (
+                        <div
+                          key={`summary-strip-${latestRun.id}-${index}`}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                            symbol === "✕"
+                              ? "border-zinc-300 bg-zinc-100 text-zinc-700"
+                              : symbol === "✓"
+                                ? "border-zinc-900 bg-zinc-900 text-white"
+                                : "border-zinc-200 text-zinc-600"
+                          }`}
+                        >
+                          {symbol}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-sm text-zinc-600">
+                      Clean days: {latestRun.cleanDays}/{RUN_LENGTH}
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm text-zinc-600">
+                    {runSummaryLine}
+                  </p>
+                </section>
+              ) : null}
               <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-zinc-900">
@@ -793,11 +924,6 @@ export default function QuadrantApp({
                         Recent
                       </span>
                     </div>
-                    {failureInsightLineDashboard && !freeRunComplete ? (
-                      <p className="mt-2 text-sm text-zinc-600">
-                        {failureInsightLineDashboard}
-                      </p>
-                    ) : null}
                     <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
                       {visibleRunHistoryRows.length > 0 ? (
                         <table className="w-full text-left text-sm">
@@ -900,43 +1026,15 @@ export default function QuadrantApp({
                   </section>
 
                   {freeRunComplete ? (
-                    <section className="rounded-2xl border border-zinc-200 bg-zinc-900 p-6 text-white shadow-sm">
+                    <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-zinc-900 shadow-sm">
                       <div className="space-y-2">
                         <h2 className="text-xl font-semibold">
                           Free run complete.
                         </h2>
-                        <p className="text-sm text-zinc-300">
-                          Run history across devices, unlimited runs, and
-                          pattern insights.
+                        <p className="text-sm text-zinc-600">
+                          Run history, cross-device persistence, and multiple
+                          runs require Pro.
                         </p>
-                        {failureInsightLineDashboard ? (
-                          <p className="text-sm text-zinc-300">
-                            {failureInsightLineDashboard}
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              window.location.href = "/pricing";
-                            }
-                          }}
-                        >
-                          Upgrade to Pro
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/70"
-                          onClick={() => {
-                            setSelectedRunId(runHistory[0]?.id ?? null);
-                            setShowRunDetail(true);
-                          }}
-                        >
-                          View completed run
-                        </button>
                       </div>
                     </section>
                   ) : null}
@@ -1089,18 +1187,16 @@ export default function QuadrantApp({
                           <div className="flex flex-wrap gap-3 pt-4">
                             <button
                               type="button"
-                              className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                              className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              disabled={freeRunComplete}
                               onClick={() => {
                                 if (freeRunComplete) {
-                                  router.push("/pricing");
                                   return;
                                 }
                                 setConfirmProtocolId(protocol.id);
                               }}
                             >
-                              {freeRunComplete
-                                ? "Upgrade to activate"
-                                : "Activate protocol"}
+                              Activate protocol
                             </button>
                           </div>
                         </div>
@@ -1239,128 +1335,86 @@ export default function QuadrantApp({
           </div>
         </div>
       ) : null}
-      {showPaywall ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-            <div className="space-y-4">
-              <h2 className="text-xl font-semibold text-zinc-900">
-                Your first run is complete.
-              </h2>
-              <div className="space-y-3 text-sm text-zinc-600">
-                <p>Free users can complete one protocol run.</p>
-                <p>Upgrade to continue experimenting with another protocol.</p>
-              </div>
-            </div>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                type="button"
-                className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                onClick={() => {
-                  setShowPaywall(false);
-                  if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
-                  }
-                }}
-              >
-                Upgrade to continue
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-zinc-300 px-5 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                onClick={() => {
-                  setShowPaywall(false);
-                  router.push("/dashboard");
-                }}
-              >
-                Back to dashboard
-              </button>
-            </div>
-            <p className="mt-3 text-xs text-zinc-500">
-              Upgrades save your runs across devices.
-            </p>
-          </div>
-        </div>
-      ) : null}
-      {showRunEndedModal && activeProtocol && view === "dashboard" ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
+      {runEndModalOpen && runEndCopy && runEndContext ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-xl"
+          >
             <div className="space-y-3">
               <h2 className="text-2xl font-semibold text-zinc-900">
-                Run ended.
+                {runEndCopy.title}
               </h2>
-              <p className="text-sm text-zinc-600">
-                {runEndedMessage}
+              <p className="text-sm text-zinc-700">
+                {runEndCopy.outcomePrefix}
+                <strong className="font-semibold text-zinc-900">
+                  {runEndCopy.outcomeHighlight}
+                </strong>
+                {runEndCopy.outcomeSuffix}
               </p>
             </div>
-            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
-              <div className="text-sm font-semibold text-zinc-900">
-                {activeProtocol.name}
-              </div>
-              <details className="mt-3">
-                <summary className="cursor-pointer text-xs font-semibold tracking-wide text-zinc-500">
-                  Rule
-                </summary>
-                <p className="mt-2 text-sm text-zinc-700">
-                  {activeProtocol.rule}
-                </p>
-              </details>
-              <div className="mt-4 text-sm font-semibold text-zinc-700">
-                Clean days: {successfulDays}/{RUN_LENGTH}
-              </div>
-              <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-500">
+            <div className="h-4" />
+            <div className="space-y-2 text-sm text-zinc-700">
+              {runEndCopy.reframeLines.map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            </div>
+            <div className="mt-6">
+              <div className="text-xs font-semibold tracking-wide text-zinc-500">
                 This run
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
-                {runTrackerSymbols.map((symbol, index) => (
+                {buildHistoryStrip(
+                  runEndContext.cleanDays,
+                  runEndContext.result,
+                  RUN_LENGTH,
+                ).map((symbol, index) => (
                   <div
-                    key={`run-ended-symbol-${index}`}
+                    key={`run-end-strip-${index}`}
                     className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                      symbol === "✓"
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : symbol === "✕"
-                        ? "border-red-200 bg-red-50 text-red-600"
-                      : "border-zinc-200 text-zinc-600"
+                      symbol === "✕"
+                        ? "border-zinc-300 bg-zinc-100 text-zinc-700"
+                        : symbol === "✓"
+                          ? "border-zinc-900 bg-zinc-900 text-white"
+                          : "border-zinc-200 text-zinc-600"
                     }`}
                   >
                     {symbol}
                   </div>
                 ))}
               </div>
-              {failureInsightLine ? (
-                <p className="mt-4 text-sm text-zinc-600">
-                  {failureInsightLine}
-                </p>
-              ) : null}
             </div>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <div className="mt-6 flex flex-col gap-3">
+              <div>
+                <button
+                  type="button"
+                  className="rounded-full bg-zinc-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.location.href = "/pricing";
+                    }
+                  }}
+                >
+                  {runEndCopy.primaryLabel}
+                </button>
+                <p className="mt-2 text-xs text-zinc-500">
+                  {runEndCopy.primarySubtext}
+                </p>
+              </div>
               <button
                 type="button"
-                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="text-xs font-semibold text-zinc-400 transition hover:text-zinc-500"
                 onClick={() => {
-                  setSelectedRunId(runHistory[0]?.id ?? null);
-                  setShowRunEndedModal(false);
-                  setShowRunDetail(true);
-                }}
-              >
-                View run
-              </button>
-              <button
-                type="button"
-                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
+                  if (runEndContext.result === "Failed") {
+                    clearActiveProtocol();
+                    return;
                   }
+                  setShowRunEndedModal(false);
+                  setRunEndContext(null);
                 }}
               >
-                Upgrade to Pro
-              </button>
-              <button
-                type="button"
-                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                onClick={() => setShowRunEndedModal(false)}
-              >
-                Back to dashboard
+                {runEndCopy.secondaryLabel}
               </button>
             </div>
           </div>
@@ -1457,28 +1511,6 @@ export default function QuadrantApp({
                     </div>
                   ))}
                 </div>
-              </div>
-            ) : null}
-            {!isPro ? (
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                  onClick={() => {
-                    if (typeof window !== "undefined") {
-                      window.location.href = "/pricing";
-                    }
-                  }}
-                >
-                  Upgrade to Pro
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-zinc-300 px-5 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                  onClick={() => setShowRunDetail(false)}
-                >
-                  Stay on dashboard
-                </button>
               </div>
             ) : null}
           </div>

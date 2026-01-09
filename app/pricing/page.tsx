@@ -3,6 +3,13 @@
 const PRO_PRICE = 19;
 
 export default function PricingPage() {
+  const handleUpgrade = () => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("quadrant_isPro", "true");
+      window.location.href = "/dashboard";
+    }
+  };
+
   const handleBack = () => {
     if (typeof window !== "undefined") {
       window.location.href = "/dashboard";
@@ -51,11 +58,11 @@ export default function PricingPage() {
             </ul>
           </div>
 
-            <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-6 text-white shadow-sm">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-semibold">Pro</h2>
-                <p className="text-sm text-zinc-300">${PRO_PRICE}/month</p>
-              </div>
+          <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-6 text-white shadow-sm">
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">Pro</h2>
+              <p className="text-sm text-zinc-300">${PRO_PRICE}/month</p>
+            </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-100">
               <li>Full protocol library</li>
               <li>Run and streak tracking</li>
@@ -65,6 +72,13 @@ export default function PricingPage() {
             <p className="mt-4 text-xs text-zinc-300">
               Upgrades save your runs across devices.
             </p>
+            <button
+              type="button"
+              className="mt-5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-100"
+              onClick={handleUpgrade}
+            >
+              Upgrade to Pro
+            </button>
           </div>
         </section>
 
