@@ -319,10 +319,14 @@ export default function Home() {
   const canStartNewRun = isPro || !hasCompletedRun;
   const freeRunComplete = !isPro && hasCompletedRun && !runActive;
   const protocolOrder = [
-    "emotional-state-trading-ban",
-    "trade-count-and-exposure-cap",
     "post-entry-information-restriction",
+    "risk-and-size-immutability",
     "single-attempt-participation",
+    "trade-count-and-exposure-cap",
+    "regime-participation-filter",
+    "entry-trigger-lock",
+    "strategy-singularity-constraint",
+    "session-boundary-restriction",
   ];
   const orderedProtocols = [...protocols].sort((a, b) => {
     const aIndex = protocolOrder.indexOf(a.id);
@@ -1019,7 +1023,7 @@ export default function Home() {
                                   </div>
                                   <div>
                                     <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                      Failure
+                                      Failure condition
                                     </dt>
                                     <dd className="mt-1">
                                       {protocol.failure}
@@ -1112,7 +1116,7 @@ export default function Home() {
               </h1>
               {selectedProtocol.commonBehaviourRemoved ? (
                 <p className="text-base leading-7 text-zinc-600">
-                  Common behaviour removed:{" "}
+                  Behaviour removed:{" "}
                   {selectedProtocol.commonBehaviourRemoved}
                 </p>
               ) : null}
@@ -1136,7 +1140,7 @@ export default function Home() {
               </div>
               <div>
                 <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                  Failure
+                  Failure condition
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
                   {selectedProtocol.failure}
