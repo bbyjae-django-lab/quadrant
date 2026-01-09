@@ -1041,7 +1041,7 @@ export default function QuadrantApp({
                               className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
                               onClick={() => {
                                 if (freeRunComplete) {
-                                  setShowPaywall(true);
+                                  router.push("/pricing");
                                   return;
                                 }
                                 setConfirmProtocolId(protocol.id);
@@ -1153,7 +1153,7 @@ export default function QuadrantApp({
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-3">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
-                Confirm protocol
+                Activate protocol?
               </p>
               <h2 className="text-2xl font-semibold text-zinc-900">
                 {selectedProtocol.name}
