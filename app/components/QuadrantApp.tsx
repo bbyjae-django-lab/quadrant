@@ -173,8 +173,10 @@ export default function QuadrantApp({
       endedAt: string;
       result: "Completed" | "Failed" | "Ended";
       cleanDays: number;
+      notes?: Array<{ date: string; note: string }>;
     }>
   >([]);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -248,6 +250,7 @@ export default function QuadrantApp({
           endedAt: string;
           result: "Completed" | "Failed" | "Ended";
           cleanDays: number;
+          notes?: Array<{ date: string; note: string }>;
         }>;
         setRunHistory(parsedHistory);
       } catch {
@@ -349,13 +352,6 @@ export default function QuadrantApp({
     ),
   ];
 
-  const checkInNotes = Object.entries(checkIns)
-    .filter(([, entry]) => entry.note && entry.note.trim().length > 0)
-    .map(([date, entry]) => ({
-      date,
-      note: entry.note as string,
-    }));
-
   const runActive = runStatus === "active";
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
@@ -414,6 +410,12 @@ export default function QuadrantApp({
     const cleanDays = Object.values(snapshot).filter(
       (entry) => entry.followed,
     ).length;
+    const notes = Object.entries(snapshot)
+      .filter(([, value]) => value.note && value.note.trim().length > 0)
+      .map(([date, value]) => ({
+        date,
+        note: value.note as string,
+      }));
     const entry = {
       id: `${activeProtocolId}-${Date.now()}`,
       protocolId: activeProtocolId,
@@ -422,6 +424,7 @@ export default function QuadrantApp({
       endedAt: new Date().toISOString(),
       result,
       cleanDays,
+      notes,
     };
     setRunHistory((prev) => [entry, ...prev]);
   };
@@ -556,11 +559,19 @@ export default function QuadrantApp({
   };
 
   const runHistoryRows = runHistory.map((entry) => ({
+    id: entry.id,
     protocol: entry.protocolName,
     result: entry.result,
     days: entry.cleanDays,
     strip: buildHistoryStrip(entry.cleanDays, entry.result, RUN_LENGTH),
   }));
+  const selectedRun =
+    selectedRunId && runHistory.length > 0
+      ? runHistory.find((entry) => entry.id === selectedRunId) ?? null
+      : null;
+  const selectedRunProtocol = selectedRun
+    ? protocolById[selectedRun.protocolId]
+    : null;
   const visibleRunHistoryRows = isPro
     ? runHistoryRows
     : runHistoryRows.slice(0, 1);
@@ -664,10 +675,10 @@ export default function QuadrantApp({
                               <div
                                 key={`this-run-${index}`}
                                 className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                                  symbol === "✕"
-                                    ? "border-red-200 bg-red-50 text-red-600"
-                                    : symbol === "✓"
-                                      ? "border-zinc-900 bg-zinc-900 text-white"
+                                  symbol === "✓"
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : symbol === "✕"
+                                      ? "border-red-200 bg-red-50 text-red-600"
                                       : "border-zinc-200 text-zinc-600"
                                 }`}
                               >
@@ -800,9 +811,18 @@ export default function QuadrantApp({
                           </thead>
                           <tbody className="divide-y divide-zinc-100">
                             {visibleRunHistoryRows.map((row) => (
-                              <tr key={row.protocol}>
+                              <tr key={row.id}>
                                 <td className="px-4 py-3 text-zinc-900">
-                                  {row.protocol}
+                                  <button
+                                    type="button"
+                                    className="text-left text-sm font-semibold text-zinc-900 hover:text-zinc-700"
+                                    onClick={() => {
+                                      setSelectedRunId(row.id);
+                                      setShowRunDetail(true);
+                                    }}
+                                  >
+                                    {row.protocol}
+                                  </button>
                                 </td>
                                 <td className="px-4 py-3 text-zinc-600">
                                   {row.result}
@@ -811,7 +831,7 @@ export default function QuadrantApp({
                                   <div className="flex flex-wrap gap-2">
                                     {row.strip.map((symbol, index) => (
                                       <div
-                                        key={`history-strip-${row.protocol}-${index}`}
+                                        key={`history-strip-${row.id}-${index}`}
                                         className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs font-semibold ${
                                           symbol === "✕"
                                             ? "border-red-200 bg-red-50 text-red-600"
@@ -911,6 +931,7 @@ export default function QuadrantApp({
                           type="button"
                           className="rounded-full border border-white/40 px-5 py-2 text-sm font-semibold text-white transition hover:border-white/70"
                           onClick={() => {
+                            setSelectedRunId(runHistory[0]?.id ?? null);
                             setShowRunDetail(true);
                           }}
                         >
@@ -1316,6 +1337,7 @@ export default function QuadrantApp({
                 type="button"
                 className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={() => {
+                  setSelectedRunId(runHistory[0]?.id ?? null);
                   setShowRunEndedModal(false);
                   setShowRunDetail(true);
                 }}
@@ -1344,7 +1366,7 @@ export default function QuadrantApp({
           </div>
         </div>
       ) : null}
-      {showRunDetail && activeProtocol ? (
+      {showRunDetail && selectedRun && selectedRunProtocol ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">
@@ -1353,7 +1375,7 @@ export default function QuadrantApp({
                   Run detail
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold text-zinc-900">
-                  {activeProtocol.name}
+                  {selectedRunProtocol.name}
                 </h2>
               </div>
               <button
@@ -1370,7 +1392,7 @@ export default function QuadrantApp({
                   Rule
                 </dt>
                 <dd className="mt-1 text-base text-zinc-800">
-                  {activeProtocol.rule}
+                  {selectedRunProtocol.rule}
                 </dd>
               </div>
               <div className="flex flex-wrap gap-6">
@@ -1379,53 +1401,53 @@ export default function QuadrantApp({
                     Result
                   </dt>
                   <dd className="mt-1 text-base text-zinc-800">
-                    {runResultLabel}
+                    {selectedRun.result}
                   </dd>
                 </div>
                 <div>
                   <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                    {isPro ? "Clean days" : "Days completed"}
+                    Clean days
                   </dt>
                   <dd className="mt-1 text-base text-zinc-800">
-                    {isPro ? progressCount : `${freeProgressCount}/${RUN_LENGTH}`}
+                    {selectedRun.cleanDays}/{RUN_LENGTH}
                   </dd>
                 </div>
               </div>
             </dl>
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-              {isPro ? (
-                <>
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Current clean streak: {streak} days
+              <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                This run
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {buildHistoryStrip(
+                  selectedRun.cleanDays,
+                  selectedRun.result,
+                  RUN_LENGTH,
+                ).map((symbol, index) => (
+                  <div
+                    key={`run-detail-strip-${index}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                      symbol === "✕"
+                        ? "border-red-200 bg-red-50 text-red-600"
+                        : symbol === "✓"
+                          ? "border-zinc-900 bg-zinc-900 text-white"
+                          : "border-zinc-200 text-zinc-600"
+                    }`}
+                  >
+                    {symbol}
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {recentCheckInSymbols.map((symbol, index) => (
-                      <div
-                        key={`run-detail-recent-${index}`}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                          symbol === "✕"
-                            ? "border-red-200 bg-red-50 text-red-600"
-                            : symbol === "✓"
-                              ? "border-zinc-900 bg-zinc-900 text-white"
-                              : "border-zinc-200 text-zinc-600"
-                        }`}
-                      >
-                        {symbol}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : null}
+                ))}
+              </div>
             </div>
-            {checkInNotes.length > 0 ? (
+            {selectedRun.notes && selectedRun.notes.length > 0 ? (
               <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4">
                 <div className="text-xs font-semibold tracking-wide text-zinc-500">
                   Notes
                 </div>
                 <div className="mt-3 space-y-2">
-                  {checkInNotes.map((entry) => (
+                  {selectedRun.notes.map((entry) => (
                     <div
-                      key={`note-${entry.date}`}
+                      key={`run-note-${entry.date}`}
                       className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
                     >
                       <div className="text-xs text-zinc-500">{entry.date}</div>
