@@ -70,23 +70,16 @@ const InsightCard = ({
         </div>
       ) : null}
     </div>
-    {isLocked ? (
-      <div className="mt-4 space-y-1">
-        <div className="text-sm font-semibold text-zinc-700">
-          Upgrade to unlock
+    <div className="mt-4 space-y-1">
+      <div className="text-2xl font-semibold text-zinc-900">
+        {isLocked ? "—" : value}
+      </div>
+      {lockReason ? (
+        <div className="text-xs text-zinc-500">
+          {isLocked ? lockReason : subtitle ?? lockReason}
         </div>
-        {lockReason ? (
-          <div className="text-xs text-zinc-500">{lockReason}</div>
-        ) : null}
-      </div>
-    ) : (
-      <div className="mt-4 space-y-1">
-        <div className="text-2xl font-semibold text-zinc-900">{value}</div>
-        {subtitle ? (
-          <div className="text-xs text-zinc-500">{subtitle}</div>
-        ) : null}
-      </div>
-    )}
+      ) : null}
+    </div>
   </div>
 );
 
