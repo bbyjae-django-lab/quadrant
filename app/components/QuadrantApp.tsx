@@ -325,9 +325,7 @@ export default function QuadrantApp({
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
   const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
-  const [checkInFollowed, setCheckInFollowed] = useState<boolean | null>(null);
   const [checkInNote, setCheckInNote] = useState("");
-  const [hasSaved, setHasSaved] = useState(false);
   const [runStatus, setRunStatus] = useState<
     "idle" | "active" | "failed" | "completed" | "ended"
   >("idle");
@@ -487,18 +485,14 @@ export default function QuadrantApp({
       return;
     }
 
-    setHasSaved(false);
-
     const today = getLocalDateString();
     const todayEntry = checkIns[today];
     if (todayEntry) {
-      setCheckInFollowed(todayEntry.followed);
       setCheckInNote(todayEntry.note ?? "");
       setObservedBehaviourLogSelection(
         clampObservedBehaviours(todayEntry.observedBehaviourIds),
       );
     } else {
-      setCheckInFollowed(null);
       setCheckInNote("");
       setObservedBehaviourLogSelection([]);
     }
@@ -622,9 +616,7 @@ export default function QuadrantApp({
     setStreak(0);
     setCheckIns({});
     setObservedBehaviourIds([]);
-    setCheckInFollowed(null);
     setCheckInNote("");
-    setHasSaved(false);
     setShowEndRunConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
@@ -688,7 +680,6 @@ export default function QuadrantApp({
     setObservedBehaviourIds(
       isPro ? clampObservedBehaviours(observedIds) : [],
     );
-    setCheckInFollowed(null);
     setCheckInNote("");
     setShowEndRunConfirm(false);
     router.push("/dashboard");
@@ -768,7 +759,6 @@ export default function QuadrantApp({
       }
       setRunEndContext({ result: "Failed", cleanDays });
       appendRunHistory("Failed", updatedCheckIns);
-      setHasSaved(true);
       setShowRunEndedModal(true);
       setShowCheckInModal(false);
       return;
@@ -779,9 +769,7 @@ export default function QuadrantApp({
       appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
     }
-    setHasSaved(true);
     setCheckInNote(noteValue);
-    setCheckInFollowed(followed);
     setShowCheckInModal(false);
   };
 
@@ -793,9 +781,7 @@ export default function QuadrantApp({
     setActiveProblemId(null);
     setActiveProtocolId(null);
     setActivatedAt(null);
-    setCheckInFollowed(null);
     setCheckInNote("");
-    setHasSaved(false);
     setRunStatus("idle");
     setRunStartDate(null);
     setStreak(0);
@@ -1550,15 +1536,11 @@ export default function QuadrantApp({
                   className="min-h-[120px] w-full rounded-xl border border-zinc-200 p-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
                 />
               </div>
-              {hasSaved ? (
-                <p className="text-sm font-semibold text-zinc-600">Saved</p>
-              ) : null}
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
                   onClick={() => {
-                    setCheckInFollowed(true);
                     handleSaveCheckIn(true);
                   }}
                 >
@@ -1568,7 +1550,6 @@ export default function QuadrantApp({
                   type="button"
                   className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                   onClick={() => {
-                    setCheckInFollowed(false);
                     handleSaveCheckIn(false);
                   }}
                 >
