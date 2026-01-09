@@ -47,7 +47,7 @@ export default function PricingPage() {
             <ul className="mt-6 space-y-2 text-sm text-zinc-700">
               <li>One active protocol</li>
               <li>Daily check-in</li>
-              <li>7-day history</li>
+              <li>Run history</li>
             </ul>
           </div>
 
@@ -58,7 +58,7 @@ export default function PricingPage() {
               </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-100">
               <li>Full protocol library</li>
-              <li>Run & streak tracking</li>
+              <li>Run and streak tracking</li>
               <li>Search-based problem matching</li>
               <li>Future: multiple protocols, insights</li>
             </ul>
@@ -70,14 +70,14 @@ export default function PricingPage() {
 
         <section className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-6 py-5">
           <p className="text-sm font-semibold text-zinc-700">
-            Start with one problem.
+            Start with one problem
           </p>
           <button
             type="button"
             className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
             onClick={handleBack}
           >
-            Start with one problem.
+            Start with one problem
           </button>
         </section>
       </main>
