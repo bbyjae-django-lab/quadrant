@@ -597,6 +597,11 @@ export default function QuadrantApp({
   const failureInsightLine = runFailed
     ? "Most traders need 5–10 runs before patterns become obvious."
     : null;
+  const latestRunResult = runHistory[0]?.result ?? null;
+  const failureInsightLineDashboard =
+    latestRunResult === "Failed"
+      ? "Most traders need 5–10 runs before patterns become obvious."
+      : null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
@@ -777,6 +782,11 @@ export default function QuadrantApp({
                         Recent
                       </span>
                     </div>
+                    {failureInsightLineDashboard && !freeRunComplete ? (
+                      <p className="mt-2 text-sm text-zinc-600">
+                        {failureInsightLineDashboard}
+                      </p>
+                    ) : null}
                     <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
                       {visibleRunHistoryRows.length > 0 ? (
                         <table className="w-full text-left text-sm">
@@ -879,6 +889,11 @@ export default function QuadrantApp({
                           Run history across devices, unlimited runs, and
                           pattern insights.
                         </p>
+                        {failureInsightLineDashboard ? (
+                          <p className="text-sm text-zinc-300">
+                            {failureInsightLineDashboard}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="mt-4 flex flex-wrap gap-3">
                         <button
@@ -1255,11 +1270,6 @@ export default function QuadrantApp({
               <p className="text-sm text-zinc-600">
                 {runEndedMessage}
               </p>
-              {failureInsightLine ? (
-                <p className="text-sm text-zinc-600">
-                  {failureInsightLine}
-                </p>
-              ) : null}
             </div>
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
               <div className="text-sm font-semibold text-zinc-900">
@@ -1295,6 +1305,11 @@ export default function QuadrantApp({
                   </div>
                 ))}
               </div>
+              {failureInsightLine ? (
+                <p className="mt-4 text-sm text-zinc-600">
+                  {failureInsightLine}
+                </p>
+              ) : null}
             </div>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
