@@ -36,6 +36,8 @@ type InsightCardProps = {
   isLocked: boolean;
   lockReason: string | null;
   proBadge: boolean;
+  emphasis?: boolean;
+  className?: string;
 };
 
 const InsightCard = ({
@@ -45,11 +47,13 @@ const InsightCard = ({
   isLocked,
   lockReason,
   proBadge,
+  emphasis = false,
+  className,
 }: InsightCardProps) => (
   <div
     className={`rounded-2xl border p-5 ${
       isLocked ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white"
-    }`}
+    } ${className ?? ""}`}
     aria-disabled={isLocked}
   >
     <div className="flex items-center justify-between gap-3">
@@ -71,13 +75,18 @@ const InsightCard = ({
       ) : null}
     </div>
     <div className="mt-4 space-y-1">
-      <div className="text-2xl font-semibold text-zinc-900">
+      <div
+        className={`font-semibold text-zinc-900 ${
+          emphasis ? "text-3xl" : "text-2xl"
+        }`}
+      >
         {isLocked ? "—" : value}
       </div>
-      {lockReason ? (
-        <div className="text-xs text-zinc-500">
-          {isLocked ? lockReason : subtitle ?? lockReason}
-        </div>
+      {isLocked && lockReason ? (
+        <div className="text-xs text-zinc-500">{lockReason}</div>
+      ) : null}
+      {!isLocked && subtitle ? (
+        <div className="text-xs text-zinc-500">{subtitle}</div>
       ) : null}
     </div>
   </div>
@@ -852,13 +861,9 @@ export default function QuadrantApp({
         (observedBehaviourLogCounts[id] ?? 0) + count;
     });
   }
-  const totalObservedBehaviourLogs = Object.values(
-    observedBehaviourLogCounts,
-  ).reduce((sum, count) => sum + count, 0);
-  const maxObservedBehaviourLog = Math.max(
-    0,
-    ...Object.values(observedBehaviourLogCounts),
-  );
+  const completedRunsCount = runHistory.filter(
+    (entry) => entry.result === "Completed",
+  ).length;
   const enabledBehaviourIds = new Set<string>();
   observedBehaviourIds.forEach((id) => enabledBehaviourIds.add(id));
   runHistory.forEach((entry) =>
@@ -915,38 +920,60 @@ export default function QuadrantApp({
 
   const patternInsights = [
     {
-      title: "Failure day distribution",
-      isUnlocked: maxObservedBehaviourLog >= 3,
-      requirement: "Requires 3 logs",
-      value: failureDaySummary,
-    },
-    {
-      title: "Most frequent breaking behaviour",
-      isUnlocked:
-        enabledBehaviourIds.size >= 2 && totalObservedBehaviourLogs >= 5,
-      requirement: "Requires 2 behaviours and 5 logs",
-      value: mostFrequentBehaviourLabel,
-    },
-    {
       title: "Longest clean run",
-      isUnlocked: runHistory.length >= 2,
+      isUnlocked: completedRunsCount >= 2,
       requirement: "Requires 2 runs",
       value: `${longestCleanRun} days`,
+      subtitle:
+        completedRunsCount === 2
+          ? "Early pattern. Refines with more runs."
+          : null,
+      emphasis: true,
+    },
+    {
+      title: "Failure day distribution",
+      isUnlocked: completedRunsCount >= 2,
+      requirement: "Requires 2 runs",
+      value: failureDaySummary,
+      subtitle:
+        completedRunsCount === 2
+          ? "Early pattern. Refines with more runs."
+          : null,
+      emphasis: true,
     },
     {
       title: "Time between failures",
-      isUnlocked: runHistory.length >= 3,
+      isUnlocked: completedRunsCount >= 3,
       requirement: "Requires 3 runs",
       value:
         averageFailureGapDays !== null
           ? `Average ${averageFailureGapDays} days`
           : "Not enough failures yet.",
+      subtitle:
+        completedRunsCount === 3
+          ? "Early pattern. Refines with more runs."
+          : null,
     },
     {
       title: "Protocols attempted",
       isUnlocked: uniqueProtocolsAttempted >= 2,
       requirement: "Requires 2 protocols",
       value: `${uniqueProtocolsAttempted} protocols`,
+      subtitle:
+        uniqueProtocolsAttempted === 2
+          ? "Early pattern. Refines with more runs."
+          : null,
+    },
+    {
+      title: "Most frequent breaking behaviour",
+      isUnlocked: enabledBehaviourIds.size >= 2 && completedRunsCount >= 5,
+      requirement: "Requires 2 behaviours and 5 runs",
+      value: mostFrequentBehaviourLabel,
+      subtitle:
+        enabledBehaviourIds.size === 2 && completedRunsCount === 5
+          ? "Early pattern. Refines with more runs."
+          : null,
+      className: "md:col-span-2",
     },
   ];
   const latestRun = runHistory[0] ?? null;
@@ -1295,10 +1322,12 @@ export default function QuadrantApp({
                             key={insight.title}
                             title={insight.title}
                             value={isLocked ? null : insight.value}
-                            subtitle={isLocked ? null : null}
+                            subtitle={isLocked ? null : insight.subtitle ?? null}
                             isLocked={isLocked}
                             lockReason={insight.requirement}
                             proBadge={isLocked}
+                            emphasis={insight.emphasis}
+                            className={insight.className}
                           />
                         );
                       })}
