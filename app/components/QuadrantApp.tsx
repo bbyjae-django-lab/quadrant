@@ -7,6 +7,7 @@ import { problemIndex } from "../data/problemIndex";
 import { protocolById, protocols } from "../data/protocols";
 
 const RUN_LENGTH = 5;
+const MAX_OBSERVED_BEHAVIOURS = 2;
 
 type RunEndContext = {
   result: "Failed" | "Completed";
@@ -26,6 +27,13 @@ type RunEndCopy = {
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
+
+const clampObservedBehaviours = (ids: string[] | null | undefined) => {
+  if (!ids || !Array.isArray(ids)) {
+    return [];
+  }
+  return ids.filter((id) => typeof id === "string").slice(0, MAX_OBSERVED_BEHAVIOURS);
+};
 
 const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
   const dayIndex = context.cleanDays;
@@ -106,6 +114,7 @@ const storageKeys = [
   "runStartDate",
   "streak",
   "checkIns",
+  "observedBehaviourIds",
   "runHistory",
   "lastCheckInDate",
   "lastCheckInFollowed",
@@ -243,6 +252,9 @@ export default function QuadrantApp({
   const [checkIns, setCheckIns] = useState<
     Record<string, { followed: boolean; note?: string }>
   >({});
+  const [observedBehaviourIds, setObservedBehaviourIds] = useState<string[]>(
+    [],
+  );
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [isPro, setIsPro] = useState(false);
@@ -265,6 +277,7 @@ export default function QuadrantApp({
       endedAt: string;
       result: "Completed" | "Failed" | "Ended";
       cleanDays: number;
+      observedBehaviourIds?: string[];
       notes?: Array<{ date: string; note: string }>;
     }>
   >([]);
@@ -281,6 +294,7 @@ export default function QuadrantApp({
     const storedRunStartDate = localStorage.getItem("runStartDate");
     const storedStreak = localStorage.getItem("streak");
     const storedCheckIns = localStorage.getItem("checkIns");
+    const storedObservedBehaviours = localStorage.getItem("observedBehaviourIds");
     const storedHasCompletedRun = localStorage.getItem("hasCompletedRun");
     const storedIsPro = localStorage.getItem("quadrant_isPro");
     const storedRunHistory = localStorage.getItem("runHistory");
@@ -326,6 +340,16 @@ export default function QuadrantApp({
         setCheckIns({});
       }
     }
+    if (storedObservedBehaviours) {
+      try {
+        const parsedObservedBehaviours = JSON.parse(
+          storedObservedBehaviours,
+        ) as string[];
+        setObservedBehaviourIds(clampObservedBehaviours(parsedObservedBehaviours));
+      } catch {
+        setObservedBehaviourIds([]);
+      }
+    }
     if (storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
     }
@@ -342,9 +366,17 @@ export default function QuadrantApp({
           endedAt: string;
           result: "Completed" | "Failed" | "Ended";
           cleanDays: number;
+          observedBehaviourIds?: string[];
           notes?: Array<{ date: string; note: string }>;
         }>;
-        setRunHistory(parsedHistory);
+        setRunHistory(
+          parsedHistory.map((entry) => ({
+            ...entry,
+            observedBehaviourIds: clampObservedBehaviours(
+              entry.observedBehaviourIds,
+            ),
+          })),
+        );
       } catch {
         setRunHistory([]);
       }
@@ -401,6 +433,10 @@ export default function QuadrantApp({
     }
     localStorage.setItem("streak", String(streak));
     localStorage.setItem("checkIns", JSON.stringify(checkIns));
+    localStorage.setItem(
+      "observedBehaviourIds",
+      JSON.stringify(clampObservedBehaviours(observedBehaviourIds)),
+    );
     localStorage.setItem("hasCompletedRun", hasCompletedRun ? "true" : "false");
     localStorage.setItem("runHistory", JSON.stringify(runHistory));
   }, [
@@ -411,6 +447,7 @@ export default function QuadrantApp({
     runStartDate,
     streak,
     checkIns,
+    observedBehaviourIds,
     hasCompletedRun,
     runHistory,
   ]);
@@ -482,6 +519,7 @@ export default function QuadrantApp({
     setRunStartDate(null);
     setStreak(0);
     setCheckIns({});
+    setObservedBehaviourIds([]);
     setCheckInFollowed(null);
     setCheckInNote("");
     setHasSaved(false);
@@ -517,6 +555,9 @@ export default function QuadrantApp({
       endedAt: new Date().toISOString(),
       result,
       cleanDays,
+      observedBehaviourIds: isPro
+        ? clampObservedBehaviours(observedBehaviourIds)
+        : [],
       notes,
     };
     setRunHistory((prev) => [entry, ...prev]);
@@ -532,6 +573,7 @@ export default function QuadrantApp({
     setRunStartDate(today);
     setStreak(0);
     setCheckIns({});
+    setObservedBehaviourIds([]);
     setCheckInFollowed(null);
     setCheckInNote("");
     setShowEndRunConfirm(false);
@@ -630,6 +672,7 @@ export default function QuadrantApp({
     setRunStartDate(null);
     setStreak(0);
     setCheckIns({});
+    setObservedBehaviourIds([]);
     setShowSwitchConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
