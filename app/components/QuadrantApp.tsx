@@ -1299,7 +1299,7 @@ export default function QuadrantApp({
         </div>
       ) : null}
       {selectedProtocol && view === "protocols" ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-3">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
