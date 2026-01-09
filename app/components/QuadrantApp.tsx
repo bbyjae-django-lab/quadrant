@@ -1065,6 +1065,48 @@ export default function QuadrantApp({
                       </button>
                     ) : null}
                   </div>
+                  {showSwitchConfirm ? (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                      <span>Switching protocols resets your current run.</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                          onClick={() => setShowSwitchConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                          onClick={handleConfirmSwitch}
+                        >
+                          Switch
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {showEndRunConfirm ? (
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                      <span>Ending locks this run in history.</span>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                          onClick={() => setShowEndRunConfirm(false)}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                          onClick={handleEndRun}
+                        >
+                          End run
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </>
               ) : latestRun ? (
                 <>
@@ -1110,6 +1152,32 @@ export default function QuadrantApp({
                   <p className="mt-4 text-sm text-zinc-600">
                     {runSummaryLine}
                   </p>
+                  {freeRunComplete ? (
+                    <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-900">
+                      <div className="space-y-2">
+                        <div className="text-sm font-semibold">
+                          Free run complete.
+                        </div>
+                        <p className="text-sm text-zinc-600">
+                          Run history, cross-device persistence, and multiple
+                          runs require Pro.
+                        </p>
+                      </div>
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
+                        >
+                          View pricing
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -1127,49 +1195,6 @@ export default function QuadrantApp({
                 </>
               )}
             </section>
-            {showSwitchConfirm ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                <span>Switching protocols resets your current run.</span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                    onClick={() => setShowSwitchConfirm(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                    onClick={handleConfirmSwitch}
-                  >
-                    Switch
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            {showEndRunConfirm ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                <span>Ending locks this run in history.</span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                    onClick={() => setShowEndRunConfirm(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                    onClick={handleEndRun}
-                  >
-                    End run
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
             <div className="space-y-10">
               <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
@@ -1293,33 +1318,6 @@ export default function QuadrantApp({
                       })}
                     </div>
                   </section>
-
-                  {freeRunComplete ? (
-                    <section className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6 text-zinc-900 shadow-sm">
-                      <div className="space-y-2">
-                        <h2 className="text-xl font-semibold">
-                          Free run complete.
-                        </h2>
-                        <p className="text-sm text-zinc-600">
-                          Run history, cross-device persistence, and multiple
-                          runs require Pro.
-                        </p>
-                      </div>
-                      <div className="mt-4">
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              window.location.href = "/pricing";
-                            }
-                          }}
-                        >
-                          View pricing
-                        </button>
-                      </div>
-                    </section>
-                  ) : null}
 
                   <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
