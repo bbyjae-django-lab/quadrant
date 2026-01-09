@@ -1247,13 +1247,29 @@ export default function QuadrantApp({
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Pattern insights
                       </h2>
-                      <span
-                        className={`text-xs font-semibold tracking-wide ${
-                          isPro ? "text-zinc-400" : "text-zinc-500"
-                        }`}
-                      >
-                        {isPro ? "Live" : "Locked"}
-                      </span>
+                      {!isPro ? (
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            className="h-4 w-4 text-zinc-400"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
+                            />
+                          </svg>
+                          <span>Pro</span>
+                        </button>
+                      ) : null}
                     </div>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       {patternInsights.map((insight) => {
