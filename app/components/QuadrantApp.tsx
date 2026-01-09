@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
 import { protocolById, protocols } from "../data/protocols";
+import { observedBehaviours } from "../data/observedBehaviours";
 
 const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
@@ -266,6 +267,12 @@ export default function QuadrantApp({
   const [runEndContext, setRunEndContext] = useState<RunEndContext | null>(
     null,
   );
+  const [showObservedBehaviourPicker, setShowObservedBehaviourPicker] =
+    useState(false);
+  const [observedBehaviourSelection, setObservedBehaviourSelection] = useState<
+    string[]
+  >([]);
+  const [observedBehaviourError, setObservedBehaviourError] = useState("");
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<
@@ -563,7 +570,11 @@ export default function QuadrantApp({
     setRunHistory((prev) => [entry, ...prev]);
   };
 
-  const activateProtocol = (protocolId: string, problemId: number | null) => {
+  const activateProtocol = (
+    protocolId: string,
+    problemId: number | null,
+    observedIds?: string[],
+  ) => {
     const timestamp = new Date().toISOString();
     const today = getLocalDateString();
     setActivatedAt(timestamp);
@@ -573,7 +584,9 @@ export default function QuadrantApp({
     setRunStartDate(today);
     setStreak(0);
     setCheckIns({});
-    setObservedBehaviourIds([]);
+    setObservedBehaviourIds(
+      isPro ? clampObservedBehaviours(observedIds) : [],
+    );
     setCheckInFollowed(null);
     setCheckInNote("");
     setShowEndRunConfirm(false);
@@ -587,8 +600,15 @@ export default function QuadrantApp({
     if (!canStartNewRun) {
       return;
     }
-    activateProtocol(selectedProtocol.id, null);
+    activateProtocol(
+      selectedProtocol.id,
+      null,
+      isPro ? observedBehaviourSelection : [],
+    );
     setConfirmProtocolId(null);
+    setShowObservedBehaviourPicker(false);
+    setObservedBehaviourSelection([]);
+    setObservedBehaviourError("");
   };
 
   const handleSwitchProtocol = () => {
@@ -1383,11 +1403,91 @@ export default function QuadrantApp({
                 </dd>
               </div>
             </dl>
+            {isPro ? (
+              <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-zinc-900"
+                  onClick={() =>
+                    setShowObservedBehaviourPicker((prev) => !prev)
+                  }
+                >
+                  <span>Observe additional behaviours (optional)</span>
+                  <span className="text-sm text-zinc-500">
+                    {showObservedBehaviourPicker ? "v" : ">"}
+                  </span>
+                </button>
+                {showObservedBehaviourPicker ? (
+                  <div className="mt-3 space-y-3">
+                    <p className="text-xs text-zinc-500">
+                      Tracked for insight. Does not end your run.
+                    </p>
+                    <div className="space-y-2">
+                      {observedBehaviours.map((behaviour) => {
+                        const isChecked = observedBehaviourSelection.includes(
+                          behaviour.id,
+                        );
+                        return (
+                          <label
+                            key={behaviour.id}
+                            className="flex items-start gap-3 text-sm text-zinc-700"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
+                              checked={isChecked}
+                              onChange={() => {
+                                setObservedBehaviourError("");
+                                if (isChecked) {
+                                  setObservedBehaviourSelection((prev) =>
+                                    prev.filter((id) => id !== behaviour.id),
+                                  );
+                                  return;
+                                }
+                                if (
+                                  observedBehaviourSelection.length >=
+                                  MAX_OBSERVED_BEHAVIOURS
+                                ) {
+                                  setObservedBehaviourError("Choose up to 2.");
+                                  return;
+                                }
+                                setObservedBehaviourSelection((prev) => [
+                                  ...prev,
+                                  behaviour.id,
+                                ]);
+                              }}
+                            />
+                            <span>
+                              <span className="font-semibold text-zinc-900">
+                                {behaviour.label}
+                              </span>
+                              <span className="mt-1 block text-xs text-zinc-500">
+                                {behaviour.description}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {observedBehaviourError ? (
+                      <p className="text-xs font-semibold text-zinc-500">
+                        {observedBehaviourError}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                onClick={() => setConfirmProtocolId(null)}
+                onClick={() => {
+                  setConfirmProtocolId(null);
+                  setShowObservedBehaviourPicker(false);
+                  setObservedBehaviourSelection([]);
+                  setObservedBehaviourError("");
+                }}
               >
                 Cancel
               </button>
