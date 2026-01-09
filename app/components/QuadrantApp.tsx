@@ -33,7 +33,27 @@ const clampObservedBehaviours = (ids: string[] | null | undefined) => {
   if (!ids || !Array.isArray(ids)) {
     return [];
   }
-  return ids.filter((id) => typeof id === "string").slice(0, MAX_OBSERVED_BEHAVIOURS);
+  return ids
+    .filter((id) => typeof id === "string")
+    .slice(0, MAX_OBSERVED_BEHAVIOURS);
+};
+
+const getObservedBehaviourLogCounts = (
+  snapshot: Record<
+    string,
+    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+  >,
+) => {
+  const counts: Record<string, number> = {};
+  Object.values(snapshot).forEach((entry) => {
+    if (!entry.observedBehaviourIds) {
+      return;
+    }
+    entry.observedBehaviourIds.forEach((id) => {
+      counts[id] = (counts[id] ?? 0) + 1;
+    });
+  });
+  return counts;
 };
 
 const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
@@ -299,6 +319,7 @@ export default function QuadrantApp({
       result: "Completed" | "Failed" | "Ended";
       cleanDays: number;
       observedBehaviourIds?: string[];
+      observedBehaviourLogCounts?: Record<string, number>;
       notes?: Array<{ date: string; note: string }>;
     }>
   >([]);
@@ -388,6 +409,7 @@ export default function QuadrantApp({
           result: "Completed" | "Failed" | "Ended";
           cleanDays: number;
           observedBehaviourIds?: string[];
+          observedBehaviourLogCounts?: Record<string, number>;
           notes?: Array<{ date: string; note: string }>;
         }>;
         setRunHistory(
@@ -396,6 +418,7 @@ export default function QuadrantApp({
             observedBehaviourIds: clampObservedBehaviours(
               entry.observedBehaviourIds,
             ),
+            observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
           })),
         );
       } catch {
@@ -586,6 +609,9 @@ export default function QuadrantApp({
       observedBehaviourIds: isPro
         ? clampObservedBehaviours(observedBehaviourIds)
         : [],
+      observedBehaviourLogCounts: isPro
+        ? getObservedBehaviourLogCounts(snapshot)
+        : {},
       notes,
     };
     setRunHistory((prev) => [entry, ...prev]);
@@ -766,11 +792,122 @@ export default function QuadrantApp({
   const visibleRunHistoryRows = isPro
     ? runHistoryRows
     : runHistoryRows.slice(0, 1);
+  const observedBehaviourLabelById = Object.fromEntries(
+    observedBehaviours.map((behaviour) => [behaviour.id, behaviour.label]),
+  );
+  const observedBehaviourLogCounts = runHistory.reduce(
+    (acc, entry) => {
+      const counts = entry.observedBehaviourLogCounts ?? {};
+      Object.entries(counts).forEach(([id, count]) => {
+        acc[id] = (acc[id] ?? 0) + count;
+      });
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  if (runActive) {
+    const currentCounts = getObservedBehaviourLogCounts(checkIns);
+    Object.entries(currentCounts).forEach(([id, count]) => {
+      observedBehaviourLogCounts[id] =
+        (observedBehaviourLogCounts[id] ?? 0) + count;
+    });
+  }
+  const totalObservedBehaviourLogs = Object.values(
+    observedBehaviourLogCounts,
+  ).reduce((sum, count) => sum + count, 0);
+  const maxObservedBehaviourLog = Math.max(
+    0,
+    ...Object.values(observedBehaviourLogCounts),
+  );
+  const enabledBehaviourIds = new Set<string>();
+  observedBehaviourIds.forEach((id) => enabledBehaviourIds.add(id));
+  runHistory.forEach((entry) =>
+    entry.observedBehaviourIds?.forEach((id) => enabledBehaviourIds.add(id)),
+  );
+
+  const failedRuns = runHistory
+    .filter((entry) => entry.result === "Failed")
+    .map((entry) => entry.cleanDays + 1);
+  const failureDayDistribution = failedRuns.reduce(
+    (acc, day) => {
+      acc[day] = (acc[day] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<number, number>,
+  );
+  const failureDaySummary =
+    Object.keys(failureDayDistribution).length > 0
+      ? Object.entries(failureDayDistribution)
+          .sort(([dayA], [dayB]) => Number(dayA) - Number(dayB))
+          .map(([day, count]) => `Day ${day}: ${count}`)
+          .join(", ")
+      : "No failures yet.";
+
+  const longestCleanRun = runHistory.reduce(
+    (max, entry) => Math.max(max, entry.cleanDays),
+    0,
+  );
+  const failureDates = runHistory
+    .filter((entry) => entry.result === "Failed")
+    .map((entry) => new Date(entry.endedAt).getTime())
+    .sort((a, b) => a - b);
+  const averageFailureGapDays =
+    failureDates.length > 1
+      ? Math.round(
+          failureDates
+            .slice(1)
+            .map((date, index) => date - failureDates[index])
+            .reduce((sum, diff) => sum + diff, 0) /
+            (failureDates.length - 1) /
+            (1000 * 60 * 60 * 24),
+        )
+      : null;
+  const uniqueProtocolsAttempted = new Set(
+    runHistory.map((entry) => entry.protocolId),
+  ).size;
+
+  const mostFrequentBehaviour = Object.entries(observedBehaviourLogCounts).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+  const mostFrequentBehaviourLabel = mostFrequentBehaviour
+    ? `${observedBehaviourLabelById[mostFrequentBehaviour[0]] ?? "Unknown"} (${mostFrequentBehaviour[1]})`
+    : "No logs yet.";
+
   const patternInsights = [
-    { title: "Failure day distribution", value: "—" },
-    { title: "Longest clean run", value: "—" },
-    { title: "Time between failures", value: "—" },
-    { title: "Protocols attempted", value: "—" },
+    {
+      title: "Failure day distribution",
+      isUnlocked: maxObservedBehaviourLog >= 3,
+      requirement: "Requires 3 logs",
+      value: failureDaySummary,
+    },
+    {
+      title: "Most frequent breaking behaviour",
+      isUnlocked:
+        enabledBehaviourIds.size >= 2 && totalObservedBehaviourLogs >= 5,
+      requirement: "Requires 2 behaviours and 5 logs",
+      value: mostFrequentBehaviourLabel,
+    },
+    {
+      title: "Longest clean run",
+      isUnlocked: runHistory.length >= 2,
+      requirement: "Requires 2 runs",
+      value: `${longestCleanRun} days`,
+    },
+    {
+      title: "Time between failures",
+      isUnlocked: runHistory.length >= 3,
+      requirement: "Requires 3 runs",
+      value:
+        averageFailureGapDays !== null
+          ? `Average ${averageFailureGapDays} days`
+          : "Not enough failures yet.",
+    },
+    {
+      title: "Protocols attempted",
+      isUnlocked: uniqueProtocolsAttempted >= 2,
+      requirement: "Requires 2 protocols",
+      value: `${uniqueProtocolsAttempted} protocols`,
+    },
   ];
   const lockIcon = (
     <svg
@@ -1077,21 +1214,23 @@ export default function QuadrantApp({
                       </span>
                     </div>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      {patternInsights.map((insight) => (
+                      {patternInsights.map((insight) => {
+                        const isLocked = !isPro || !insight.isUnlocked;
+                        return (
                         <div
                           key={insight.title}
                           className={`rounded-2xl border p-5 ${
-                            isPro
+                            !isLocked
                               ? "border-zinc-200 bg-white"
                               : "border-zinc-200 bg-zinc-50 text-zinc-400"
                           }`}
-                          aria-disabled={!isPro}
+                          aria-disabled={isLocked}
                         >
                           <div className="flex items-center justify-between">
                             <div className="text-sm font-semibold text-zinc-700">
                               {insight.title}
                             </div>
-                            {!isPro ? (
+                            {isLocked ? (
                               <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
                                 {lockIcon}
                                 <span>Pro</span>
@@ -1099,10 +1238,16 @@ export default function QuadrantApp({
                             ) : null}
                           </div>
                           <div className="mt-4 text-2xl font-semibold text-zinc-900">
-                            {isPro ? insight.value : "—"}
+                            {isLocked ? "Locked" : insight.value}
                           </div>
+                          {isLocked ? (
+                            <div className="mt-2 text-xs font-semibold text-zinc-500">
+                              {insight.requirement}
+                            </div>
+                          ) : null}
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   </section>
 
