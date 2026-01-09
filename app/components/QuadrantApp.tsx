@@ -1036,6 +1036,19 @@ export default function QuadrantApp({
                           runs require Pro.
                         </p>
                       </div>
+                      <div className="mt-4">
+                        <button
+                          type="button"
+                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
+                        >
+                          View pricing
+                        </button>
+                      </div>
                     </section>
                   ) : null}
 
