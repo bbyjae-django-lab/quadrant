@@ -129,7 +129,6 @@ export default function QuadrantApp({
   const [checkInFollowed, setCheckInFollowed] = useState<boolean | null>(null);
   const [checkInNote, setCheckInNote] = useState("");
   const [hasSaved, setHasSaved] = useState(false);
-  const [checkInError, setCheckInError] = useState("");
   const [runStatus, setRunStatus] = useState<
     "idle" | "active" | "failed" | "completed" | "ended"
   >("idle");
@@ -248,7 +247,6 @@ export default function QuadrantApp({
     }
 
     setHasSaved(false);
-    setCheckInError("");
 
     const today = getLocalDateString();
     const todayEntry = checkIns[today];
@@ -335,6 +333,13 @@ export default function QuadrantApp({
     ),
   ];
 
+  const checkInNotes = Object.entries(checkIns)
+    .filter(([, entry]) => entry.note && entry.note.trim().length > 0)
+    .map(([date, entry]) => ({
+      date,
+      note: entry.note as string,
+    }));
+
   const runActive = runStatus === "active";
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
@@ -376,7 +381,6 @@ export default function QuadrantApp({
     setCheckInFollowed(null);
     setCheckInNote("");
     setHasSaved(false);
-    setCheckInError("");
     setShowEndRunConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
@@ -449,35 +453,32 @@ export default function QuadrantApp({
     router.push("/protocols");
   };
 
-  const handleSaveCheckIn = () => {
+  const persistCheckIns = (
+    nextCheckIns: Record<string, { followed: boolean; note?: string }>,
+  ) => {
+    setCheckIns(nextCheckIns);
+  };
+
+  const handleSaveCheckIn = (followed: boolean) => {
     if (typeof window === "undefined") {
       return;
     }
     if (!runActive) {
       return;
     }
-    if (checkInFollowed === null) {
-      setCheckInError("Please select Yes or No.");
-      return;
-    }
     const noteValue = checkInNote.trim();
-    if (checkInFollowed === false && !noteValue) {
-      setCheckInError("Please add a note for a deviation.");
-      return;
-    }
-    setCheckInError("");
     const dateStamp = getLocalDateString();
     const updatedCheckIns = {
       ...checkIns,
       [dateStamp]: {
-        followed: checkInFollowed,
+        followed,
         note: noteValue || undefined,
       },
     };
-    setCheckIns(updatedCheckIns);
+    persistCheckIns(updatedCheckIns);
     const newStreak = computeCurrentRun(updatedCheckIns, dateStamp);
     setStreak(newStreak);
-    if (checkInFollowed === false) {
+    if (!followed) {
       setRunStatus("failed");
       if (!isPro) {
         setHasCompletedRun(true);
@@ -495,6 +496,7 @@ export default function QuadrantApp({
     }
     setHasSaved(true);
     setCheckInNote(noteValue);
+    setCheckInFollowed(followed);
     setShowCheckInModal(false);
   };
 
@@ -509,7 +511,6 @@ export default function QuadrantApp({
     setCheckInFollowed(null);
     setCheckInNote("");
     setHasSaved(false);
-    setCheckInError("");
     setRunStatus("idle");
     setRunStartDate(null);
     setStreak(0);
@@ -538,7 +539,6 @@ export default function QuadrantApp({
     setShowRunEndedModal(true);
   };
 
-  const canSaveCheckIn = runActive && checkInFollowed !== null;
   const runHistoryRows = runHistory.map((entry) => ({
     protocol: entry.protocolName,
     result: entry.result,
@@ -1054,7 +1054,7 @@ export default function QuadrantApp({
                   Daily check-in
                 </p>
                 <h2 className="mt-2 text-xl font-semibold text-zinc-900">
-                  Did you follow your active protocol today?
+                  Did you violate the protocol today?
                 </h2>
               </div>
               <button
@@ -1066,64 +1066,43 @@ export default function QuadrantApp({
               </button>
             </div>
             <div className="mt-6 space-y-6">
-              <fieldset className="space-y-4">
-                <div className="flex flex-wrap gap-3">
-                  {["Yes", "No"].map((option) => (
-                    <label
-                      key={option}
-                      className={`flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                        (option === "Yes" && checkInFollowed === true) ||
-                        (option === "No" && checkInFollowed === false)
-                          ? "border-zinc-900 bg-zinc-50"
-                          : "border-zinc-200 text-zinc-600 hover:border-zinc-400"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="daily-check-in"
-                        value={option}
-                        checked={
-                          (option === "Yes" && checkInFollowed === true) ||
-                          (option === "No" && checkInFollowed === false)
-                        }
-                        onChange={() => setCheckInFollowed(option === "Yes")}
-                        className="h-4 w-4 accent-zinc-900"
-                      />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              {checkInFollowed === false ? (
-                <div className="space-y-2">
-                  <label
-                    htmlFor="check-in-note"
-                    className="text-sm font-semibold text-zinc-800"
-                  >
-                    If no, what caused the deviation?
-                  </label>
-                  <textarea
-                    id="check-in-note"
-                    value={checkInNote}
-                    onChange={(event) => setCheckInNote(event.target.value)}
-                    className="min-h-[120px] w-full rounded-xl border border-zinc-200 p-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-                  />
-                </div>
-              ) : null}
-              {checkInError ? (
-                <p className="text-sm text-red-600">{checkInError}</p>
-              ) : null}
+              <div className="space-y-2">
+                <label
+                  htmlFor="check-in-note"
+                  className="text-sm font-semibold text-zinc-800"
+                >
+                  Notes (optional)
+                </label>
+                <textarea
+                  id="check-in-note"
+                  value={checkInNote}
+                  onChange={(event) => setCheckInNote(event.target.value)}
+                  className="min-h-[120px] w-full rounded-xl border border-zinc-200 p-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+                />
+              </div>
               {hasSaved ? (
                 <p className="text-sm font-semibold text-zinc-600">Saved</p>
               ) : null}
-              <div className="flex flex-col items-end gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={handleSaveCheckIn}
-                  disabled={!canSaveCheckIn}
+                  className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  onClick={() => {
+                    setCheckInFollowed(true);
+                    handleSaveCheckIn(true);
+                  }}
                 >
-                  Save check-in
+                  No — clean day
+                </button>
+                <button
+                  type="button"
+                  className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  onClick={() => {
+                    setCheckInFollowed(false);
+                    handleSaveCheckIn(false);
+                  }}
+                >
+                  Yes — violated
                 </button>
               </div>
             </div>
@@ -1376,6 +1355,26 @@ export default function QuadrantApp({
                 </>
               ) : null}
             </div>
+            {checkInNotes.length > 0 ? (
+              <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4">
+                <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                  Notes
+                </div>
+                <div className="mt-3 space-y-2">
+                  {checkInNotes.map((entry) => (
+                    <div
+                      key={`note-${entry.date}`}
+                      className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                    >
+                      <div className="text-xs text-zinc-500">{entry.date}</div>
+                      <div className="mt-1 text-sm text-zinc-700">
+                        {entry.note}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {!isPro ? (
               <div className="mt-6 flex flex-wrap gap-3">
                 <button
