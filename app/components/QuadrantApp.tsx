@@ -590,12 +590,10 @@ export default function QuadrantApp({
         ? "Ended"
         : "—";
   const runEndedMessage = runComplete
-    ? "Five clean days recorded. This run is complete."
+    ? "You completed the run. This run is complete."
     : runFailed
       ? "The protocol was violated. This run is complete."
-      : runEnded
-        ? "This run was ended. The record is complete."
-        : "This run is complete.";
+      : "This run is complete.";
   const failureInsightLine = runFailed
     ? "Most traders need 5–10 runs before patterns become obvious."
     : null;
@@ -1303,13 +1301,24 @@ export default function QuadrantApp({
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={() => {
                   setShowRunEndedModal(false);
                   setShowRunDetail(true);
                 }}
               >
                 View run
+              </button>
+              <button
+                type="button"
+                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/pricing";
+                  }
+                }}
+              >
+                Upgrade to Pro
               </button>
               <button
                 type="button"
