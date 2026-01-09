@@ -28,7 +28,9 @@ const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
 
 const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
-  if (context.result === "Completed") {
+  const dayIndex = context.cleanDays;
+
+  if (context.result === "Completed" && dayIndex === RUN_LENGTH) {
     return {
       title: "Run complete",
       outcomePrefix: "You completed ",
@@ -44,9 +46,9 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
     };
   }
 
-  const failureDay = Math.min(context.cleanDays + 1, RUN_LENGTH);
+  const failureDay = Math.min(dayIndex + 1, RUN_LENGTH);
 
-  if (failureDay <= 1) {
+  if (dayIndex === 0) {
     return {
       title: "Run ended",
       outcomePrefix: "You violated the protocol on day ",
@@ -54,29 +56,29 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       outcomeSuffix: ` of ${RUN_LENGTH}.`,
       reframeLines: [
         "That’s common.",
-        "Early failures usually mean the rule exposed a real reflex.",
-        "That’s the point.",
+        "Early failures usually mean the rule exposed a real reflex. That’s the point.",
         RUN_END_INSIGHT_LINE,
       ],
-      primaryLabel: "Continue with run history — $19/month",
+      primaryLabel: "Keep run history — $19/month",
       primarySubtext: "See what keeps breaking first.",
       secondaryLabel: "Close and reset",
     };
   }
 
-  if (failureDay <= 3) {
+  if (dayIndex >= 3 && dayIndex < RUN_LENGTH) {
     return {
       title: "Run ended",
       outcomePrefix: "You violated the protocol on day ",
       outcomeHighlight: String(failureDay),
       outcomeSuffix: ` of ${RUN_LENGTH}.`,
       reframeLines: [
-        "This is where behaviour usually shows up.",
-        RUN_END_INSIGHT_LINE,
+        "You were close.",
+        "This is where patterns usually show up — right before completion.",
+        "What matters now is whether you let this reset silently… or keep the evidence.",
       ],
-      primaryLabel: "Continue with run history — $19/month",
-      primarySubtext: "Keep this run.",
-      secondaryLabel: "Close and reset",
+      primaryLabel: "Keep run history — $19/month",
+      primarySubtext: "Don’t lose this run.",
+      secondaryLabel: "Close and start over",
     };
   }
 
@@ -86,14 +88,13 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
     outcomeHighlight: String(failureDay),
     outcomeSuffix: ` of ${RUN_LENGTH}.`,
     reframeLines: [
-      "You were close.",
-      "This is where patterns usually show up — right before completion.",
-      "What matters now is whether you let this reset silently…",
-      "or keep the evidence.",
+      "That’s common.",
+      "Early failures usually mean the rule exposed a real reflex. That’s the point.",
+      RUN_END_INSIGHT_LINE,
     ],
     primaryLabel: "Keep run history — $19/month",
-    primarySubtext: "Don’t lose this run.",
-    secondaryLabel: "Close and start over",
+    primarySubtext: "See what keeps breaking first.",
+    secondaryLabel: "Close and reset",
   };
 };
 
