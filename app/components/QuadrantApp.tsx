@@ -876,8 +876,8 @@ export default function QuadrantApp({
                           Free run complete.
                         </h2>
                         <p className="text-sm text-zinc-300">
-                          You can review your completed run. To start another
-                          run, upgrade.
+                          Run history across devices, unlimited runs, and
+                          pattern insights.
                         </p>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-3">
