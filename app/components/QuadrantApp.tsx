@@ -928,9 +928,7 @@ export default function QuadrantApp({
                           >
                             <button
                               type="button"
-                              className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left ${
-                                "hover:border-zinc-400"
-                              }`}
+                              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:border-zinc-400"
                               onClick={() => {
                                 setLibraryProtocolId(
                                   isExpanded ? null : protocol.id,
@@ -946,7 +944,7 @@ export default function QuadrantApp({
                                 </div>
                               </div>
                               <span className="text-sm text-zinc-500">
-                                {isExpanded ? "▼" : "▶"}
+                                {isExpanded ? "v" : ">"}
                               </span>
                             </button>
                             {isExpanded ? (
@@ -1026,7 +1024,7 @@ export default function QuadrantApp({
                         </div>
                       </div>
                       <span className="text-sm text-zinc-500">
-                        {isExpanded ? "ƒ-¬" : "ƒ-ô"}
+                        {isExpanded ? "v" : ">"}
                       </span>
                     </button>
                     {isExpanded ? (
