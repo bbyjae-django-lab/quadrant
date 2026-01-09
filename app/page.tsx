@@ -44,6 +44,34 @@ const getPreviousDate = (dateKey: string) => {
   return `${nextYear}-${nextMonth}-${nextDay}`;
 };
 
+const getDateOffset = (dateKey: string, offset: number) => {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + offset);
+  const nextYear = date.getFullYear();
+  const nextMonth = String(date.getMonth() + 1).padStart(2, "0");
+  const nextDay = String(date.getDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
+};
+
+const buildRunTracker = (
+  startDate: string | null,
+  length: number,
+  checkIns: Record<string, { followed: boolean; note?: string }>,
+) => {
+  if (!startDate) {
+    return Array.from({ length }, () => "—");
+  }
+  return Array.from({ length }, (_, index) => {
+    const dateKey = getDateOffset(startDate, index);
+    const entry = checkIns[dateKey];
+    if (!entry) {
+      return "—";
+    }
+    return entry.followed ? "✓" : "✕";
+  });
+};
+
 const computeCurrentRun = (
   checkIns: Record<string, { followed: boolean; note?: string }>,
   todayKey: string,
@@ -116,6 +144,7 @@ export default function Home() {
     null,
   );
   const [showRunDetail, setShowRunDetail] = useState(false);
+  const [showRunEndedModal, setShowRunEndedModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<
     Array<{
@@ -304,6 +333,7 @@ export default function Home() {
   ).length;
   const freeProgressCount = Math.min(successfulDays, RUN_LENGTH);
   const progressCount = isPro ? successfulDays : freeProgressCount;
+  const runTrackerSymbols = buildRunTracker(runStartDate, RUN_LENGTH, checkIns);
   const recentCheckInKeys = Object.keys(checkIns).sort().slice(-14);
   const recentCheckInSymbols = [
     ...Array.from({ length: 14 - recentCheckInKeys.length }, () => "—"),
@@ -355,6 +385,8 @@ export default function Home() {
     setHasSaved(false);
     setCheckInError("");
     setShowEndRunConfirm(false);
+    setShowRunDetail(false);
+    setShowRunEndedModal(false);
   };
 
   const appendRunHistory = (
@@ -466,7 +498,7 @@ export default function Home() {
       }
       appendRunHistory("Failed", updatedCheckIns);
       setHasSaved(true);
-      setShowRunDetail(true);
+      setShowRunEndedModal(true);
       setStep(1);
       return;
     } else if (!isPro && newStreak >= RUN_LENGTH) {
@@ -500,6 +532,8 @@ export default function Home() {
     setShowPricingPaymentsSoon(false);
     setShowPaywall(false);
     setShowSwitchConfirm(false);
+    setShowRunDetail(false);
+    setShowRunEndedModal(false);
   };
 
   const handleCheckInClick = () => {
@@ -1274,6 +1308,71 @@ export default function Home() {
             <p className="mt-3 text-xs text-zinc-500">
               Upgrades save your runs across devices.
             </p>
+          </div>
+        </div>
+      ) : null}
+      {showRunEndedModal && activeProtocol ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
+            <div className="space-y-3">
+              <h2 className="text-2xl font-semibold text-zinc-900">
+                Run ended.
+              </h2>
+              <p className="text-sm text-zinc-600">
+                The protocol was violated. This run is complete.
+              </p>
+            </div>
+            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
+              <div className="text-sm font-semibold text-zinc-900">
+                {activeProtocol.name}
+              </div>
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs font-semibold tracking-wide text-zinc-500">
+                  Rule
+                </summary>
+                <p className="mt-2 text-sm text-zinc-700">
+                  {activeProtocol.rule}
+                </p>
+              </details>
+              <div className="mt-4 text-sm font-semibold text-zinc-700">
+                Clean days: {successfulDays}/{RUN_LENGTH}
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {runTrackerSymbols.map((symbol, index) => (
+                  <div
+                    key={`run-ended-symbol-${index}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                      symbol === "✓"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : symbol === "✕"
+                          ? "border-red-200 bg-red-50 text-red-600"
+                          : "border-zinc-200 text-zinc-600"
+                    }`}
+                  >
+                    {symbol}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <button
+                type="button"
+                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                onClick={() => {
+                  setShowRunEndedModal(false);
+                  setShowRunDetail(true);
+                }}
+              >
+                View run
+              </button>
+              <button
+                type="button"
+                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                onClick={() => setShowRunEndedModal(false)}
+              >
+                Back to dashboard
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
