@@ -726,151 +726,73 @@ export default function QuadrantApp({
 
         {view === "dashboard" && (
           <section className="mt-10 space-y-6">
-            {runActive && activeProtocol ? (
-              <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
-                    <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-                      <div className="space-y-4 md:max-w-xl">
-                        <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
-                          Active protocol
-                        </p>
-                        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                          {activeProtocol.name}
-                        </h1>
-                        {activeProblem ? (
-                          <p className="text-sm text-zinc-500">
-                            Focus: {activeProblem.normalized_problem}
-                          </p>
-                        ) : null}
-                        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                            Rule
-                          </div>
-                          <p className="mt-2 text-base text-zinc-800">
-                            {activeProtocol.rule}
-                          </p>
-                        </div>
+            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+              {runActive && activeProtocol ? (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-zinc-900">
+                      Active run
+                    </h2>
+                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+                      Active
+                    </span>
+                  </div>
+                  <div className="mt-3 text-sm font-semibold text-zinc-900">
+                    {activeProtocol.name}
+                  </div>
+                  <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-500">
+                    This run
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {runTrackerSymbols.map((symbol, index) => (
+                      <div
+                        key={`active-run-strip-${index}`}
+                        className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                          symbol === "✕"
+                            ? "border-zinc-300 bg-zinc-100 text-zinc-700"
+                            : symbol === "✓"
+                              ? "border-zinc-900 bg-zinc-900 text-white"
+                              : "border-zinc-200 text-zinc-600"
+                        }`}
+                      >
+                        {symbol}
                       </div>
-                      <div className="w-full max-w-sm space-y-4">
-                        <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                          <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                            This run
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {runTrackerSymbols.map((symbol, index) => (
-                              <div
-                                key={`this-run-${index}`}
-                                className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                                  symbol === "✓"
-                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                    : symbol === "✕"
-                                      ? "border-red-200 bg-red-50 text-red-600"
-                                      : "border-zinc-200 text-zinc-600"
-                                }`}
-                              >
-                                {symbol}
-                              </div>
-                            ))}
-                          </div>
-                          {isPro ? (
-                            <div className="mt-3 text-sm font-semibold text-zinc-900">
-                              Current clean streak: {streak} days
-                            </div>
-                          ) : null}
-                          <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
-                            <span>
-                              Status:{" "}
-                              {runActive
-                                ? "Active"
-                                : runComplete
-                                  ? "Complete"
-                                  : runFailed
-                                    ? "Failed"
-                                    : runEnded
-                                      ? "Ended"
-                                      : "Inactive"}
-                            </span>
-                            <span>Best run: {bestRun}</span>
-                            {hasSaved ? <span>Today logged</span> : null}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-                            onClick={handleCheckInClick}
-                            disabled={!runActive}
-                          >
-                            Daily check-in
-                          </button>
-                          {isPro && runActive ? (
-                            <button
-                              type="button"
-                              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                              onClick={() => setShowEndRunConfirm(true)}
-                            >
-                              End run
-                            </button>
-                          ) : null}
-                          {isPro && runActive ? (
-                            <button
-                              type="button"
-                              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                              onClick={handleSwitchProtocol}
-                            >
-                              Switch protocol
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                    {showSwitchConfirm ? (
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                        <span>Switching protocols resets your current run.</span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                            onClick={() => setShowSwitchConfirm(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                            onClick={handleConfirmSwitch}
-                          >
-                            Switch
-                          </button>
-                        </div>
-                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 text-sm text-zinc-600">
+                    Clean days: {successfulDays}/{RUN_LENGTH}
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={handleCheckInClick}
+                      disabled={!runActive}
+                    >
+                      Daily check-in
+                    </button>
+                    {isPro && runActive ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                        onClick={() => setShowEndRunConfirm(true)}
+                      >
+                        End run
+                      </button>
                     ) : null}
-                    {showEndRunConfirm ? (
-                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                        <span>Ending locks this run in history.</span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                            onClick={() => setShowEndRunConfirm(false)}
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                            onClick={handleEndRun}
-                          >
-                            End run
-                          </button>
-                        </div>
-                      </div>
+                    {isPro && runActive ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                        onClick={handleSwitchProtocol}
+                      >
+                        Switch protocol
+                      </button>
                     ) : null}
-                  </section>
-                ) : null}
-
-            <div className="space-y-10">
-              {latestRun && !runActive ? (
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  </div>
+                </>
+              ) : latestRun ? (
+                <>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-lg font-semibold text-zinc-900">
                       Completed run summary
@@ -913,8 +835,67 @@ export default function QuadrantApp({
                   <p className="mt-4 text-sm text-zinc-600">
                     {runSummaryLine}
                   </p>
-                </section>
-              ) : null}
+                </>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="text-lg font-semibold text-zinc-900">
+                      Active run
+                    </h2>
+                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+                      Inactive
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-zinc-600">
+                    Start a protocol to begin a run.
+                  </p>
+                </>
+              )}
+            </section>
+            {showSwitchConfirm ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                <span>Switching protocols resets your current run.</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                    onClick={() => setShowSwitchConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                    onClick={handleConfirmSwitch}
+                  >
+                    Switch
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {showEndRunConfirm ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                <span>Ending locks this run in history.</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                    onClick={() => setShowEndRunConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                    onClick={handleEndRun}
+                  >
+                    End run
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="space-y-10">
               <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-zinc-900">
