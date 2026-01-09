@@ -23,14 +23,14 @@ export default function PricingPage() {
           </button>
         </div>
         <section className="space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          <p className="text-xs font-semibold tracking-wide text-zinc-500">
             Pricing
           </p>
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-            Fix the behaviour that’s costing you money.
+            Fix the behaviour that's costing you money.
           </h1>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-            PRO = ${PRO_PRICE}/month
+          <p className="text-xs font-semibold tracking-wide text-zinc-500">
+            Pro = ${PRO_PRICE}/month
           </p>
           <p className="max-w-2xl text-lg leading-7 text-zinc-600">
             Quadrant helps traders identify recurring behavioural patterns and
