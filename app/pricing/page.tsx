@@ -5,7 +5,7 @@ const PRO_PRICE = 19;
 export default function PricingPage() {
   const handleBack = () => {
     if (typeof window !== "undefined") {
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     }
   };
 
