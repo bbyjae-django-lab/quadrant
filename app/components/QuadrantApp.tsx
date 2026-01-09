@@ -972,7 +972,11 @@ export default function QuadrantApp({
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Pattern insights
                       </h2>
-                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
+                      <span
+                        className={`text-xs font-semibold tracking-wide ${
+                          isPro ? "text-zinc-400" : "text-zinc-500"
+                        }`}
+                      >
                         {isPro ? "Live" : "Locked"}
                       </span>
                     </div>
@@ -992,7 +996,7 @@ export default function QuadrantApp({
                               {insight.title}
                             </div>
                             {!isPro ? (
-                              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
+                              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500">
                                 {lockIcon}
                                 <span>Pro</span>
                               </div>
