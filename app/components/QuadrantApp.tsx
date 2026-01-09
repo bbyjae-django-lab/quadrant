@@ -449,16 +449,6 @@ export default function QuadrantApp({
     router.push("/protocols");
   };
 
-  const handleStartAnotherProtocol = () => {
-    if (!canStartNewRun) {
-      setShowPaywall(true);
-      return;
-    }
-    clearActiveProtocol();
-    setConfirmProtocolId(null);
-    router.push("/protocols");
-  };
-
   const handleSaveCheckIn = () => {
     if (typeof window === "undefined") {
       return;
@@ -501,7 +491,7 @@ export default function QuadrantApp({
       setRunStatus("completed");
       setHasCompletedRun(true);
       appendRunHistory("Completed", updatedCheckIns);
-      setShowRunDetail(true);
+      setShowRunEndedModal(true);
     }
     setHasSaved(true);
     setCheckInNote(noteValue);
@@ -545,7 +535,7 @@ export default function QuadrantApp({
     setRunStatus("ended");
     appendRunHistory("Ended", checkIns);
     setShowEndRunConfirm(false);
-    setShowRunDetail(true);
+    setShowRunEndedModal(true);
   };
 
   const canSaveCheckIn = runActive && checkInFollowed !== null;
@@ -582,6 +572,13 @@ export default function QuadrantApp({
       : runEnded
         ? "Ended"
         : "—";
+  const runEndedMessage = runComplete
+    ? "Five clean days recorded. This run is complete."
+    : runFailed
+      ? "The protocol was violated. This run is complete."
+      : runEnded
+        ? "This run was ended. The record is complete."
+        : "This run is complete.";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
@@ -610,10 +607,8 @@ export default function QuadrantApp({
 
         {view === "dashboard" && (
           <section className="mt-10 space-y-6">
-            {activeProtocol ? (
-              <>
-                <div className="space-y-10">
-                  <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
+            {runActive && activeProtocol ? (
+              <section className="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm md:p-8">
                     <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
                       <div className="space-y-4 md:max-w-xl">
                         <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
@@ -708,22 +703,6 @@ export default function QuadrantApp({
                         </div>
                       </div>
                     </div>
-                    {!freeRunComplete && runComplete ? (
-                      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                        <span className="text-sm font-semibold text-zinc-700">
-                          Run complete
-                        </span>
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                            onClick={handleStartAnotherProtocol}
-                          >
-                            Start another protocol
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
                     {showSwitchConfirm ? (
                       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
                         <span>Switching protocols resets your current run.</span>
@@ -767,8 +746,10 @@ export default function QuadrantApp({
                       </div>
                     ) : null}
                   </section>
+                ) : null}
 
-                  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <div className="space-y-10">
+              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                     <div className="flex items-center justify-between">
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Run history
@@ -967,9 +948,7 @@ export default function QuadrantApp({
                       })}
                     </div>
                   </section>
-                </div>
-              </>
-            ) : null}
+            </div>
           </section>
         )}
 
@@ -1251,7 +1230,7 @@ export default function QuadrantApp({
           </div>
         </div>
       ) : null}
-      {showRunEndedModal && activeProtocol ? (
+      {showRunEndedModal && activeProtocol && view === "dashboard" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-3">
@@ -1259,7 +1238,7 @@ export default function QuadrantApp({
                 Run ended.
               </h2>
               <p className="text-sm text-zinc-600">
-                The protocol was violated. This run is complete.
+                {runEndedMessage}
               </p>
             </div>
             <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-5">
