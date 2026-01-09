@@ -71,6 +71,22 @@ const buildRunTracker = (
   });
 };
 
+const buildHistoryStrip = (
+  cleanDays: number,
+  result: "Completed" | "Failed" | "Ended",
+  length: number,
+) => {
+  const symbols = Array.from({ length }, () => "—");
+  const filled = Math.min(cleanDays, length);
+  for (let i = 0; i < filled; i += 1) {
+    symbols[i] = "✓";
+  }
+  if (result === "Failed" && cleanDays < length) {
+    symbols[cleanDays] = "✕";
+  }
+  return symbols;
+};
+
 const computeCurrentRun = (
   checkIns: Record<string, { followed: boolean; note?: string }>,
   todayKey: string,
@@ -543,6 +559,7 @@ export default function QuadrantApp({
     protocol: entry.protocolName,
     result: entry.result,
     days: entry.cleanDays,
+    strip: buildHistoryStrip(entry.cleanDays, entry.result, RUN_LENGTH),
   }));
   const visibleRunHistoryRows = isPro
     ? runHistoryRows
@@ -636,28 +653,29 @@ export default function QuadrantApp({
                       </div>
                       <div className="w-full max-w-sm space-y-4">
                         <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                          <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                            This run
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {runTrackerSymbols.map((symbol, index) => (
+                              <div
+                                key={`this-run-${index}`}
+                                className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
+                                  symbol === "✕"
+                                    ? "border-red-200 bg-red-50 text-red-600"
+                                    : symbol === "✓"
+                                      ? "border-zinc-900 bg-zinc-900 text-white"
+                                      : "border-zinc-200 text-zinc-600"
+                                }`}
+                              >
+                                {symbol}
+                              </div>
+                            ))}
+                          </div>
                           {isPro ? (
-                            <>
-                              <div className="text-sm font-semibold text-zinc-900">
-                                Current clean streak: {streak} days
-                              </div>
-                              <div className="mt-3 flex flex-wrap gap-2">
-                                {recentCheckInSymbols.map((symbol, index) => (
-                                  <div
-                                    key={`recent-checkin-${index}`}
-                                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                                      symbol === "✕"
-                                        ? "border-red-200 bg-red-50 text-red-600"
-                                        : symbol === "✓"
-                                          ? "border-zinc-900 bg-zinc-900 text-white"
-                                          : "border-zinc-200 text-zinc-600"
-                                    }`}
-                                  >
-                                    {symbol}
-                                  </div>
-                                ))}
-                              </div>
-                            </>
+                            <div className="mt-3 text-sm font-semibold text-zinc-900">
+                              Current clean streak: {streak} days
+                            </div>
                           ) : null}
                           <div className="mt-3 flex flex-wrap gap-3 text-xs text-zinc-500">
                             <span>
@@ -768,6 +786,7 @@ export default function QuadrantApp({
                             <tr>
                               <th className="px-4 py-3">Protocol</th>
                               <th className="px-4 py-3">Result</th>
+                              <th className="px-4 py-3">This run</th>
                               <th className="px-4 py-3">Days</th>
                             </tr>
                           </thead>
@@ -779,6 +798,24 @@ export default function QuadrantApp({
                                 </td>
                                 <td className="px-4 py-3 text-zinc-600">
                                   {row.result}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex flex-wrap gap-2">
+                                    {row.strip.map((symbol, index) => (
+                                      <div
+                                        key={`history-strip-${row.protocol}-${index}`}
+                                        className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs font-semibold ${
+                                          symbol === "✕"
+                                            ? "border-red-200 bg-red-50 text-red-600"
+                                            : symbol === "✓"
+                                              ? "border-zinc-900 bg-zinc-900 text-white"
+                                              : "border-zinc-200 text-zinc-600"
+                                        }`}
+                                      >
+                                        {symbol}
+                                      </div>
+                                    ))}
+                                  </div>
                                 </td>
                                 <td className="px-4 py-3 text-zinc-600">
                                   {row.days}
@@ -1243,16 +1280,19 @@ export default function QuadrantApp({
               <div className="mt-4 text-sm font-semibold text-zinc-700">
                 Clean days: {successfulDays}/{RUN_LENGTH}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-500">
+                This run
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
                 {runTrackerSymbols.map((symbol, index) => (
                   <div
                     key={`run-ended-symbol-${index}`}
                     className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
                       symbol === "✓"
                         ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : symbol === "✕"
-                          ? "border-red-200 bg-red-50 text-red-600"
-                          : "border-zinc-200 text-zinc-600"
+                      : symbol === "✕"
+                        ? "border-red-200 bg-red-50 text-red-600"
+                      : "border-zinc-200 text-zinc-600"
                     }`}
                   >
                     {symbol}
