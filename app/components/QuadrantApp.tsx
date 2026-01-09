@@ -1084,31 +1084,56 @@ export default function QuadrantApp({
                               <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
                                 <div className="border-l border-zinc-200 pl-4">
                                   <dl className="space-y-4 text-sm text-zinc-700">
-                                  <div>
-                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                      Rule
-                                    </dt>
-                                    <dd className="mt-1">
-                                      {protocol.rule}
-                                    </dd>
+                                    <div>
+                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
+                                        Behaviour removed
+                                      </dt>
+                                      <dd className="mt-1">
+                                        {protocol.commonBehaviourRemoved}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
+                                        Rule
+                                      </dt>
+                                      <dd className="mt-1">{protocol.rule}</dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
+                                        Duration
+                                      </dt>
+                                      <dd className="mt-1">
+                                        {protocol.duration}
+                                      </dd>
+                                    </div>
+                                    <div>
+                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
+                                        Failure condition
+                                      </dt>
+                                      <dd className="mt-1">
+                                        {protocol.failure}
+                                      </dd>
+                                    </div>
+                                  </dl>
+                                  <div className="pt-4">
+                                    <button
+                                      type="button"
+                                      className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                                      onClick={() => {
+                                        if (freeRunComplete) {
+                                          if (typeof window !== "undefined") {
+                                            window.location.href = "/pricing";
+                                          }
+                                          return;
+                                        }
+                                        setConfirmProtocolId(protocol.id);
+                                      }}
+                                    >
+                                      {freeRunComplete
+                                        ? "Upgrade to activate"
+                                        : "Activate protocol"}
+                                    </button>
                                   </div>
-                                  <div>
-                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                      Duration
-                                    </dt>
-                                    <dd className="mt-1">
-                                      {protocol.duration}
-                                    </dd>
-                                  </div>
-                                  <div>
-                                    <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                      Failure condition
-                                    </dt>
-                                    <dd className="mt-1">
-                                      {protocol.failure}
-                                    </dd>
-                                  </div>
-                                </dl>
                                 </div>
                               </div>
                             ) : null}
