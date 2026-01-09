@@ -156,7 +156,10 @@ const getDateOffset = (dateKey: string, offset: number) => {
 const buildRunTracker = (
   startDate: string | null,
   length: number,
-  checkIns: Record<string, { followed: boolean; note?: string }>,
+  checkIns: Record<
+    string,
+    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+  >,
 ) => {
   if (!startDate) {
     return Array.from({ length }, () => "▢");
@@ -188,7 +191,10 @@ const buildHistoryStrip = (
 };
 
 const computeCurrentRun = (
-  checkIns: Record<string, { followed: boolean; note?: string }>,
+  checkIns: Record<
+    string,
+    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+  >,
   todayKey: string,
 ) => {
   if (!checkIns[todayKey]?.followed) {
@@ -204,7 +210,10 @@ const computeCurrentRun = (
 };
 
 const computeBestRun = (
-  checkIns: Record<string, { followed: boolean; note?: string }>,
+  checkIns: Record<
+    string,
+    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+  >,
 ) => {
   const keys = Object.keys(checkIns).sort();
   let best = 0;
@@ -251,11 +260,16 @@ export default function QuadrantApp({
   const [runStartDate, setRunStartDate] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
   const [checkIns, setCheckIns] = useState<
-    Record<string, { followed: boolean; note?: string }>
+    Record<
+      string,
+      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+    >
   >({});
   const [observedBehaviourIds, setObservedBehaviourIds] = useState<string[]>(
     [],
   );
+  const [observedBehaviourLogSelection, setObservedBehaviourLogSelection] =
+    useState<string[]>([]);
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [isPro, setIsPro] = useState(false);
@@ -338,10 +352,10 @@ export default function QuadrantApp({
     }
     if (storedCheckIns) {
       try {
-        const parsedCheckIns = JSON.parse(storedCheckIns) as Record<
-          string,
-          { followed: boolean; note?: string }
-        >;
+    const parsedCheckIns = JSON.parse(storedCheckIns) as Record<
+      string,
+      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+    >;
         setCheckIns(parsedCheckIns);
       } catch {
         setCheckIns({});
@@ -403,9 +417,13 @@ export default function QuadrantApp({
     if (todayEntry) {
       setCheckInFollowed(todayEntry.followed);
       setCheckInNote(todayEntry.note ?? "");
+      setObservedBehaviourLogSelection(
+        clampObservedBehaviours(todayEntry.observedBehaviourIds),
+      );
     } else {
       setCheckInFollowed(null);
       setCheckInNote("");
+      setObservedBehaviourLogSelection([]);
     }
   }, [showCheckInModal, checkIns]);
 
@@ -540,7 +558,10 @@ export default function QuadrantApp({
 
   const appendRunHistory = (
     result: "Completed" | "Failed" | "Ended",
-    snapshot: Record<string, { followed: boolean; note?: string }>,
+    snapshot: Record<
+      string,
+      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+    >,
   ) => {
     if (!activeProtocolId || !activeProtocol) {
       return;
@@ -626,7 +647,10 @@ export default function QuadrantApp({
   };
 
   const persistCheckIns = (
-    nextCheckIns: Record<string, { followed: boolean; note?: string }>,
+    nextCheckIns: Record<
+      string,
+      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+    >,
   ) => {
     setCheckIns(nextCheckIns);
   };
@@ -645,6 +669,10 @@ export default function QuadrantApp({
       [dateStamp]: {
         followed,
         note: noteValue || undefined,
+        observedBehaviourIds:
+          followed && isPro
+            ? clampObservedBehaviours(observedBehaviourLogSelection)
+            : undefined,
       },
     };
     persistCheckIns(updatedCheckIns);
@@ -706,6 +734,10 @@ export default function QuadrantApp({
     }
     setShowCheckInModal(true);
   };
+
+  const availableObservedBehaviours = observedBehaviours.filter((behaviour) =>
+    observedBehaviourIds.includes(behaviour.id),
+  );
 
   const handleEndRun = () => {
     if (!isPro || !runActive) {
@@ -1341,11 +1373,19 @@ export default function QuadrantApp({
                   className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
                   onClick={() => {
                     setCheckInFollowed(true);
-                    handleSaveCheckIn(true);
                   }}
                 >
                   No — clean day
                 </button>
+                {checkInFollowed === true ? (
+                  <button
+                    type="button"
+                    className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                    onClick={() => handleSaveCheckIn(true)}
+                  >
+                    Save check-in
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
@@ -1357,6 +1397,57 @@ export default function QuadrantApp({
                   Yes — violated
                 </button>
               </div>
+              {isPro &&
+              checkInFollowed === true &&
+              availableObservedBehaviours.length > 0 ? (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div className="text-sm font-semibold text-zinc-900">
+                    Did any of these occur today?
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Optional — tracked for insight only
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {availableObservedBehaviours.map((behaviour) => {
+                      const isChecked =
+                        observedBehaviourLogSelection.includes(behaviour.id);
+                      return (
+                        <label
+                          key={behaviour.id}
+                          className="flex items-start gap-3 text-sm text-zinc-700"
+                        >
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setObservedBehaviourLogSelection((prev) =>
+                                  prev.filter((id) => id !== behaviour.id),
+                                );
+                                return;
+                              }
+                              if (
+                                observedBehaviourLogSelection.length >=
+                                MAX_OBSERVED_BEHAVIOURS
+                              ) {
+                                return;
+                              }
+                              setObservedBehaviourLogSelection((prev) => [
+                                ...prev,
+                                behaviour.id,
+                              ]);
+                            }}
+                          />
+                          <span className="font-semibold text-zinc-900">
+                            {behaviour.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
