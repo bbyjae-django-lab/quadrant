@@ -1775,7 +1775,7 @@ export default function QuadrantApp({
                     Behaviour removed: {selectedProtocol.commonBehaviourRemoved}
                   </div>
                 ) : null}
-                <div className="text-sm font-semibold text-zinc-900 whitespace-normal break-words">
+                <div className="text-base font-semibold text-zinc-900 whitespace-normal break-words">
                   Rule: {selectedProtocol.rule}
                 </div>
                 <div className="whitespace-normal break-words">
