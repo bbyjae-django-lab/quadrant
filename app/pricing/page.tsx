@@ -1,11 +1,19 @@
 "use client";
 
+import { useState } from "react";
+
 const PRO_PRICE = 19;
 
 export default function PricingPage() {
+  const [upgradeNotice, setUpgradeNotice] = useState("");
+  const hasProEntitlement = false;
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
-      window.location.href = "/pricing";
+      if (hasProEntitlement) {
+        window.location.href = "/dashboard";
+        return;
+      }
+      setUpgradeNotice("Upgrade pending. Subscription not yet provisioned.");
     }
   };
 
@@ -65,6 +73,11 @@ export default function PricingPage() {
             >
               Upgrade to Pro
             </button>
+            {upgradeNotice ? (
+              <p className="mt-3 text-xs font-semibold text-zinc-300">
+                {upgradeNotice}
+              </p>
+            ) : null}
           </div>
         </section>
 
@@ -75,11 +88,7 @@ export default function PricingPage() {
           <button
             type="button"
             className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.location.href = "/dashboard";
-              }
-            }}
+            onClick={handleUpgrade}
           >
             Start with one problem
           </button>
