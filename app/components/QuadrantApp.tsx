@@ -116,6 +116,80 @@ const getRuleSummary = (rule: string) => {
   return summary;
 };
 
+const getDashboardViewModel = ({
+  isPro,
+  runStatus,
+  activeProtocol,
+  runHistory,
+  hasCompletedRun,
+  runHistoryRows,
+  visibleRunHistoryRows,
+  runHistoryCount,
+}: {
+  isPro: boolean;
+  runStatus: "idle" | "active" | "failed" | "completed" | "ended";
+  activeProtocol: typeof protocols[number] | null;
+  runHistory: Array<{
+    id: string;
+    protocolId: string;
+    protocolName: string;
+    startedAt: string | null;
+    endedAt: string;
+    result: "Completed" | "Failed" | "Ended";
+    cleanDays: number;
+    observedBehaviourIds?: string[];
+    observedBehaviourLogCounts?: Record<string, number>;
+    notes?: Array<{ date: string; note: string }>;
+  }>;
+  hasCompletedRun: boolean;
+  runHistoryRows: Array<{
+    id: string;
+    protocol: string;
+    result: "Completed" | "Failed" | "Ended";
+    days: number;
+    strip: string[];
+  }>;
+  visibleRunHistoryRows: Array<{
+    id: string;
+    protocol: string;
+    result: "Completed" | "Failed" | "Ended";
+    days: number;
+    strip: string[];
+  }>;
+  runHistoryCount: number;
+}) => {
+  const runActive = runStatus === "active";
+  const latestRun = runHistory[0] ?? null;
+  const showFreeRunComplete = !isPro && hasCompletedRun && !runActive;
+  const activeRunState =
+    runActive && activeProtocol
+      ? "active"
+      : latestRun
+        ? "summary"
+        : "inactive";
+
+  return {
+    activeRunState,
+    latestRun,
+    showFreeRunComplete,
+    runHistory: {
+      rows: runHistoryRows,
+      visibleRows: visibleRunHistoryRows,
+      count: runHistoryCount,
+      layout: isPro ? "table" : "list",
+      collapsible: true,
+      defaults: {
+        collapsed: true,
+      },
+    },
+    defaults: {
+      runHistoryCollapsed: runHistoryCount === 0,
+      patternInsightsCollapsed: true,
+      protocolLibraryCollapsed: true,
+    },
+  };
+};
+
 const getObservedBehaviourLogCounts = (
   snapshot: Record<
     string,
@@ -383,11 +457,15 @@ export default function QuadrantApp({
   const [runEndContext, setRunEndContext] = useState<RunEndContext | null>(
     null,
   );
-  const [isRunHistoryCollapsed, setIsRunHistoryCollapsed] = useState(true);
-  const [isPatternInsightsCollapsed, setIsPatternInsightsCollapsed] =
-    useState(true);
-  const [isProtocolLibraryCollapsed, setIsProtocolLibraryCollapsed] =
-    useState(true);
+  const [isRunHistoryCollapsed, setIsRunHistoryCollapsed] = useState<
+    boolean | null
+  >(null);
+  const [isPatternInsightsCollapsed, setIsPatternInsightsCollapsed] = useState<
+    boolean | null
+  >(null);
+  const [isProtocolLibraryCollapsed, setIsProtocolLibraryCollapsed] = useState<
+    boolean | null
+  >(null);
   const [showObservedBehaviourPicker, setShowObservedBehaviourPicker] =
     useState(false);
   const [observedBehaviourSelection, setObservedBehaviourSelection] = useState<
@@ -878,6 +956,24 @@ export default function QuadrantApp({
   const runHistoryCount = isPro
     ? runHistoryRows.length
     : visibleRunHistoryRows.length;
+  const dashboardViewModel = getDashboardViewModel({
+    isPro,
+    runStatus,
+    activeProtocol,
+    runHistory,
+    hasCompletedRun,
+    runHistoryRows,
+    visibleRunHistoryRows,
+    runHistoryCount,
+  });
+  const isRunHistoryCollapsedResolved =
+    isRunHistoryCollapsed ?? dashboardViewModel.defaults.runHistoryCollapsed;
+  const isPatternInsightsCollapsedResolved =
+    isPatternInsightsCollapsed ??
+    dashboardViewModel.defaults.patternInsightsCollapsed;
+  const isProtocolLibraryCollapsedResolved =
+    isProtocolLibraryCollapsed ??
+    dashboardViewModel.defaults.protocolLibraryCollapsed;
   const observedBehaviourLabelById = Object.fromEntries(
     observedBehaviours.map((behaviour) => [behaviour.id, behaviour.label]),
   );
@@ -1013,7 +1109,6 @@ export default function QuadrantApp({
       className: "md:col-span-2",
     },
   ];
-  const latestRun = runHistory[0] ?? null;
   const runSummaryLine = RUN_END_INSIGHT_LINE;
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
@@ -1065,7 +1160,8 @@ export default function QuadrantApp({
         {view === "dashboard" && (
           <section className="mt-10 space-y-6">
             <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              {runActive && activeProtocol ? (
+              {dashboardViewModel.activeRunState === "active" &&
+              activeProtocol ? (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-lg font-semibold text-zinc-900">
@@ -1150,8 +1246,8 @@ export default function QuadrantApp({
                           Switch
                         </button>
                       </div>
-                    </div>
-                  ) : null}
+                      </div>
+                    ) : null}
                   {showEndRunConfirm ? (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
                       <span>Ending locks this run in history.</span>
@@ -1174,31 +1270,32 @@ export default function QuadrantApp({
                     </div>
                   ) : null}
                 </>
-              ) : latestRun ? (
+              ) : dashboardViewModel.activeRunState === "summary" &&
+                dashboardViewModel.latestRun ? (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h2 className="text-lg font-semibold text-zinc-900">
                       Completed run summary
                     </h2>
                     <span className="text-xs font-semibold tracking-wide text-zinc-500">
-                      {latestRun.result}
+                      {dashboardViewModel.latestRun.result}
                     </span>
                   </div>
                   <div className="mt-4 space-y-3">
                     <div className="text-sm font-semibold text-zinc-900">
-                      {latestRun.protocolName}
+                      {dashboardViewModel.latestRun.protocolName}
                     </div>
                     <div className="text-xs font-semibold tracking-wide text-zinc-500">
                       This run
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {buildHistoryStrip(
-                        latestRun.cleanDays,
-                        latestRun.result,
+                        dashboardViewModel.latestRun.cleanDays,
+                        dashboardViewModel.latestRun.result,
                         RUN_LENGTH,
                       ).map((symbol, index) => (
                         <div
-                          key={`summary-strip-${latestRun.id}-${index}`}
+                          key={`summary-strip-${dashboardViewModel.latestRun.id}-${index}`}
                           className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
                             symbol === "✕"
                               ? "border-zinc-300 bg-zinc-100 text-zinc-700"
@@ -1212,13 +1309,14 @@ export default function QuadrantApp({
                       ))}
                     </div>
                     <div className="text-sm text-zinc-600">
-                      Clean days: {latestRun.cleanDays}/{RUN_LENGTH}
+                      Clean days: {dashboardViewModel.latestRun.cleanDays}/
+                      {RUN_LENGTH}
                     </div>
                   </div>
                   <p className="mt-4 text-sm text-zinc-600">
                     {runSummaryLine}
                   </p>
-                  {freeRunComplete ? (
+                  {dashboardViewModel.showFreeRunComplete ? (
                     <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-900">
                       <div className="space-y-2">
                         <div className="text-sm font-semibold">
@@ -1267,24 +1365,30 @@ export default function QuadrantApp({
                   type="button"
                   className="flex w-full items-center justify-between text-left"
                   onClick={() =>
-                    setIsRunHistoryCollapsed((collapsed) => !collapsed)
+                    setIsRunHistoryCollapsed(
+                      (collapsed) =>
+                        !(
+                          collapsed ??
+                          dashboardViewModel.defaults.runHistoryCollapsed
+                        ),
+                    )
                   }
                 >
                   <h2 className="text-lg font-semibold text-zinc-900">
-                    Run history ({runHistoryCount})
+                    Run history ({dashboardViewModel.runHistory.count})
                   </h2>
                   <span className="text-sm text-zinc-500">
-                    {isRunHistoryCollapsed ? ">" : "v"}
+                    {isRunHistoryCollapsedResolved ? ">" : "v"}
                   </span>
                 </button>
-                {!isRunHistoryCollapsed ? (
+                {!isRunHistoryCollapsedResolved ? (
                   <>
                     <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
                       Recent
                     </div>
                     <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
-                      {visibleRunHistoryRows.length > 0 ? (
-                        isPro ? (
+                      {dashboardViewModel.runHistory.visibleRows.length > 0 ? (
+                        dashboardViewModel.runHistory.layout === "table" ? (
                           <table className="w-full text-left text-sm">
                             <thead className="bg-zinc-50 text-xs font-semibold tracking-wide text-zinc-500">
                               <tr>
@@ -1295,7 +1399,8 @@ export default function QuadrantApp({
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
-                              {visibleRunHistoryRows.map((row) => (
+                              {dashboardViewModel.runHistory.visibleRows.map(
+                                (row) => (
                                 <tr key={row.id}>
                                   <td className="px-4 py-3 text-zinc-900">
                                     <button
@@ -1339,7 +1444,8 @@ export default function QuadrantApp({
                           </table>
                         ) : (
                           <div className="divide-y divide-zinc-100 text-sm text-zinc-700">
-                            {visibleRunHistoryRows.map((row) => {
+                            {dashboardViewModel.runHistory.visibleRows.map(
+                              (row) => {
                               const dayNumber =
                                 row.result === "Failed"
                                   ? Math.max(row.days + 1, 1)
@@ -1375,17 +1481,23 @@ export default function QuadrantApp({
                   type="button"
                   className="flex w-full items-center justify-between text-left"
                   onClick={() =>
-                    setIsPatternInsightsCollapsed((collapsed) => !collapsed)
+                    setIsPatternInsightsCollapsed(
+                      (collapsed) =>
+                        !(
+                          collapsed ??
+                          dashboardViewModel.defaults.patternInsightsCollapsed
+                        ),
+                    )
                   }
                 >
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Pattern insights (Pro)
                   </h2>
                   <span className="text-sm text-zinc-500">
-                    {isPatternInsightsCollapsed ? ">" : "v"}
+                    {isPatternInsightsCollapsedResolved ? ">" : "v"}
                   </span>
                 </button>
-                {!isPatternInsightsCollapsed ? (
+                {!isPatternInsightsCollapsedResolved ? (
                   <>
                     <p className="mt-1 text-xs text-zinc-500">
                       Patterns emerge after repeated runs.
@@ -1443,17 +1555,23 @@ export default function QuadrantApp({
                   type="button"
                   className="flex w-full items-center justify-between text-left"
                   onClick={() =>
-                    setIsProtocolLibraryCollapsed((collapsed) => !collapsed)
+                    setIsProtocolLibraryCollapsed(
+                      (collapsed) =>
+                        !(
+                          collapsed ??
+                          dashboardViewModel.defaults.protocolLibraryCollapsed
+                        ),
+                    )
                   }
                 >
                   <h2 className="text-lg font-semibold text-zinc-900">
                     Protocol library
                   </h2>
                   <span className="text-sm text-zinc-500">
-                    {isProtocolLibraryCollapsed ? ">" : "v"}
+                    {isProtocolLibraryCollapsedResolved ? ">" : "v"}
                   </span>
                 </button>
-                {!isProtocolLibraryCollapsed ? (
+                {!isProtocolLibraryCollapsedResolved ? (
                   <>
                     <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
                       Read-only
