@@ -60,13 +60,12 @@ export default function PricingPage() {
               <p className="text-sm text-zinc-300">${PRO_PRICE}/month</p>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-100">
-              <li>Full protocol library</li>
-              <li>Run and streak tracking</li>
-              <li>Search-based problem matching</li>
-              <li>Future: multiple protocols, insights</li>
+              <li>See what breaks first.</li>
+              <li>Track it over time.</li>
+              <li>Stop repeating it.</li>
             </ul>
             <p className="mt-4 text-xs text-zinc-300">
-              Upgrades save your runs across devices.
+              Accelerate the feedback loop on your behavior.
             </p>
             <button
               type="button"

@@ -1420,8 +1420,8 @@ export default function QuadrantApp({
                           Free run complete.
                         </div>
                         <p className="text-sm text-zinc-600">
-                          Run history, cross-device persistence, and multiple
-                          runs require Pro.
+                          See what breaks first. Track it over time. Stop
+                          repeating it with Pro.
                         </p>
                       </div>
                       <div className="mt-4">
