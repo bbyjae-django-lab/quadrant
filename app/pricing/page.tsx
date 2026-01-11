@@ -9,24 +9,11 @@ export default function PricingPage() {
     }
   };
 
-  const handleBack = () => {
-    if (typeof window !== "undefined") {
-      window.location.href = "/dashboard";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-12">
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>Pricing</span>
-          <button
-            type="button"
-            className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
-            onClick={handleBack}
-          >
-            Back to dashboard
-          </button>
         </div>
         <section className="space-y-4">
           <p className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -88,7 +75,11 @@ export default function PricingPage() {
           <button
             type="button"
             className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-            onClick={handleBack}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.location.href = "/dashboard";
+              }
+            }}
           >
             Start with one problem
           </button>
