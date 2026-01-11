@@ -141,7 +141,7 @@ const RunHistorySection = ({
                   <button
                     key={row.id}
                     type="button"
-                    className="w-full px-5 py-3.5 text-left hover:bg-zinc-50"
+                    className="w-full cursor-pointer px-5 py-3.5 text-left hover:bg-zinc-50"
                     onClick={() => onRowClick(row.id)}
                   >
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
