@@ -160,7 +160,7 @@ const getDashboardViewModel = ({
 }) => {
   const runActive = runStatus === "active";
   const latestRun = runHistory[0] ?? null;
-  const showFreeRunComplete = !isPro && hasCompletedRun && !runActive;
+  const showFreeRunComplete = !isPro && hasCompletedRun;
   const activeRunState =
     runActive && activeProtocol
       ? "active"
@@ -692,7 +692,8 @@ export default function QuadrantApp({
   const runFailed = runStatus === "failed";
   const runEnded = runStatus === "ended";
   const canStartNewRun = isPro || !hasCompletedRun;
-  const freeRunComplete = !isPro && hasCompletedRun && !runActive;
+  const freeRunCompleted = hasCompletedRun;
+  const freeRunComplete = !isPro && freeRunCompleted;
 
   useEffect(() => {
     if (!isDashboardRoute || !runActive) {
