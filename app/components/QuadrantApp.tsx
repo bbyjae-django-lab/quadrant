@@ -126,12 +126,12 @@ const RunHistorySection = ({
     </button>
     {!collapsed ? (
       <>
-        <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
+        <div className="mt-1 text-[11px] font-semibold tracking-wide text-zinc-400">
           Recent
         </div>
         <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
           {rows.length > 0 ? (
-            <div className="divide-y divide-zinc-100 text-sm text-zinc-700">
+            <div className="divide-y divide-zinc-100 text-sm text-zinc-600">
               {rows.map((row) => {
                 const dayNumber =
                   row.result === "Failed"
@@ -141,10 +141,20 @@ const RunHistorySection = ({
                   <button
                     key={row.id}
                     type="button"
-                    className="w-full px-4 py-3 text-left hover:bg-zinc-50"
+                    className="w-full px-5 py-3.5 text-left hover:bg-zinc-50"
                     onClick={() => onRowClick(row.id)}
                   >
-                    {row.protocol} — {row.result} — Day {dayNumber}
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className="font-semibold text-zinc-900">
+                        {row.protocol}
+                      </span>
+                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
+                        {row.result}
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-400">
+                        Day {dayNumber}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
