@@ -93,6 +93,73 @@ const InsightCard = ({
   </div>
 );
 
+type RunHistorySectionProps = {
+  collapsed: boolean;
+  count: number;
+  rows: Array<{
+    id: string;
+    protocol: string;
+    result: "Completed" | "Failed" | "Ended";
+    days: number;
+  }>;
+  onToggle: () => void;
+  onRowClick: (rowId: string) => void;
+};
+
+const RunHistorySection = ({
+  collapsed,
+  count,
+  rows,
+  onToggle,
+  onRowClick,
+}: RunHistorySectionProps) => (
+  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <button
+      type="button"
+      className="flex w-full items-center justify-between text-left"
+      onClick={onToggle}
+    >
+      <h2 className="text-lg font-semibold text-zinc-900">
+        Run history ({count})
+      </h2>
+      <span className="text-sm text-zinc-500">{collapsed ? ">" : "v"}</span>
+    </button>
+    {!collapsed ? (
+      <>
+        <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
+          Recent
+        </div>
+        <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
+          {rows.length > 0 ? (
+            <div className="divide-y divide-zinc-100 text-sm text-zinc-700">
+              {rows.map((row) => {
+                const dayNumber =
+                  row.result === "Failed"
+                    ? Math.max(row.days + 1, 1)
+                    : Math.max(row.days, 1);
+                return (
+                  <button
+                    key={row.id}
+                    type="button"
+                    className="w-full px-4 py-3 text-left hover:bg-zinc-50"
+                    onClick={() => onRowClick(row.id)}
+                  >
+                    {row.protocol} — {row.result} — Day {dayNumber}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="px-4 py-6 text-sm text-zinc-500">
+              No runs recorded yet.
+            </div>
+          )}
+        </div>
+      </>
+    ) : null}
+  </section>
+);
+
 const clampObservedBehaviours = (ids: string[] | null | undefined) => {
   if (!ids || !Array.isArray(ids)) {
     return [];
@@ -176,7 +243,6 @@ const getDashboardViewModel = ({
       rows: runHistoryRows,
       visibleRows: visibleRunHistoryRows,
       count: runHistoryCount,
-      layout: isPro ? "table" : "list",
       collapsible: true,
       defaults: {
         collapsed: true,
@@ -1357,121 +1423,24 @@ export default function QuadrantApp({
               )}
             </section>
             <div className="space-y-10">
-              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left"
-                  onClick={() =>
-                    setIsRunHistoryCollapsed(
-                      (collapsed) =>
-                        !(
-                          collapsed ??
-                          dashboardViewModel.defaults.runHistoryCollapsed
-                        ),
-                    )
-                  }
-                >
-                  <h2 className="text-lg font-semibold text-zinc-900">
-                    Run history ({dashboardViewModel.runHistory.count})
-                  </h2>
-                  <span className="text-sm text-zinc-500">
-                    {isRunHistoryCollapsedResolved ? ">" : "v"}
-                  </span>
-                </button>
-                {!isRunHistoryCollapsedResolved ? (
-                  <>
-                    <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
-                      Recent
-                    </div>
-                    <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
-                      {dashboardViewModel.runHistory.visibleRows.length > 0 ? (
-                        dashboardViewModel.runHistory.layout === "table" ? (
-                          <table className="w-full text-left text-sm">
-                            <thead className="bg-zinc-50 text-xs font-semibold tracking-wide text-zinc-500">
-                              <tr>
-                                <th className="px-4 py-3">Protocol</th>
-                                <th className="px-4 py-3">Result</th>
-                                <th className="px-4 py-3">This run</th>
-                                <th className="px-4 py-3">Days</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-zinc-100">
-                              {dashboardViewModel.runHistory.visibleRows.map(
-                                (row) => (
-                                <tr key={row.id}>
-                                  <td className="px-4 py-3 text-zinc-900">
-                                    <button
-                                      type="button"
-                                      className="text-left text-sm font-semibold text-zinc-900 hover:text-zinc-700"
-                                      onClick={() => {
-                                        setSelectedRunId(row.id);
-                                        setShowRunDetail(true);
-                                      }}
-                                    >
-                                      {row.protocol}
-                                    </button>
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-600">
-                                    {row.result}
-                                  </td>
-                                  <td className="px-4 py-3">
-                                    <div className="flex flex-wrap gap-2">
-                                      {row.strip.map((symbol, index) => (
-                                        <div
-                                          key={`history-strip-${row.id}-${index}`}
-                                          className={`flex h-7 w-7 items-center justify-center rounded-md border text-xs font-semibold ${
-                                            symbol === "✕"
-                                              ? "border-red-200 bg-red-50 text-red-600"
-                                              : symbol === "✓"
-                                                ? "border-zinc-900 bg-zinc-900 text-white"
-                                                : "border-zinc-200 text-zinc-600"
-                                          }`}
-                                        >
-                                          {symbol}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </td>
-                                  <td className="px-4 py-3 text-zinc-600">
-                                    {row.days}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        ) : (
-                          <div className="divide-y divide-zinc-100 text-sm text-zinc-700">
-                            {dashboardViewModel.runHistory.visibleRows.map(
-                              (row) => {
-                              const dayNumber =
-                                row.result === "Failed"
-                                  ? Math.max(row.days + 1, 1)
-                                  : Math.max(row.days, 1);
-                              return (
-                                <button
-                                  key={row.id}
-                                  type="button"
-                                  className="w-full px-4 py-3 text-left hover:bg-zinc-50"
-                                  onClick={() => {
-                                    setSelectedRunId(row.id);
-                                    setShowRunDetail(true);
-                                  }}
-                                >
-                                  {row.protocol} — {row.result} — Day {dayNumber}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )
-                      ) : (
-                        <div className="px-4 py-6 text-sm text-zinc-500">
-                          No runs recorded yet.
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : null}
-              </section>
+              <RunHistorySection
+                collapsed={isRunHistoryCollapsedResolved}
+                count={dashboardViewModel.runHistory.count}
+                rows={dashboardViewModel.runHistory.visibleRows}
+                onToggle={() =>
+                  setIsRunHistoryCollapsed(
+                    (collapsed) =>
+                      !(
+                        collapsed ??
+                        dashboardViewModel.defaults.runHistoryCollapsed
+                      ),
+                  )
+                }
+                onRowClick={(rowId) => {
+                  setSelectedRunId(rowId);
+                  setShowRunDetail(true);
+                }}
+              />
 
               <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
                 <button
