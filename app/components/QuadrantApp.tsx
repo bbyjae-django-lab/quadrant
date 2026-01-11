@@ -1023,15 +1023,6 @@ export default function QuadrantApp({
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "protocols" ? "Protocol library" : "Dashboard"}</span>
           <div className="flex items-center gap-3">
-            {view === "protocols" ? (
-              <button
-                type="button"
-                className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
-                onClick={() => router.push("/dashboard")}
-              >
-                Back to dashboard
-              </button>
-            ) : null}
             <button
               type="button"
               className="text-xs font-semibold text-zinc-400 hover:text-zinc-500"
@@ -2047,6 +2038,5 @@ export default function QuadrantApp({
     </div>
   );
 }
-
 
 
