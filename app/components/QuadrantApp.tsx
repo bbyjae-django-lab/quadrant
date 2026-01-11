@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
@@ -347,6 +347,9 @@ export default function QuadrantApp({
   view: "dashboard" | "protocols";
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isDashboardRoute =
+    pathname === "/dashboard" || pathname?.startsWith("/dashboard/");
   const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
     null,
   );
@@ -617,6 +620,12 @@ export default function QuadrantApp({
   const runEnded = runStatus === "ended";
   const canStartNewRun = isPro || !hasCompletedRun;
   const freeRunComplete = !isPro && hasCompletedRun && !runActive;
+
+  useEffect(() => {
+    if (!isDashboardRoute || !runActive) {
+      setShowRunMenu(false);
+    }
+  }, [isDashboardRoute, runActive]);
   const protocolOrder = [
     "post-entry-information-restriction",
     "risk-and-size-immutability",
@@ -1025,6 +1034,32 @@ export default function QuadrantApp({
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "protocols" ? "Protocol library" : "Dashboard"}</span>
           <div className="flex items-center gap-3">
+            {isDashboardRoute && runActive ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  className="rounded-full border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-400 hover:border-zinc-300 hover:text-zinc-600"
+                  onClick={() => setShowRunMenu((open) => !open)}
+                  aria-label="Open run actions"
+                >
+                  ⋯
+                </button>
+                {showRunMenu ? (
+                  <div className="absolute right-0 z-10 mt-2 w-40 rounded-lg border border-zinc-200 bg-white p-1 text-xs font-semibold text-zinc-600 shadow-sm">
+                    <button
+                      type="button"
+                      className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100 hover:text-zinc-900"
+                      onClick={() => {
+                        setShowRunMenu(false);
+                        handleReset();
+                      }}
+                    >
+                      Reset run
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -1037,35 +1072,9 @@ export default function QuadrantApp({
                     <h2 className="text-lg font-semibold text-zinc-900">
                       Active run
                     </h2>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
-                        Active
-                      </span>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
-                          onClick={() => setShowRunMenu((open) => !open)}
-                          aria-label="Open run actions"
-                        >
-                          ⋯
-                        </button>
-                        {showRunMenu ? (
-                          <div className="absolute right-0 z-10 mt-2 w-40 rounded-lg border border-zinc-200 bg-white p-1 text-xs font-semibold text-zinc-600 shadow-sm">
-                            <button
-                              type="button"
-                              className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100 hover:text-zinc-900"
-                              onClick={() => {
-                                setShowRunMenu(false);
-                                handleReset();
-                              }}
-                            >
-                              Reset run
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
+                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+                      Active
+                    </span>
                   </div>
                   <div className="mt-3 text-sm font-semibold text-zinc-900">
                     {activeProtocol.name}
