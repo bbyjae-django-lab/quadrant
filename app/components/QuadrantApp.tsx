@@ -1305,22 +1305,24 @@ export default function QuadrantApp({
                     >
                       Daily check-in
                     </button>
-                    <button
-                      type="button"
-                      className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400"
-                      onClick={() => setShowEndRunConfirm(true)}
-                      disabled={!isPro || !runActive}
-                    >
-                      End run
-                    </button>
-                    <button
-                      type="button"
-                      className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400"
-                      onClick={handleSwitchProtocol}
-                      disabled={!isPro || !runActive}
-                    >
-                      Switch protocol
-                    </button>
+                    {isPro && runActive ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                        onClick={() => setShowEndRunConfirm(true)}
+                      >
+                        End run
+                      </button>
+                    ) : null}
+                    {isPro && runActive ? (
+                      <button
+                        type="button"
+                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                        onClick={handleSwitchProtocol}
+                      >
+                        Switch protocol
+                      </button>
+                    ) : null}
                   </div>
                   {showSwitchConfirm ? (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
@@ -1502,28 +1504,29 @@ export default function QuadrantApp({
                     </p>
                     <div className="mt-4 flex items-start justify-between gap-4">
                       <div />
-                      <button
-                        type="button"
-                        className="flex items-center gap-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700 disabled:cursor-not-allowed disabled:text-zinc-400"
-                        onClick={() => {
-                          if (typeof window !== "undefined" && !isPro) {
-                            window.location.href = "/pricing";
-                          }
-                        }}
-                        disabled={isPro}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          aria-hidden="true"
-                          className="h-4 w-4 text-zinc-400"
+                      {!isPro ? (
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
                         >
-                          <path
-                            fill="currentColor"
-                            d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
-                          />
-                        </svg>
-                        <span>Pro</span>
-                      </button>
+                          <svg
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                            className="h-4 w-4 text-zinc-400"
+                          >
+                            <path
+                              fill="currentColor"
+                              d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
+                            />
+                          </svg>
+                          <span>Pro</span>
+                        </button>
+                      ) : null}
                     </div>
                     <div className="mt-4 grid gap-4 md:grid-cols-2">
                       {patternInsights.map((insight) => {
