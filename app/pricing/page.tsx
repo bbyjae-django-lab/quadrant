@@ -5,8 +5,7 @@ const PRO_PRICE = 19;
 export default function PricingPage() {
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("quadrant_isPro", "true");
-      window.location.href = "/dashboard";
+      window.location.href = "/pricing";
     }
   };
 

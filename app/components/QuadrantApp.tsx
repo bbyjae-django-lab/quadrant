@@ -504,7 +504,6 @@ export default function QuadrantApp({
     const storedCheckIns = localStorage.getItem("checkIns");
     const storedObservedBehaviours = localStorage.getItem("observedBehaviourIds");
     const storedHasCompletedRun = localStorage.getItem("hasCompletedRun");
-    const storedIsPro = localStorage.getItem("quadrant_isPro");
     const storedRunHistory = localStorage.getItem("runHistory");
 
     if (storedActiveProblemId) {
@@ -560,9 +559,6 @@ export default function QuadrantApp({
     }
     if (storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
-    }
-    if (storedIsPro === "true") {
-      setIsPro(true);
     }
     if (storedRunHistory) {
       try {
