@@ -348,8 +348,7 @@ export default function QuadrantApp({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const isDashboardRoute =
-    pathname === "/dashboard" || pathname?.startsWith("/dashboard/");
+  const isDashboardRoute = pathname === "/dashboard";
   const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
     null,
   );
