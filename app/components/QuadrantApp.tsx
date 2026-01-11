@@ -193,6 +193,26 @@ const getRuleSummary = (rule: string) => {
   return summary;
 };
 
+const persistRunHistory = (
+  history: Array<{
+    id: string;
+    protocolId: string;
+    protocolName: string;
+    startedAt: string | null;
+    endedAt: string;
+    result: "Completed" | "Failed" | "Ended";
+    cleanDays: number;
+    observedBehaviourIds?: string[];
+    observedBehaviourLogCounts?: Record<string, number>;
+    notes?: Array<{ date: string; note: string }>;
+  }>,
+) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem("runHistory", JSON.stringify(history));
+};
+
 const getDashboardViewModel = ({
   isPro,
   runStatus,
@@ -854,7 +874,11 @@ export default function QuadrantApp({
         : {},
       notes,
     };
-    setRunHistory((prev) => [entry, ...prev]);
+    setRunHistory((prev) => {
+      const next = [entry, ...prev];
+      persistRunHistory(next);
+      return next;
+    });
   };
 
   const activateProtocol = (
