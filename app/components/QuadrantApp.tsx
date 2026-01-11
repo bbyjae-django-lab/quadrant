@@ -1759,7 +1759,7 @@ export default function QuadrantApp({
       ) : null}
       {selectedProtocol && view === "protocols" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
+          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-2">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
                 Activate protocol?
@@ -1770,17 +1770,19 @@ export default function QuadrantApp({
             </div>
             <div className="mt-5 space-y-2 text-sm text-zinc-700">
               {selectedProtocol.commonBehaviourRemoved ? (
-                <div className="truncate">
+                <div className="whitespace-normal break-words">
                   Behaviour removed: {selectedProtocol.commonBehaviourRemoved}
                 </div>
               ) : null}
-              <div className="truncate text-sm font-semibold text-zinc-900">
+              <div className="text-sm font-semibold text-zinc-900 whitespace-normal break-words">
                 Rule: {selectedProtocol.rule}
               </div>
-              <div className="truncate">
+              <div className="whitespace-normal break-words">
                 Ends when: {selectedProtocol.duration}
               </div>
-              <div className="truncate">Failure: {selectedProtocol.failure}</div>
+              <div className="whitespace-normal break-words">
+                Failure: {selectedProtocol.failure}
+              </div>
             </div>
             {isPro ? (
               <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
