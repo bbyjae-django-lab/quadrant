@@ -57,11 +57,6 @@ export default function LandingPage() {
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
             One protocol at a time. Binary rule. Daily check-in. Run history.
           </p>
-          <ul className="space-y-2 text-sm text-zinc-600">
-            <li>Binary constraints</li>
-            <li>Daily check-in</li>
-            <li>Run history and pattern insights</li>
-          </ul>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <button
@@ -71,12 +66,6 @@ export default function LandingPage() {
           >
             Start a run
           </button>
-          <a
-            href="/pricing"
-            className="text-sm font-semibold text-zinc-600 hover:text-zinc-900"
-          >
-            Pricing
-          </a>
         </div>
       </main>
     </div>
