@@ -1223,7 +1223,7 @@ export default function QuadrantApp({
         aria-hidden={runEndModalOpen}
       >
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
-          <span>{view === "protocols" ? "Protocol library" : "Dashboard"}</span>
+          <span>{view === "dashboard" ? "Dashboard" : ""}</span>
           <div className="flex items-center gap-3">
             {isDashboardRoute && runActive ? (
               <div className="relative">
