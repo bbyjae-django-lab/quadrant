@@ -394,6 +394,7 @@ export default function QuadrantApp({
   const [observedBehaviourError, setObservedBehaviourError] = useState("");
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
+  const [showRunMenu, setShowRunMenu] = useState(false);
   const [runHistory, setRunHistory] = useState<
     Array<{
       id: string;
@@ -647,6 +648,7 @@ export default function QuadrantApp({
     setRunStatus("idle");
     setRunStartDate(null);
     setStreak(0);
+    setShowRunMenu(false);
     setCheckIns({});
     setObservedBehaviourIds([]);
     setCheckInNote("");
@@ -1023,13 +1025,6 @@ export default function QuadrantApp({
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "protocols" ? "Protocol library" : "Dashboard"}</span>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              className="text-xs font-semibold text-zinc-400 hover:text-zinc-500"
-              onClick={handleReset}
-            >
-              Reset (ends run)
-            </button>
           </div>
         </div>
 
@@ -1042,9 +1037,35 @@ export default function QuadrantApp({
                     <h2 className="text-lg font-semibold text-zinc-900">
                       Active run
                     </h2>
-                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
-                      Active
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+                        Active
+                      </span>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          className="rounded-full border border-zinc-200 px-2 py-1 text-xs font-semibold text-zinc-500 hover:border-zinc-300 hover:text-zinc-700"
+                          onClick={() => setShowRunMenu((open) => !open)}
+                          aria-label="Open run actions"
+                        >
+                          ⋯
+                        </button>
+                        {showRunMenu ? (
+                          <div className="absolute right-0 z-10 mt-2 w-40 rounded-lg border border-zinc-200 bg-white p-1 text-xs font-semibold text-zinc-600 shadow-sm">
+                            <button
+                              type="button"
+                              className="w-full rounded-md px-3 py-2 text-left hover:bg-zinc-100 hover:text-zinc-900"
+                              onClick={() => {
+                                setShowRunMenu(false);
+                                handleReset();
+                              }}
+                            >
+                              Reset run
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
                   </div>
                   <div className="mt-3 text-sm font-semibold text-zinc-900">
                     {activeProtocol.name}
@@ -2038,5 +2059,3 @@ export default function QuadrantApp({
     </div>
   );
 }
-
-
