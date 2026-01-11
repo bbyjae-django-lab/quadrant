@@ -20,13 +20,15 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-12">
-        <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
-          <span>Pricing</span>
+        <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
+          <a
+            href="/dashboard"
+            className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+          >
+            Back to dashboard
+          </a>
         </div>
         <section className="space-y-4">
-          <p className="text-xs font-semibold tracking-wide text-zinc-500">
-            Pricing
-          </p>
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
             Fix the behaviour that's costing you money.
           </h1>
@@ -81,18 +83,6 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="flex items-center justify-between rounded-2xl border border-zinc-200 bg-white px-6 py-5">
-          <p className="text-sm font-semibold text-zinc-700">
-            Start with one problem
-          </p>
-          <button
-            type="button"
-            className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-            onClick={handleUpgrade}
-          >
-            Start with one problem
-          </button>
-        </section>
       </main>
     </div>
   );
