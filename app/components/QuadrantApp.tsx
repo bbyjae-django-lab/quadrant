@@ -1644,25 +1644,27 @@ export default function QuadrantApp({
                                       </dd>
                                     </div>
                                   </dl>
-                                  <div className="pt-4">
-                                    <button
-                                      type="button"
-                                      className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                                      onClick={() => {
-                                        if (freeRunComplete) {
-                                          if (typeof window !== "undefined") {
-                                            window.location.href = "/pricing";
+                                  {!activeProtocolId ? (
+                                    <div className="pt-4">
+                                      <button
+                                        type="button"
+                                        className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                                        onClick={() => {
+                                          if (freeRunComplete) {
+                                            if (typeof window !== "undefined") {
+                                              window.location.href = "/pricing";
+                                            }
+                                            return;
                                           }
-                                          return;
-                                        }
-                                        setConfirmProtocolId(protocol.id);
-                                      }}
-                                    >
-                                      {freeRunComplete
-                                        ? "Upgrade to activate"
-                                        : "Activate protocol"}
-                                    </button>
-                                  </div>
+                                          setConfirmProtocolId(protocol.id);
+                                        }}
+                                      >
+                                        {freeRunComplete
+                                          ? "Upgrade to activate"
+                                          : "Activate protocol"}
+                                      </button>
+                                    </div>
+                                  ) : null}
                                 </div>
                               </div>
                             ) : null}
