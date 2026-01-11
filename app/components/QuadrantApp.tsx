@@ -279,7 +279,7 @@ const getDashboardViewModel = ({
       },
     },
     defaults: {
-      runHistoryCollapsed: runHistoryCount === 0,
+      runHistoryCollapsed: true,
       patternInsightsCollapsed: true,
       protocolLibraryCollapsed: true,
     },
