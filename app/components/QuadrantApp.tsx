@@ -1759,7 +1759,7 @@ export default function QuadrantApp({
       ) : null}
       {selectedProtocol && view === "protocols" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+          <div className="flex w-full max-w-xl max-h-[85vh] flex-col rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-2">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
                 Activate protocol?
@@ -1768,97 +1768,99 @@ export default function QuadrantApp({
                 {selectedProtocol.name}
               </h2>
             </div>
-            <div className="mt-5 space-y-2 text-sm text-zinc-700">
-              {selectedProtocol.commonBehaviourRemoved ? (
-                <div className="whitespace-normal break-words">
-                  Behaviour removed: {selectedProtocol.commonBehaviourRemoved}
-                </div>
-              ) : null}
-              <div className="text-sm font-semibold text-zinc-900 whitespace-normal break-words">
-                Rule: {selectedProtocol.rule}
-              </div>
-              <div className="whitespace-normal break-words">
-                Ends when: {selectedProtocol.duration}
-              </div>
-              <div className="whitespace-normal break-words">
-                Failure: {selectedProtocol.failure}
-              </div>
-            </div>
-            {isPro ? (
-              <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-zinc-900"
-                  onClick={() =>
-                    setShowObservedBehaviourPicker((prev) => !prev)
-                  }
-                >
-                  <span>Observe additional behaviours (optional)</span>
-                  <span className="text-sm text-zinc-500">
-                    {showObservedBehaviourPicker ? "v" : ">"}
-                  </span>
-                </button>
-                {showObservedBehaviourPicker ? (
-                  <div className="mt-3 space-y-3">
-                    <p className="text-xs text-zinc-500">
-                      Tracked for insight. Does not end your run.
-                    </p>
-                    <div className="space-y-2">
-                      {observedBehaviours.map((behaviour) => {
-                        const isChecked = observedBehaviourSelection.includes(
-                          behaviour.id,
-                        );
-                        return (
-                          <label
-                            key={behaviour.id}
-                            className="flex items-start gap-3 text-sm text-zinc-700"
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
-                              checked={isChecked}
-                              onChange={() => {
-                                setObservedBehaviourError("");
-                                if (isChecked) {
-                                  setObservedBehaviourSelection((prev) =>
-                                    prev.filter((id) => id !== behaviour.id),
-                                  );
-                                  return;
-                                }
-                                if (
-                                  observedBehaviourSelection.length >=
-                                  MAX_OBSERVED_BEHAVIOURS
-                                ) {
-                                  setObservedBehaviourError("Choose up to 2.");
-                                  return;
-                                }
-                                setObservedBehaviourSelection((prev) => [
-                                  ...prev,
-                                  behaviour.id,
-                                ]);
-                              }}
-                            />
-                            <span>
-                              <span className="font-semibold text-zinc-900">
-                                {behaviour.label}
-                              </span>
-                              <span className="mt-1 block text-xs text-zinc-500">
-                                {behaviour.description}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {observedBehaviourError ? (
-                      <p className="text-xs font-semibold text-zinc-500">
-                        {observedBehaviourError}
-                      </p>
-                    ) : null}
+            <div className="mt-5 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 text-sm text-zinc-700">
+              <div className="space-y-2">
+                {selectedProtocol.commonBehaviourRemoved ? (
+                  <div className="whitespace-normal break-words">
+                    Behaviour removed: {selectedProtocol.commonBehaviourRemoved}
                   </div>
                 ) : null}
+                <div className="text-sm font-semibold text-zinc-900 whitespace-normal break-words">
+                  Rule: {selectedProtocol.rule}
+                </div>
+                <div className="whitespace-normal break-words">
+                  Ends when: {selectedProtocol.duration}
+                </div>
+                <div className="whitespace-normal break-words">
+                  Failure: {selectedProtocol.failure}
+                </div>
               </div>
-            ) : null}
+              {isPro ? (
+                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between text-left text-sm font-semibold text-zinc-900"
+                    onClick={() =>
+                      setShowObservedBehaviourPicker((prev) => !prev)
+                    }
+                  >
+                    <span>Observe additional behaviours (optional)</span>
+                    <span className="text-sm text-zinc-500">
+                      {showObservedBehaviourPicker ? "v" : ">"}
+                    </span>
+                  </button>
+                  {showObservedBehaviourPicker ? (
+                    <div className="mt-3 space-y-3">
+                      <p className="text-xs text-zinc-500">
+                        Tracked for insight. Does not end your run.
+                      </p>
+                      <div className="space-y-2">
+                        {observedBehaviours.map((behaviour) => {
+                          const isChecked = observedBehaviourSelection.includes(
+                            behaviour.id,
+                          );
+                          return (
+                            <label
+                              key={behaviour.id}
+                              className="flex items-start gap-3 text-sm text-zinc-700"
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setObservedBehaviourError("");
+                                  if (isChecked) {
+                                    setObservedBehaviourSelection((prev) =>
+                                      prev.filter((id) => id !== behaviour.id),
+                                    );
+                                    return;
+                                  }
+                                  if (
+                                    observedBehaviourSelection.length >=
+                                    MAX_OBSERVED_BEHAVIOURS
+                                  ) {
+                                    setObservedBehaviourError("Choose up to 2.");
+                                    return;
+                                  }
+                                  setObservedBehaviourSelection((prev) => [
+                                    ...prev,
+                                    behaviour.id,
+                                  ]);
+                                }}
+                              />
+                              <span>
+                                <span className="font-semibold text-zinc-900">
+                                  {behaviour.label}
+                                </span>
+                                <span className="mt-1 block text-xs text-zinc-500">
+                                  {behaviour.description}
+                                </span>
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {observedBehaviourError ? (
+                        <p className="text-xs font-semibold text-zinc-500">
+                          {observedBehaviourError}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
