@@ -33,7 +33,7 @@ export default function PricingPage() {
             Pricing
           </h1>
           <p className="max-w-2xl text-lg leading-7 text-zinc-600">
-            Quadrant is free to try. Memory is paid.
+            Free enforces behaviour. Pro remembers it.
           </p>
         </section>
 
@@ -41,7 +41,7 @@ export default function PricingPage() {
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-zinc-900">Free</h2>
-              <p className="text-sm text-zinc-500">Experience the constraint.</p>
+              <p className="text-sm text-zinc-500">Experience constraint.</p>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-700">
               <li>One active protocol</li>
@@ -59,13 +59,13 @@ export default function PricingPage() {
               </p>
             </div>
             <p className="mt-4 text-xs text-zinc-300">
-              Pro preserves behavioural evidence over time.
+              Pro preserves behavioural evidence.
             </p>
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
               <li>Run history across sessions</li>
+              <li>Cross-device persistence</li>
               <li>Pattern visibility across runs</li>
               <li>Run detail and review</li>
-              <li>Cross-device persistence</li>
             </ul>
             <p className="mt-3 text-xs text-zinc-300">
               Behaviour changes when memory accumulates.
