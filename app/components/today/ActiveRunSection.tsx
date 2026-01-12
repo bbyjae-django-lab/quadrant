@@ -3,7 +3,7 @@ import type { ActiveRunState, Protocol, RunHistoryEntry } from "../../types";
 type ActiveRunSectionProps = {
   activeRunState: ActiveRunState;
   activeProtocol: Protocol | null;
-  activeRuleSummary: string;
+  activeRuleText: string;
   runActive: boolean;
   runTrackerSymbols: string[];
   successfulDays: number;
@@ -28,7 +28,7 @@ type ActiveRunSectionProps = {
 export default function ActiveRunSection({
   activeRunState,
   activeProtocol,
-  activeRuleSummary,
+  activeRuleText,
   runActive,
   runTrackerSymbols,
   successfulDays,
@@ -62,8 +62,8 @@ export default function ActiveRunSection({
           <div className="mt-3 text-sm font-semibold text-zinc-900">
             {activeProtocol.name}
           </div>
-          <div className="mt-2 whitespace-normal break-words text-sm font-semibold text-zinc-800">
-            Rule: {activeRuleSummary}
+          <div className="mt-2 max-w-full whitespace-normal break-words text-sm font-semibold text-zinc-800">
+            Rule: {activeRuleText}
           </div>
           <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-400">
             Run is live

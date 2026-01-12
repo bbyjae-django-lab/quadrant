@@ -1038,9 +1038,7 @@ export default function QuadrantApp({
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
   const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
-  const activeRuleSummary = activeProtocol
-    ? getRuleSummary(activeProtocol.rule)
-    : "";
+  const activeRuleText = activeProtocol ? activeProtocol.rule : "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
@@ -1087,7 +1085,7 @@ export default function QuadrantApp({
             <ActiveRunSection
               activeRunState={dashboardViewModel.activeRunState}
               activeProtocol={activeProtocol}
-              activeRuleSummary={activeRuleSummary}
+              activeRuleText={activeRuleText}
               runActive={runActive}
               runTrackerSymbols={runTrackerSymbols}
               successfulDays={successfulDays}
