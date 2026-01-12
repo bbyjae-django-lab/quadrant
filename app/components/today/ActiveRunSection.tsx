@@ -62,7 +62,7 @@ export default function ActiveRunSection({
           <div className="mt-3 text-sm font-semibold text-zinc-900">
             {activeProtocol.name}
           </div>
-          <div className="mt-2 text-sm font-semibold text-zinc-800">
+          <div className="mt-2 line-clamp-2 text-sm font-semibold text-zinc-800">
             Rule: {activeRuleSummary}
           </div>
           <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-400">
