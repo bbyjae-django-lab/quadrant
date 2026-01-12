@@ -41,7 +41,7 @@ export default function DailyCheckInModal({
               Daily check-in
             </p>
             <h2 className="mt-2 text-xl font-semibold text-zinc-900">
-              Did you violate the protocol today?
+              Did you break the protocol today?
             </h2>
           </div>
           <button
@@ -74,14 +74,14 @@ export default function DailyCheckInModal({
               className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
               onClick={onCleanDay}
             >
-              No — clean day
+              No
             </button>
             <button
               type="button"
               className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
               onClick={onViolated}
             >
-              Yes — violated
+              Yes
             </button>
           </div>
           {isPro && availableObservedBehaviours.length > 0 ? (

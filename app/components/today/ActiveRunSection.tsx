@@ -65,9 +65,6 @@ export default function ActiveRunSection({
           <div className="mt-2 max-w-full whitespace-normal break-words text-sm font-semibold text-zinc-800">
             Rule: {activeRuleText}
           </div>
-          <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-400">
-            Run is live
-          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {runTrackerSymbols.map((symbol, index) => (
               <div

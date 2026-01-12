@@ -162,7 +162,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       outcomeHighlight: String(failureDay),
       outcomeSuffix: ` of ${RUN_LENGTH}.`,
       reframeLines: [
-        "That’s common.",
+        "That happens.",
         "Early failures usually mean the rule exposed a real reflex. That’s the point.",
         RUN_END_INSIGHT_LINE,
       ],
@@ -197,7 +197,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
     outcomeHighlight: String(failureDay),
     outcomeSuffix: ` of ${RUN_LENGTH}.`,
     reframeLines: [
-      "That’s common.",
+      "That happens.",
       "Early failures usually mean the rule exposed a real reflex. That’s the point.",
       RUN_END_INSIGHT_LINE,
     ],
