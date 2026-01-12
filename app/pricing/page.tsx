@@ -30,11 +30,10 @@ export default function PricingPage() {
         </div>
         <section className="space-y-4">
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
-            Fix the behaviour that's costing you money.
+            Pricing
           </h1>
           <p className="max-w-2xl text-lg leading-7 text-zinc-600">
-            Quadrant helps traders identify recurring behavioural patterns and
-            enforce one corrective protocol at a time.
+            Quadrant is free to try. Memory is paid.
           </p>
         </section>
 
@@ -42,12 +41,13 @@ export default function PricingPage() {
           <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-zinc-900">Free</h2>
-              <p className="text-sm text-zinc-500">Forever</p>
+              <p className="text-sm text-zinc-500">Experience the constraint.</p>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-700">
               <li>One active protocol</li>
               <li>Daily check-in</li>
-              <li>Run history</li>
+              <li>Run ends on violation</li>
+              <li>No historical persistence</li>
             </ul>
           </div>
 
@@ -59,12 +59,16 @@ export default function PricingPage() {
               </p>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-100">
-              <li>See what breaks first.</li>
-              <li>Track it over time.</li>
-              <li>Stop repeating it.</li>
+              <li>Run history across sessions</li>
+              <li>Pattern visibility across runs</li>
+              <li>Run detail and review</li>
+              <li>Cross-device persistence</li>
             </ul>
             <p className="mt-4 text-xs text-zinc-300">
-              Accelerate the feedback loop on your behavior.
+              Pro preserves behavioural evidence over time.
+            </p>
+            <p className="mt-3 text-xs text-zinc-300">
+              Behaviour changes when memory accumulates.
             </p>
             <button
               type="button"
