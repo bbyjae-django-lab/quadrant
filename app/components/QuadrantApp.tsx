@@ -318,7 +318,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
         "The question now is whether this repeats — or fades.",
       ],
       primaryLabel: "Keep my run history",
-      primarySubtext: "$19/month",
+      primarySubtext: "$19 / month",
       primarySupportingLine: "See what breaks first over time.",
       secondaryLabel: "Close",
     };
@@ -338,7 +338,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
         RUN_END_INSIGHT_LINE,
       ],
       primaryLabel: "Keep my run history",
-      primarySubtext: "$19/month",
+      primarySubtext: "$19 / month",
       primarySupportingLine: "See what breaks first over time.",
       secondaryLabel: "Close and reset",
     };
@@ -356,7 +356,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
         "What matters now is whether you let this reset silently… or keep the evidence.",
       ],
       primaryLabel: "Keep my run history",
-      primarySubtext: "$19/month",
+      primarySubtext: "$19 / month",
       primarySupportingLine: "See what breaks first over time.",
       secondaryLabel: "Close and start over",
     };
@@ -373,7 +373,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       RUN_END_INSIGHT_LINE,
     ],
     primaryLabel: "Keep my run history",
-    primarySubtext: "$19/month",
+    primarySubtext: "$19 / month",
     primarySupportingLine: "See what breaks first over time.",
     secondaryLabel: "Close and reset",
   };
@@ -1644,27 +1644,6 @@ export default function QuadrantApp({
                                       </dd>
                                     </div>
                                   </dl>
-                                  {!activeProtocolId ? (
-                                    <div className="pt-4">
-                                      <button
-                                        type="button"
-                                        className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                                        onClick={() => {
-                                          if (freeRunComplete) {
-                                            if (typeof window !== "undefined") {
-                                              window.location.href = "/pricing";
-                                            }
-                                            return;
-                                          }
-                                          setConfirmProtocolId(protocol.id);
-                                        }}
-                                      >
-                                        {freeRunComplete
-                                          ? "Upgrade to activate"
-                                          : "Activate protocol"}
-                                      </button>
-                                    </div>
-                                  ) : null}
                                 </div>
                               </div>
                             ) : null}
@@ -2154,7 +2133,7 @@ export default function QuadrantApp({
                     key={`run-detail-strip-${index}`}
                     className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
                       symbol === "✕"
-                        ? "border-red-200 bg-red-50 text-red-600"
+                        ? "border-zinc-300 bg-zinc-100 text-zinc-700"
                         : symbol === "✓"
                           ? "border-zinc-900 bg-zinc-900 text-white"
                           : "border-zinc-200 text-zinc-600"

@@ -32,9 +32,6 @@ export default function PricingPage() {
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
             Fix the behaviour that's costing you money.
           </h1>
-          <p className="text-xs font-semibold tracking-wide text-zinc-500">
-            Pro = ${PRO_PRICE}/month
-          </p>
           <p className="max-w-2xl text-lg leading-7 text-zinc-600">
             Quadrant helps traders identify recurring behavioural patterns and
             enforce one corrective protocol at a time.
@@ -57,7 +54,9 @@ export default function PricingPage() {
           <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-6 text-white shadow-sm">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Pro</h2>
-              <p className="text-sm text-zinc-300">${PRO_PRICE}/month</p>
+              <p className="text-sm text-zinc-300">
+                ${PRO_PRICE} / month
+              </p>
             </div>
             <ul className="mt-6 space-y-2 text-sm text-zinc-100">
               <li>See what breaks first.</li>
