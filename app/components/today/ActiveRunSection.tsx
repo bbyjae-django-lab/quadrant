@@ -74,7 +74,7 @@ export default function ActiveRunSection({
                     ? "border-zinc-300 bg-zinc-100 text-zinc-700"
                     : symbol === "✓"
                       ? "border-zinc-900 bg-zinc-900 text-white"
-                      : "border-zinc-200 text-zinc-600"
+                      : "border-zinc-300 bg-zinc-50 text-zinc-500"
                 }`}
               >
                 {symbol}
@@ -181,7 +181,7 @@ export default function ActiveRunSection({
                       ? "border-zinc-300 bg-zinc-100 text-zinc-700"
                       : symbol === "✓"
                         ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 text-zinc-600"
+                        : "border-zinc-300 bg-zinc-50 text-zinc-500"
                   }`}
                 >
                   {symbol}
@@ -198,8 +198,7 @@ export default function ActiveRunSection({
               <div className="space-y-2">
                 <div className="text-sm font-semibold">Free run complete.</div>
                 <p className="text-sm text-zinc-600">
-                  See what breaks first. Track it over time. Stop repeating it
-                  with Pro.
+                  Patterns become visible with repetition. Pro tracks them.
                 </p>
               </div>
               <div className="mt-4">

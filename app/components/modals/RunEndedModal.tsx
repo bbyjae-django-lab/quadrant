@@ -65,7 +65,7 @@ export default function RunEndedModal({
                     ? "border-zinc-300 bg-zinc-100 text-zinc-700"
                     : symbol === "✓"
                       ? "border-zinc-900 bg-zinc-900 text-white"
-                      : "border-zinc-200 text-zinc-600"
+                      : "border-zinc-300 bg-zinc-50 text-zinc-500"
                 }`}
               >
                 {symbol}
