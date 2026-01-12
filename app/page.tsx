@@ -55,7 +55,8 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            One protocol at a time. Binary rule. Daily check-in. Run history.
+            Quadrant helps traders identify recurring behavioural patterns and
+            enforce one corrective protocol at a time.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
@@ -64,7 +65,7 @@ export default function LandingPage() {
             className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
             onClick={handleStartRun}
           >
-            Start a run
+            Select a protocol
           </button>
         </div>
       </main>

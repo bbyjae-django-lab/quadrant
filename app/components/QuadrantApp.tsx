@@ -340,7 +340,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       primaryLabel: "Keep my run history",
       primarySubtext: "$19 / month",
       primarySupportingLine: "See what breaks first over time.",
-      secondaryLabel: "Close and reset",
+      secondaryLabel: "Close",
     };
   }
 
@@ -358,7 +358,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       primaryLabel: "Keep my run history",
       primarySubtext: "$19 / month",
       primarySupportingLine: "See what breaks first over time.",
-      secondaryLabel: "Close and start over",
+      secondaryLabel: "Close",
     };
   }
 
@@ -375,7 +375,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
     primaryLabel: "Keep my run history",
     primarySubtext: "$19 / month",
     primarySupportingLine: "See what breaks first over time.",
-    secondaryLabel: "Close and reset",
+    secondaryLabel: "Close",
   };
 };
 
@@ -1990,17 +1990,34 @@ export default function QuadrantApp({
             aria-modal="true"
             className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-xl"
           >
-            <div className="space-y-3">
-              <h2 className="text-2xl font-semibold text-zinc-900">
-                {runEndCopy.title}
-              </h2>
-              <p className="text-sm text-zinc-700">
-                {runEndCopy.outcomePrefix}
-                <strong className="font-semibold text-zinc-900">
-                  {runEndCopy.outcomeHighlight}
-                </strong>
-                {runEndCopy.outcomeSuffix}
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-3">
+                <h2 className="text-2xl font-semibold text-zinc-900">
+                  {runEndCopy.title}
+                </h2>
+                <p className="text-sm text-zinc-700">
+                  {runEndCopy.outcomePrefix}
+                  <strong className="font-semibold text-zinc-900">
+                    {runEndCopy.outcomeHighlight}
+                  </strong>
+                  {runEndCopy.outcomeSuffix}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="text-sm font-semibold text-zinc-400 transition hover:text-zinc-600"
+                aria-label="Close"
+                onClick={() => {
+                  if (runEndContext.result === "Failed") {
+                    clearActiveProtocol();
+                    return;
+                  }
+                  setShowRunEndedModal(false);
+                  setRunEndContext(null);
+                }}
+              >
+                ✕
+              </button>
             </div>
             <div className="h-4" />
             <div className="space-y-2 text-sm text-zinc-700">
@@ -2046,27 +2063,7 @@ export default function QuadrantApp({
                 >
                   {runEndCopy.primaryLabel}
                 </button>
-                <p className="mt-2 text-xs text-zinc-400">
-                  {runEndCopy.primarySubtext}
-                </p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  {runEndCopy.primarySupportingLine}
-                </p>
               </div>
-              <button
-                type="button"
-                className="text-xs font-semibold text-zinc-400 transition hover:text-zinc-500"
-                onClick={() => {
-                  if (runEndContext.result === "Failed") {
-                    clearActiveProtocol();
-                    return;
-                  }
-                  setShowRunEndedModal(false);
-                  setRunEndContext(null);
-                }}
-              >
-                {runEndCopy.secondaryLabel}
-              </button>
             </div>
           </div>
         </div>
