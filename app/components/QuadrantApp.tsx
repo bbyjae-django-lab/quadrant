@@ -4,171 +4,35 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
-import { protocolById, protocols } from "../data/protocols";
 import { observedBehaviours } from "../data/observedBehaviours";
+import { protocolById, protocols } from "../protocols";
+import type {
+  ActiveRunState,
+  Protocol,
+  RunEndContext,
+  RunEndCopy,
+  RunHistoryEntry,
+  RunHistoryRow,
+} from "../types";
+import DailyCheckInModal from "./modals/DailyCheckInModal";
+import RunEndedModal from "./modals/RunEndedModal";
+import ActiveRunSection from "./today/ActiveRunSection";
+import PatternInsightsSection from "./today/PatternInsightsSection";
+import ProtocolLibrarySection from "./today/ProtocolLibrarySection";
+import RunHistorySection from "./today/RunHistorySection";
 
 const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
 
-type RunEndContext = {
-  result: "Failed" | "Completed";
-  cleanDays: number;
-};
-
-type RunEndCopy = {
-  title: string;
-  outcomePrefix: string;
-  outcomeHighlight: string;
-  outcomeSuffix: string;
-  reframeLines: string[];
-  primaryLabel: string;
-  primarySubtext: string;
-  primarySupportingLine: string;
-  secondaryLabel: string;
-};
-
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
 
-type InsightCardProps = {
-  title: string;
-  value: string | null;
-  subtitle: string | null;
-  isLocked: boolean;
-  lockReason: string | null;
-  proBadge: boolean;
-  emphasis?: boolean;
-  className?: string;
+const coerceActiveRunState = (value: unknown): ActiveRunState => {
+  if (value === "active" || value === "summary" || value === "inactive") {
+    return value;
+  }
+  return "inactive";
 };
-
-const InsightCard = ({
-  title,
-  value,
-  subtitle,
-  isLocked,
-  lockReason,
-  proBadge,
-  emphasis = false,
-  className,
-}: InsightCardProps) => (
-  <div
-    className={`rounded-2xl border p-5 ${
-      isLocked ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white"
-    } ${className ?? ""}`}
-    aria-disabled={isLocked}
-  >
-    <div className="flex items-center justify-between gap-3">
-      <div className="text-sm font-semibold text-zinc-700">{title}</div>
-      {proBadge ? (
-        <div className="flex items-center gap-2 rounded-full border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-500">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            className="h-3.5 w-3.5 text-zinc-400"
-          >
-            <path
-              fill="currentColor"
-              d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
-            />
-          </svg>
-          <span>Pro</span>
-        </div>
-      ) : null}
-    </div>
-    <div className="mt-4 space-y-1">
-      <div
-        className={`font-semibold text-zinc-900 ${
-          emphasis ? "text-3xl" : "text-2xl"
-        }`}
-      >
-        {isLocked ? "—" : value}
-      </div>
-      {isLocked && lockReason ? (
-        <div className="text-[11px] text-zinc-400">{lockReason}</div>
-      ) : null}
-      {!isLocked && subtitle ? (
-        <div className="text-xs text-zinc-500">{subtitle}</div>
-      ) : null}
-    </div>
-  </div>
-);
-
-type RunHistorySectionProps = {
-  collapsed: boolean;
-  count: number;
-  rows: Array<{
-    id: string;
-    protocol: string;
-    result: "Completed" | "Failed" | "Ended";
-    days: number;
-  }>;
-  onToggle: () => void;
-  onRowClick: (rowId: string) => void;
-};
-
-const RunHistorySection = ({
-  collapsed,
-  count,
-  rows,
-  onToggle,
-  onRowClick,
-}: RunHistorySectionProps) => (
-  <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-    <button
-      type="button"
-      className="flex w-full items-center justify-between text-left"
-      onClick={onToggle}
-    >
-      <h2 className="text-lg font-semibold text-zinc-900">
-        Run history ({count})
-      </h2>
-      <span className="text-sm text-zinc-500">{collapsed ? ">" : "v"}</span>
-    </button>
-    {!collapsed ? (
-      <>
-        <div className="mt-1 text-[11px] font-semibold tracking-wide text-zinc-400">
-          Recent
-        </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
-          {rows.length > 0 ? (
-            <div className="divide-y divide-zinc-100 text-sm text-zinc-600">
-              {rows.map((row) => {
-                const dayNumber =
-                  row.result === "Failed"
-                    ? Math.max(row.days + 1, 1)
-                    : Math.max(row.days, 1);
-                return (
-                  <button
-                    key={row.id}
-                    type="button"
-                    className="w-full cursor-pointer px-5 py-3.5 text-left hover:bg-zinc-50"
-                    onClick={() => onRowClick(row.id)}
-                  >
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="font-semibold text-zinc-900">
-                        {row.protocol}
-                      </span>
-                      <span className="text-xs font-semibold tracking-wide text-zinc-400">
-                        {row.result}
-                      </span>
-                      <span className="text-xs font-semibold text-zinc-400">
-                        Day {dayNumber}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="px-4 py-6 text-sm text-zinc-500">
-              No runs recorded yet.
-            </div>
-          )}
-        </div>
-      </>
-    ) : null}
-  </section>
-);
 
 const clampObservedBehaviours = (ids: string[] | null | undefined) => {
   if (!ids || !Array.isArray(ids)) {
@@ -193,20 +57,7 @@ const getRuleSummary = (rule: string) => {
   return summary;
 };
 
-const persistRunHistory = (
-  history: Array<{
-    id: string;
-    protocolId: string;
-    protocolName: string;
-    startedAt: string | null;
-    endedAt: string;
-    result: "Completed" | "Failed" | "Ended";
-    cleanDays: number;
-    observedBehaviourIds?: string[];
-    observedBehaviourLogCounts?: Record<string, number>;
-    notes?: Array<{ date: string; note: string }>;
-  }>,
-) => {
+const persistRunHistory = (history: RunHistoryEntry[]) => {
   if (typeof window === "undefined") {
     return;
   }
@@ -225,45 +76,23 @@ const getDashboardViewModel = ({
 }: {
   isPro: boolean;
   runStatus: "idle" | "active" | "failed" | "completed" | "ended";
-  activeProtocol: typeof protocols[number] | null;
-  runHistory: Array<{
-    id: string;
-    protocolId: string;
-    protocolName: string;
-    startedAt: string | null;
-    endedAt: string;
-    result: "Completed" | "Failed" | "Ended";
-    cleanDays: number;
-    observedBehaviourIds?: string[];
-    observedBehaviourLogCounts?: Record<string, number>;
-    notes?: Array<{ date: string; note: string }>;
-  }>;
+  activeProtocol: Protocol | null;
+  runHistory: RunHistoryEntry[];
   hasCompletedRun: boolean;
-  runHistoryRows: Array<{
-    id: string;
-    protocol: string;
-    result: "Completed" | "Failed" | "Ended";
-    days: number;
-    strip: string[];
-  }>;
-  visibleRunHistoryRows: Array<{
-    id: string;
-    protocol: string;
-    result: "Completed" | "Failed" | "Ended";
-    days: number;
-    strip: string[];
-  }>;
+  runHistoryRows: RunHistoryRow[];
+  visibleRunHistoryRows: RunHistoryRow[];
   runHistoryCount: number;
 }) => {
   const runActive = runStatus === "active";
   const latestRun = runHistory[0] ?? null;
   const showFreeRunComplete = !isPro && hasCompletedRun;
-  const activeRunState =
+  const activeRunState = coerceActiveRunState(
     runActive && activeProtocol
       ? "active"
       : latestRun
         ? "summary"
-        : "inactive";
+        : "inactive",
+  );
 
   return {
     activeRunState,
@@ -571,20 +400,7 @@ export default function QuadrantApp({
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [showRunMenu, setShowRunMenu] = useState(false);
-  const [runHistory, setRunHistory] = useState<
-    Array<{
-      id: string;
-      protocolId: string;
-      protocolName: string;
-      startedAt: string | null;
-      endedAt: string;
-      result: "Completed" | "Failed" | "Ended";
-      cleanDays: number;
-      observedBehaviourIds?: string[];
-      observedBehaviourLogCounts?: Record<string, number>;
-      notes?: Array<{ date: string; note: string }>;
-    }>
-  >([]);
+  const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -1053,6 +869,10 @@ export default function QuadrantApp({
   const runHistoryCount = isPro
     ? runHistoryRows.length
     : visibleRunHistoryRows.length;
+  const runEndHistoryStrip =
+    runEndContext !== null
+      ? buildHistoryStrip(runEndContext.cleanDays, runEndContext.result, RUN_LENGTH)
+      : [];
   const dashboardViewModel = getDashboardViewModel({
     isPro,
     runStatus,
@@ -1063,6 +883,14 @@ export default function QuadrantApp({
     visibleRunHistoryRows,
     runHistoryCount,
   });
+  const latestRunStrip =
+    dashboardViewModel.latestRun !== null
+      ? buildHistoryStrip(
+          dashboardViewModel.latestRun.cleanDays,
+          dashboardViewModel.latestRun.result,
+          RUN_LENGTH,
+        )
+      : [];
   const isRunHistoryCollapsedResolved =
     isRunHistoryCollapsed ?? dashboardViewModel.defaults.runHistoryCollapsed;
   const isPatternInsightsCollapsedResolved =
@@ -1256,206 +1084,34 @@ export default function QuadrantApp({
 
         {view === "dashboard" && (
           <section className="mt-10 space-y-6">
-            <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-              {dashboardViewModel.activeRunState === "active" &&
-              activeProtocol ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-lg font-semibold text-zinc-900">
-                      Active run
-                    </h2>
-                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
-                      Active
-                    </span>
-                  </div>
-                  <div className="mt-3 text-sm font-semibold text-zinc-900">
-                    {activeProtocol.name}
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-zinc-800">
-                    Rule: {activeRuleSummary}
-                  </div>
-                  <div className="mt-4 text-xs font-semibold tracking-wide text-zinc-400">
-                    Run is live
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {runTrackerSymbols.map((symbol, index) => (
-                      <div
-                        key={`active-run-strip-${index}`}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                          symbol === "✕"
-                            ? "border-zinc-300 bg-zinc-100 text-zinc-700"
-                            : symbol === "✓"
-                              ? "border-zinc-900 bg-zinc-900 text-white"
-                              : "border-zinc-200 text-zinc-600"
-                        }`}
-                      >
-                        {symbol}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 text-xs font-medium text-zinc-500">
-                    Clean days: {successfulDays}/{RUN_LENGTH}
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-                      onClick={handleCheckInClick}
-                      disabled={!runActive}
-                    >
-                      Daily check-in
-                    </button>
-                    {isPro && runActive ? (
-                      <button
-                        type="button"
-                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                        onClick={() => setShowEndRunConfirm(true)}
-                      >
-                        End run
-                      </button>
-                    ) : null}
-                    {isPro && runActive ? (
-                      <button
-                        type="button"
-                        className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                        onClick={handleSwitchProtocol}
-                      >
-                        Switch protocol
-                      </button>
-                    ) : null}
-                  </div>
-                  {showSwitchConfirm ? (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                      <span>Switching protocols resets your current run.</span>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                          onClick={() => setShowSwitchConfirm(false)}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                          onClick={handleConfirmSwitch}
-                        >
-                          Switch
-                        </button>
-                      </div>
-                      </div>
-                    ) : null}
-                  {showEndRunConfirm ? (
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
-                      <span>Ending locks this run in history.</span>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
-                          onClick={() => setShowEndRunConfirm(false)}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
-                          onClick={handleEndRun}
-                        >
-                          End run
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              ) : dashboardViewModel.activeRunState === "summary" &&
-                dashboardViewModel.latestRun ? (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-lg font-semibold text-zinc-900">
-                      Completed run summary
-                    </h2>
-                    <span className="text-xs font-semibold tracking-wide text-zinc-500">
-                      {dashboardViewModel.latestRun.result}
-                    </span>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    <div className="text-sm font-semibold text-zinc-900">
-                      {dashboardViewModel.latestRun.protocolName}
-                    </div>
-                    <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                      This run
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {buildHistoryStrip(
-                        dashboardViewModel.latestRun.cleanDays,
-                        dashboardViewModel.latestRun.result,
-                        RUN_LENGTH,
-                      ).map((symbol, index) => (
-                        <div
-                          key={`summary-strip-${dashboardViewModel.latestRun.id}-${index}`}
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                            symbol === "✕"
-                              ? "border-zinc-300 bg-zinc-100 text-zinc-700"
-                              : symbol === "✓"
-                                ? "border-zinc-900 bg-zinc-900 text-white"
-                                : "border-zinc-200 text-zinc-600"
-                          }`}
-                        >
-                          {symbol}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-sm text-zinc-600">
-                      Clean days: {dashboardViewModel.latestRun.cleanDays}/
-                      {RUN_LENGTH}
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm text-zinc-600">
-                    {runSummaryLine}
-                  </p>
-                  {dashboardViewModel.showFreeRunComplete ? (
-                    <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-900">
-                      <div className="space-y-2">
-                        <div className="text-sm font-semibold">
-                          Free run complete.
-                        </div>
-                        <p className="text-sm text-zinc-600">
-                          See what breaks first. Track it over time. Stop
-                          repeating it with Pro.
-                        </p>
-                      </div>
-                      <div className="mt-4">
-                        <button
-                          type="button"
-                          className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              window.location.href = "/pricing";
-                            }
-                          }}
-                        >
-                          View pricing
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <>
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h2 className="text-lg font-semibold text-zinc-900">
-                      Active run
-                    </h2>
-                    <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
-                      Inactive
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-zinc-600">
-                    Start a protocol to begin a run.
-                  </p>
-                </>
-              )}
-            </section>
+            <ActiveRunSection
+              activeRunState={dashboardViewModel.activeRunState}
+              activeProtocol={activeProtocol}
+              activeRuleSummary={activeRuleSummary}
+              runActive={runActive}
+              runTrackerSymbols={runTrackerSymbols}
+              successfulDays={successfulDays}
+              runLength={RUN_LENGTH}
+              latestRun={dashboardViewModel.latestRun}
+              latestRunStrip={latestRunStrip}
+              runSummaryLine={runSummaryLine}
+              showFreeRunComplete={dashboardViewModel.showFreeRunComplete}
+              isPro={isPro}
+              showSwitchConfirm={showSwitchConfirm}
+              showEndRunConfirm={showEndRunConfirm}
+              onCheckIn={handleCheckInClick}
+              onEndRunRequest={() => setShowEndRunConfirm(true)}
+              onSwitchProtocol={handleSwitchProtocol}
+              onCancelSwitch={() => setShowSwitchConfirm(false)}
+              onConfirmSwitch={handleConfirmSwitch}
+              onCancelEndRun={() => setShowEndRunConfirm(false)}
+              onConfirmEndRun={handleEndRun}
+              onViewPricing={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/pricing";
+                }
+              }}
+            />
             <div className="space-y-10">
               <RunHistorySection
                 collapsed={isRunHistoryCollapsedResolved}
@@ -1475,185 +1131,41 @@ export default function QuadrantApp({
                   setShowRunDetail(true);
                 }}
               />
-
-              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left"
-                  onClick={() =>
-                    setIsPatternInsightsCollapsed(
-                      (collapsed) =>
-                        !(
-                          collapsed ??
-                          dashboardViewModel.defaults.patternInsightsCollapsed
-                        ),
-                    )
+              <PatternInsightsSection
+                collapsed={isPatternInsightsCollapsedResolved}
+                onToggle={() =>
+                  setIsPatternInsightsCollapsed(
+                    (collapsed) =>
+                      !(
+                        collapsed ??
+                        dashboardViewModel.defaults.patternInsightsCollapsed
+                      ),
+                  )
+                }
+                isPro={isPro}
+                patternInsights={patternInsights}
+                onViewPricing={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/pricing";
                   }
-                >
-                  <h2 className="text-lg font-semibold text-zinc-900">
-                    Pattern insights (Pro)
-                  </h2>
-                  <span className="text-sm text-zinc-500">
-                    {isPatternInsightsCollapsedResolved ? ">" : "v"}
-                  </span>
-                </button>
-                {!isPatternInsightsCollapsedResolved ? (
-                  <>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Patterns emerge after repeated runs.
-                    </p>
-                    <div className="mt-4 flex items-start justify-between gap-4">
-                      <div />
-                      {!isPro ? (
-                        <button
-                          type="button"
-                          className="flex items-center gap-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
-                          onClick={() => {
-                            if (typeof window !== "undefined") {
-                              window.location.href = "/pricing";
-                            }
-                          }}
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            className="h-4 w-4 text-zinc-400"
-                          >
-                            <path
-                              fill="currentColor"
-                              d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
-                            />
-                          </svg>
-                          <span>Pro</span>
-                        </button>
-                      ) : null}
-                    </div>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      {patternInsights.map((insight) => {
-                        const isLocked = !isPro || !insight.isUnlocked;
-                        return (
-                          <InsightCard
-                            key={insight.title}
-                            title={insight.title}
-                            value={isLocked ? null : insight.value}
-                            subtitle={isLocked ? null : insight.subtitle ?? null}
-                            isLocked={isLocked}
-                            lockReason={insight.requirement}
-                            proBadge={isLocked}
-                            emphasis={insight.emphasis}
-                            className={insight.className}
-                          />
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null}
-              </section>
+                }}
+              />
 
-              <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between text-left"
-                  onClick={() =>
-                    setIsProtocolLibraryCollapsed(
-                      (collapsed) =>
-                        !(
-                          collapsed ??
-                          dashboardViewModel.defaults.protocolLibraryCollapsed
-                        ),
-                    )
-                  }
-                >
-                  <h2 className="text-lg font-semibold text-zinc-900">
-                    Protocol library
-                  </h2>
-                  <span className="text-sm text-zinc-500">
-                    {isProtocolLibraryCollapsedResolved ? ">" : "v"}
-                  </span>
-                </button>
-                {!isProtocolLibraryCollapsedResolved ? (
-                  <>
-                    <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
-                      Read-only
-                    </div>
-                    <div className="mt-4 space-y-3">
-                      {orderedProtocols.map((protocol) => {
-                        const isExpanded = protocol.id === libraryProtocolId;
-                        return (
-                          <div
-                            key={protocol.id}
-                            className={`rounded-xl border transition ${
-                              isExpanded
-                                ? "border-zinc-900 bg-zinc-50"
-                                : "border-zinc-200"
-                            }`}
-                          >
-                            <button
-                              type="button"
-                              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:border-zinc-400"
-                              onClick={() => {
-                                setLibraryProtocolId(
-                                  isExpanded ? null : protocol.id,
-                                );
-                              }}
-                            >
-                              <div>
-                                <div className="text-sm font-semibold text-zinc-900">
-                                  {protocol.name}
-                                </div>
-                                <div className="mt-1 text-xs text-zinc-500">
-                                  {protocol.commonBehaviourRemoved}
-                                </div>
-                              </div>
-                              <span className="text-sm text-zinc-500">
-                                {isExpanded ? "v" : ">"}
-                              </span>
-                            </button>
-                            {isExpanded ? (
-                              <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
-                                <div className="border-l border-zinc-200 pl-4">
-                                  <dl className="space-y-4 text-sm text-zinc-700">
-                                    <div>
-                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                        Behaviour removed
-                                      </dt>
-                                      <dd className="mt-1">
-                                        {protocol.commonBehaviourRemoved}
-                                      </dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                        Rule
-                                      </dt>
-                                      <dd className="mt-1">{protocol.rule}</dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                        Duration
-                                      </dt>
-                                      <dd className="mt-1">
-                                        {protocol.duration}
-                                      </dd>
-                                    </div>
-                                    <div>
-                                      <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                                        Failure condition
-                                      </dt>
-                                      <dd className="mt-1">
-                                        {protocol.failure}
-                                      </dd>
-                                    </div>
-                                  </dl>
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null}
-              </section>
+              <ProtocolLibrarySection
+                collapsed={isProtocolLibraryCollapsedResolved}
+                protocols={orderedProtocols}
+                libraryProtocolId={libraryProtocolId}
+                onToggle={() =>
+                  setIsProtocolLibraryCollapsed(
+                    (collapsed) =>
+                      !(
+                        collapsed ??
+                        dashboardViewModel.defaults.protocolLibraryCollapsed
+                      ),
+                  )
+                }
+                onSelectProtocol={setLibraryProtocolId}
+              />
             </div>
           </section>
         )}
@@ -1747,113 +1259,22 @@ export default function QuadrantApp({
 
       </main>
       {showCheckInModal && view === "dashboard" ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold tracking-wide text-zinc-500">
-                  Daily check-in
-                </p>
-                <h2 className="mt-2 text-xl font-semibold text-zinc-900">
-                  Did you violate the protocol today?
-                </h2>
-              </div>
-              <button
-                type="button"
-                className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
-                onClick={() => setShowCheckInModal(false)}
-              >
-                Close
-              </button>
-            </div>
-            <div className="mt-6 space-y-6">
-              <div className="space-y-2">
-                <label
-                  htmlFor="check-in-note"
-                  className="text-sm font-semibold text-zinc-800"
-                >
-                  Notes (optional)
-                </label>
-                <textarea
-                  id="check-in-note"
-                  value={checkInNote}
-                  onChange={(event) => setCheckInNote(event.target.value)}
-                  placeholder="One sentence is enough."
-                  className="min-h-[88px] w-full rounded-xl border border-zinc-200 p-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-                />
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                  onClick={() => {
-                    handleSaveCheckIn(true);
-                  }}
-                >
-                  No — clean day
-                </button>
-                <button
-                  type="button"
-                  className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
-                  onClick={() => {
-                    handleSaveCheckIn(false);
-                  }}
-                >
-                  Yes — violated
-                </button>
-              </div>
-              {isPro && availableObservedBehaviours.length > 0 ? (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
-                  <div className="text-sm font-semibold text-zinc-900">
-                    Did any of these occur today?
-                  </div>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    Optional — tracked for insight only
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    {availableObservedBehaviours.map((behaviour) => {
-                      const isChecked =
-                        observedBehaviourLogSelection.includes(behaviour.id);
-                      return (
-                        <label
-                          key={behaviour.id}
-                          className="flex items-start gap-3 text-sm text-zinc-700"
-                        >
-                          <input
-                            type="checkbox"
-                            className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setObservedBehaviourLogSelection((prev) =>
-                                  prev.filter((id) => id !== behaviour.id),
-                                );
-                                return;
-                              }
-                              if (
-                                observedBehaviourLogSelection.length >=
-                                MAX_OBSERVED_BEHAVIOURS
-                              ) {
-                                return;
-                              }
-                              setObservedBehaviourLogSelection((prev) => [
-                                ...prev,
-                                behaviour.id,
-                              ]);
-                            }}
-                          />
-                          <span className="font-semibold text-zinc-900">
-                            {behaviour.label}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
+        <DailyCheckInModal
+          checkInNote={checkInNote}
+          onChangeNote={setCheckInNote}
+          onClose={() => setShowCheckInModal(false)}
+          onCleanDay={() => {
+            handleSaveCheckIn(true);
+          }}
+          onViolated={() => {
+            handleSaveCheckIn(false);
+          }}
+          isPro={isPro}
+          availableObservedBehaviours={availableObservedBehaviours}
+          observedBehaviourLogSelection={observedBehaviourLogSelection}
+          setObservedBehaviourLogSelection={setObservedBehaviourLogSelection}
+          maxObservedBehaviours={MAX_OBSERVED_BEHAVIOURS}
+        />
       ) : null}
       {selectedProtocol && view === "protocols" ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
@@ -1984,89 +1405,24 @@ export default function QuadrantApp({
         </div>
       ) : null}
       {runEndModalOpen && runEndCopy && runEndContext ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-xl"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-3">
-                <h2 className="text-2xl font-semibold text-zinc-900">
-                  {runEndCopy.title}
-                </h2>
-                <p className="text-sm text-zinc-700">
-                  {runEndCopy.outcomePrefix}
-                  <strong className="font-semibold text-zinc-900">
-                    {runEndCopy.outcomeHighlight}
-                  </strong>
-                  {runEndCopy.outcomeSuffix}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="text-sm font-semibold text-zinc-400 transition hover:text-zinc-600"
-                aria-label="Close"
-                onClick={() => {
-                  if (runEndContext.result === "Failed") {
-                    clearActiveProtocol();
-                    return;
-                  }
-                  setShowRunEndedModal(false);
-                  setRunEndContext(null);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <div className="h-4" />
-            <div className="space-y-2 text-sm text-zinc-700">
-              {runEndCopy.reframeLines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
-            <div className="mt-6">
-              <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                This run
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {buildHistoryStrip(
-                  runEndContext.cleanDays,
-                  runEndContext.result,
-                  RUN_LENGTH,
-                ).map((symbol, index) => (
-                  <div
-                    key={`run-end-strip-${index}`}
-                    className={`flex h-8 w-8 items-center justify-center rounded-lg border text-xs font-semibold ${
-                      symbol === "✕"
-                        ? "border-zinc-300 bg-zinc-100 text-zinc-700"
-                        : symbol === "✓"
-                          ? "border-zinc-900 bg-zinc-900 text-white"
-                          : "border-zinc-200 text-zinc-600"
-                    }`}
-                  >
-                    {symbol}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="mt-6 flex flex-col gap-3">
-              <div>
-                <button
-                  type="button"
-                  className="rounded-full bg-zinc-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
-                  onClick={() => {
-                    if (typeof window !== "undefined") {
-                      window.location.href = "/pricing";
-                    }
-                  }}
-                >
-                  {runEndCopy.primaryLabel}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <RunEndedModal
+          runEndCopy={runEndCopy}
+          runEndContext={runEndContext}
+          historyStrip={runEndHistoryStrip}
+          onPrimaryAction={() => {
+            if (typeof window !== "undefined") {
+              window.location.href = "/pricing";
+            }
+          }}
+          onClose={() => {
+            if (runEndContext.result === "Failed") {
+              clearActiveProtocol();
+              return;
+            }
+            setShowRunEndedModal(false);
+            setRunEndContext(null);
+          }}
+        />
       ) : null}
       {showRunDetail && selectedRun && selectedRunProtocol ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
