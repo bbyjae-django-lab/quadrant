@@ -25,7 +25,7 @@ export default function PricingPage() {
             href="/dashboard"
             className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
           >
-            Back to dashboard
+            Back to Today
           </a>
         </div>
         <section className="space-y-4">
@@ -58,15 +58,15 @@ export default function PricingPage() {
                 ${PRO_PRICE} / month
               </p>
             </div>
-            <ul className="mt-6 space-y-2 text-sm text-zinc-100">
+            <p className="mt-4 text-xs text-zinc-300">
+              Pro preserves behavioural evidence over time.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm text-zinc-100">
               <li>Run history across sessions</li>
               <li>Pattern visibility across runs</li>
               <li>Run detail and review</li>
               <li>Cross-device persistence</li>
             </ul>
-            <p className="mt-4 text-xs text-zinc-300">
-              Pro preserves behavioural evidence over time.
-            </p>
             <p className="mt-3 text-xs text-zinc-300">
               Behaviour changes when memory accumulates.
             </p>
