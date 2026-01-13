@@ -717,6 +717,7 @@ export default function QuadrantApp({
     );
     setCheckInNote("");
     setShowEndRunConfirm(false);
+    setLibraryProtocolId(null);
     router.push("/dashboard");
     focusActiveRun();
   };
@@ -1045,6 +1046,7 @@ export default function QuadrantApp({
     setIsProtocolLibraryCollapsed(false);
     setIsRunHistoryCollapsed(true);
     setIsPatternInsightsCollapsed(true);
+    setLibraryProtocolId(null);
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         document
