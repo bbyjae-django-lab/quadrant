@@ -1148,10 +1148,10 @@ export default function QuadrantApp({
                         Run history
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
-                        No saved runs.
+                        Run history is empty.
                       </p>
                       <p className="mt-1 text-xs text-zinc-500">
-                        Free runs are discarded when they end.
+                        Pro preserves behavioural evidence across runs.
                       </p>
                       <button
                         type="button"
@@ -1162,7 +1162,7 @@ export default function QuadrantApp({
                           }
                         }}
                       >
-                        Upgrade to Pro
+                        See pricing
                       </button>
                     </div>
                     <span className="text-xs font-semibold text-zinc-400">
