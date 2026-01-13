@@ -1136,27 +1136,33 @@ export default function QuadrantApp({
                 />
               ) : (
                 <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between text-left"
-                    onClick={() => {
-                      if (typeof window !== "undefined") {
-                        window.location.href = "/pricing";
-                      }
-                    }}
-                  >
+                  <div className="flex w-full items-start justify-between text-left">
                     <div>
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Run history
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
-                        Pro remembers runs.
+                        No saved runs.
                       </p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Free runs are discarded when they end.
+                      </p>
+                      <button
+                        type="button"
+                        className="mt-3 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                        onClick={() => {
+                          if (typeof window !== "undefined") {
+                            window.location.href = "/pricing";
+                          }
+                        }}
+                      >
+                        Upgrade to Pro
+                      </button>
                     </div>
                     <span className="text-xs font-semibold text-zinc-400">
                       Pro
                     </span>
-                  </button>
+                  </div>
                 </section>
               )}
               <PatternInsightsSection

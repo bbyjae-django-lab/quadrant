@@ -39,31 +39,27 @@ export default function PatternInsightsSection({
       </button>
       {!collapsed ? (
         <>
-          <p className="mt-1 text-xs text-zinc-500">
-            Patterns emerge after repeated runs.
-          </p>
-          <div className="mt-4 flex items-start justify-between gap-4">
-            <div />
-            {!isPro ? (
+          {!isPro ? (
+            <>
+              <p className="mt-1 text-xs text-zinc-500">
+                No patterns yet.
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Patterns require multiple runs.
+              </p>
               <button
                 type="button"
-                className="flex items-center gap-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                className="mt-3 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
                 onClick={onViewPricing}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="h-4 w-4 text-zinc-400"
-                >
-                  <path
-                    fill="currentColor"
-                    d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V7Z"
-                  />
-                </svg>
-                <span>Pro</span>
+                Upgrade to Pro
               </button>
-            ) : null}
-          </div>
+            </>
+          ) : (
+            <p className="mt-1 text-xs text-zinc-500">
+              Patterns emerge after repeated runs.
+            </p>
+          )}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {patternInsights.map((insight) => {
               const isLocked = !isPro || !insight.isUnlocked;
