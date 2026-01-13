@@ -1080,6 +1080,12 @@ export default function QuadrantApp({
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "dashboard" ? "Dashboard" : ""}</span>
           <div className="flex items-center gap-3">
+            <a
+              href="/about"
+              className="text-xs font-semibold text-zinc-400 hover:text-zinc-600"
+            >
+              About Quadrant
+            </a>
           </div>
         </div>
 
