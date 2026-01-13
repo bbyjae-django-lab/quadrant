@@ -46,8 +46,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10">
-        <div className="space-y-4">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-16">
+        <section className="space-y-5">
           <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
             Quadrant
           </p>
@@ -55,19 +55,115 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            Quadrant helps traders identify recurring behavioural patterns and
-            enforce one corrective protocol at a time.
+            Quadrant enforces one trading rule at a time — daily, binary, and
+            non-negotiable.
           </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              onClick={handleStartRun}
+            >
+              Start a run
+            </button>
+            <a
+              href="/pricing"
+              className="text-sm font-semibold text-zinc-500 hover:text-zinc-700"
+            >
+              Pricing
+            </a>
+          </div>
+        </section>
+
+        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
+            What Quadrant Is
+          </h2>
+          <p>
+            Quadrant is a behavioural enforcement system for traders who already
+            know the rules but don’t consistently follow them. It doesn’t
+            journal, coach, motivate, or explain. You choose a protocol. You
+            check in once per day. If you violate it, the run ends. Nothing is
+            softened. Nothing is reinterpreted. The system records what actually
+            happens.
+          </p>
+        </section>
+
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
+            How It Works
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="text-sm font-semibold text-zinc-900">
+                Choose a constraint
+              </div>
+              <p className="mt-2 text-sm text-zinc-600">
+                Pick a single rule you can’t negotiate.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="text-sm font-semibold text-zinc-900">
+                Run it daily
+              </div>
+              <p className="mt-2 text-sm text-zinc-600">
+                Check in once. The record is binary.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+              <div className="text-sm font-semibold text-zinc-900">
+                Let the outcome stand
+              </div>
+              <p className="mt-2 text-sm text-zinc-600">
+                If it breaks, the run ends.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
+            Free vs Pro
+          </h2>
+          <p className="text-base font-semibold text-zinc-900">
+            Free enforces behaviour. Pro remembers it.
+          </p>
+          <p>
+            Free lets you run protocols as many times as you want. Nothing is
+            saved. Pro keeps your runs. Patterns accumulate. Behaviour changes
+            because violations can’t hide.
+          </p>
+          <a
+            href="/pricing"
+            className="text-sm font-semibold text-zinc-500 hover:text-zinc-700"
+          >
+            View pricing
+          </a>
+        </section>
+
+        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
+          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
+            Philosophy
+          </h2>
+          <p>
+            Quadrant assumes you are already capable. If a rule is violated, the
+            system doesn’t ask why. It records that it happened. Over time,
+            behaviour changes not through insight — but through exposure.
+          </p>
+        </section>
+
+        <section className="space-y-3">
           <button
             type="button"
             className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
             onClick={handleStartRun}
           >
-            Select a protocol
+            Start a run
           </button>
-        </div>
+          <p className="text-xs font-semibold text-zinc-500">
+            Free. No account history required.
+          </p>
+        </section>
       </main>
     </div>
   );
