@@ -7,6 +7,8 @@ type RunEndedModalProps = {
   runEndContext: RunEndContext;
   historyStrip: string[];
   primaryLabel: string;
+  showFreeNotice?: boolean;
+  onUpgradeClick?: () => void;
   onPrimaryAction: () => void;
   onClose: () => void;
 };
@@ -16,6 +18,8 @@ export default function RunEndedModal({
   runEndContext,
   historyStrip,
   primaryLabel,
+  showFreeNotice = false,
+  onUpgradeClick,
   onPrimaryAction,
   onClose,
 }: RunEndedModalProps) {
@@ -85,6 +89,18 @@ export default function RunEndedModal({
               {primaryLabel}
             </button>
           </div>
+          {showFreeNotice ? (
+            <div className="text-xs text-zinc-500">
+              <p>This run won’t be saved.</p>
+              <button
+                type="button"
+                className="mt-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                onClick={onUpgradeClick}
+              >
+                Upgrade to Pro to keep run history
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

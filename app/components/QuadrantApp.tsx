@@ -605,6 +605,14 @@ export default function QuadrantApp({
   const canStartNewRun = !runActive;
   const freeRunCompleted = isPro ? hasCompletedRun : false;
   const freeRunComplete = !isPro && freeRunCompleted;
+  useEffect(() => {
+    if (!runActive) {
+      return;
+    }
+    setIsRunHistoryCollapsed(true);
+    setIsPatternInsightsCollapsed(true);
+    setIsProtocolLibraryCollapsed(true);
+  }, [runActive]);
 
   const protocolOrder = [
     "post-entry-information-restriction",
@@ -710,6 +718,7 @@ export default function QuadrantApp({
     setCheckInNote("");
     setShowEndRunConfirm(false);
     router.push("/dashboard");
+    focusActiveRun();
   };
 
   const handleActivateProtocol = () => {
@@ -1034,10 +1043,24 @@ export default function QuadrantApp({
     : runEndCopy?.primaryLabel ?? "";
   const focusProtocolLibrary = () => {
     setIsProtocolLibraryCollapsed(false);
+    setIsRunHistoryCollapsed(true);
+    setIsPatternInsightsCollapsed(true);
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         document
           .getElementById("protocol-library")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  };
+  const focusActiveRun = () => {
+    setIsProtocolLibraryCollapsed(true);
+    setIsRunHistoryCollapsed(true);
+    setIsPatternInsightsCollapsed(true);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById("active-run")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     }
@@ -1075,6 +1098,7 @@ export default function QuadrantApp({
               isPro={isPro}
               showSwitchConfirm={showSwitchConfirm}
               showEndRunConfirm={showEndRunConfirm}
+              sectionId="active-run"
               onCheckIn={handleCheckInClick}
               onEndRunRequest={() => setShowEndRunConfirm(true)}
               onSwitchProtocol={handleSwitchProtocol}
@@ -1421,6 +1445,12 @@ export default function QuadrantApp({
           runEndContext={runEndContext}
           historyStrip={runEndHistoryStrip}
           primaryLabel={runEndPrimaryLabel}
+          showFreeNotice={!isPro}
+          onUpgradeClick={() => {
+            if (typeof window !== "undefined") {
+              window.location.href = "/pricing";
+            }
+          }}
           onPrimaryAction={() => {
             if (!isPro) {
               clearActiveProtocol();
@@ -1434,6 +1464,7 @@ export default function QuadrantApp({
           onClose={() => {
             if (!isPro) {
               clearActiveProtocol();
+              focusProtocolLibrary();
               return;
             }
             if (runEndContext.result === "Failed") {

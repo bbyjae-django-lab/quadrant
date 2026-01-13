@@ -15,6 +15,7 @@ type ActiveRunSectionProps = {
   isPro: boolean;
   showSwitchConfirm: boolean;
   showEndRunConfirm: boolean;
+  sectionId?: string;
   onCheckIn: () => void;
   onEndRunRequest: () => void;
   onSwitchProtocol: () => void;
@@ -40,6 +41,7 @@ export default function ActiveRunSection({
   isPro,
   showSwitchConfirm,
   showEndRunConfirm,
+  sectionId,
   onCheckIn,
   onEndRunRequest,
   onSwitchProtocol,
@@ -50,7 +52,10 @@ export default function ActiveRunSection({
   onViewPricing,
 }: ActiveRunSectionProps) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section
+      id={sectionId}
+      className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+    >
       {activeRunState === "active" && activeProtocol ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
