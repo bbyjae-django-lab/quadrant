@@ -900,26 +900,6 @@ export default function QuadrantApp({
   const isProtocolLibraryCollapsedResolved =
     isProtocolLibraryCollapsed ??
     dashboardViewModel.defaults.protocolLibraryCollapsed;
-  const observedBehaviourLabelById = Object.fromEntries(
-    observedBehaviours.map((behaviour) => [behaviour.id, behaviour.label]),
-  );
-  const observedBehaviourLogCounts = runHistory.reduce(
-    (acc, entry) => {
-      const counts = entry.observedBehaviourLogCounts ?? {};
-      Object.entries(counts).forEach(([id, count]) => {
-        acc[id] = (acc[id] ?? 0) + count;
-      });
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
-  if (runActive) {
-    const currentCounts = getObservedBehaviourLogCounts(checkIns);
-    Object.entries(currentCounts).forEach(([id, count]) => {
-      observedBehaviourLogCounts[id] =
-        (observedBehaviourLogCounts[id] ?? 0) + count;
-    });
-  }
   const completedRunsCount = runHistory.filter(
     (entry) => entry.result === "Completed",
   ).length;
@@ -929,110 +909,47 @@ export default function QuadrantApp({
     entry.observedBehaviourIds?.forEach((id) => enabledBehaviourIds.add(id)),
   );
 
-  const failedRuns = runHistory
-    .filter((entry) => entry.result === "Failed")
-    .map((entry) => entry.cleanDays + 1);
-  const failureDayDistribution = failedRuns.reduce(
-    (acc, day) => {
-      acc[day] = (acc[day] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<number, number>,
-  );
-  const failureDaySummary =
-    Object.keys(failureDayDistribution).length > 0
-      ? Object.entries(failureDayDistribution)
-          .sort(([dayA], [dayB]) => Number(dayA) - Number(dayB))
-          .map(([day, count]) => `Day ${day}: ${count}`)
-          .join(", ")
-      : "No failures yet.";
-
   const longestCleanRun = runHistory.reduce(
     (max, entry) => Math.max(max, entry.cleanDays),
     0,
   );
-  const failureDates = runHistory
-    .filter((entry) => entry.result === "Failed")
-    .map((entry) => new Date(entry.endedAt).getTime())
-    .sort((a, b) => a - b);
-  const averageFailureGapDays =
-    failureDates.length > 1
-      ? Math.round(
-          failureDates
-            .slice(1)
-            .map((date, index) => date - failureDates[index])
-            .reduce((sum, diff) => sum + diff, 0) /
-            (failureDates.length - 1) /
-            (1000 * 60 * 60 * 24),
-        )
-      : null;
   const uniqueProtocolsAttempted = new Set(
     runHistory.map((entry) => entry.protocolId),
   ).size;
 
-  const mostFrequentBehaviour = Object.entries(observedBehaviourLogCounts).sort(
-    (a, b) => b[1] - a[1],
-  )[0];
-  const mostFrequentBehaviourLabel = mostFrequentBehaviour
-    ? `${observedBehaviourLabelById[mostFrequentBehaviour[0]] ?? "Unknown"} (${mostFrequentBehaviour[1]})`
-    : "No logs yet.";
-
   const patternInsights = [
-    {
-      title: "Longest clean run",
-      isUnlocked: completedRunsCount >= 2,
-      requirement: "Unlocks after 2 runs",
-      value: `${longestCleanRun} days`,
-      subtitle:
-        completedRunsCount === 2
-          ? "Early pattern. Refines with more runs."
-          : null,
-      emphasis: true,
-    },
-    {
-      title: "Failure day distribution",
-      isUnlocked: completedRunsCount >= 2,
-      requirement: "Unlocks after 2 runs",
-      value: failureDaySummary,
-      subtitle:
-        completedRunsCount === 2
-          ? "Early pattern. Refines with more runs."
-          : null,
-      emphasis: true,
-    },
-    {
-      title: "Time between failures",
-      isUnlocked: completedRunsCount >= 3,
-      requirement: "Unlocks after 3 runs",
-      value:
-        averageFailureGapDays !== null
-          ? `Average ${averageFailureGapDays} days`
-          : "Not enough failures yet.",
-      subtitle:
-        completedRunsCount === 3
-          ? "Early pattern. Refines with more runs."
-          : null,
-    },
-    {
-      title: "Protocols attempted",
-      isUnlocked: uniqueProtocolsAttempted >= 2,
-      requirement: "Unlocks after 2 protocols",
-      value: `${uniqueProtocolsAttempted} protocols`,
-      subtitle:
-        uniqueProtocolsAttempted === 2
-          ? "Early pattern. Refines with more runs."
-          : null,
-    },
     {
       title: "Most frequent breaking behaviour",
       isUnlocked: enabledBehaviourIds.size >= 2 && completedRunsCount >= 5,
-      requirement: "Unlocks after 2 behaviours and 5 runs",
-      value: mostFrequentBehaviourLabel,
+      requirement: "Requires memory across runs.",
+      value: "You keep breaking the same rule.",
       subtitle:
-        enabledBehaviourIds.size === 2 && completedRunsCount === 5
-          ? "Early pattern. Refines with more runs."
-          : null,
+        "This behaviour appears more often than any other across your runs.",
       className: "md:col-span-2",
+    },
+    {
+      title: "Longest clean run",
+      isUnlocked: completedRunsCount >= 2,
+      requirement: "Requires memory across runs.",
+      value: "Your longest stretch of alignment.",
+      subtitle:
+        "The maximum number of consecutive clean days you’ve completed without violation.",
+    },
+    {
+      title: "Where runs usually fail",
+      isUnlocked: completedRunsCount >= 2,
+      requirement: "Requires repeated outcomes to surface.",
+      value: "Your runs don’t fail randomly.",
+      subtitle:
+        "Most violations occur at the same point in the run.",
+    },
+    {
+      title: "Constraint switching",
+      isUnlocked: uniqueProtocolsAttempted >= 2,
+      requirement: "Requires multiple completed runs.",
+      value: "You change rules instead of changing behaviour.",
+      subtitle:
+        "Tracks how often you abandon one constraint for another.",
     },
   ];
   const runSummaryLine = RUN_END_INSIGHT_LINE;

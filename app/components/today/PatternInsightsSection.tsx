@@ -39,13 +39,16 @@ export default function PatternInsightsSection({
       </button>
       {!collapsed ? (
         <>
+          <p className="mt-1 text-xs text-zinc-500">
+            Pro preserves behavioural evidence across runs. Patterns surface whether you want them to or not.
+          </p>
           {!isPro ? (
             <>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-2 text-xs text-zinc-500">
                 No patterns yet.
               </p>
               <p className="mt-1 text-xs text-zinc-500">
-                Patterns require multiple runs.
+                Free runs reset. Patterns require accumulation.
               </p>
               <button
                 type="button"
@@ -55,11 +58,7 @@ export default function PatternInsightsSection({
                 Upgrade to Pro
               </button>
             </>
-          ) : (
-            <p className="mt-1 text-xs text-zinc-500">
-              Patterns emerge after repeated runs.
-            </p>
-          )}
+          ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {patternInsights.map((insight) => {
               const isLocked = !isPro || !insight.isUnlocked;
