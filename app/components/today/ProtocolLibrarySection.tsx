@@ -4,6 +4,9 @@ type ProtocolLibrarySectionProps = {
   collapsed: boolean;
   protocols: Protocol[];
   libraryProtocolId: string | null;
+  canActivate: boolean;
+  onActivateProtocol: (protocolId: string) => void;
+  sectionId?: string;
   onToggle: () => void;
   onSelectProtocol: (protocolId: string | null) => void;
 };
@@ -12,11 +15,17 @@ export default function ProtocolLibrarySection({
   collapsed,
   protocols,
   libraryProtocolId,
+  canActivate,
+  onActivateProtocol,
+  sectionId,
   onToggle,
   onSelectProtocol,
 }: ProtocolLibrarySectionProps) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section
+      id={sectionId}
+      className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+    >
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
@@ -29,9 +38,11 @@ export default function ProtocolLibrarySection({
       </button>
       {!collapsed ? (
         <>
-          <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
-            Read-only
-          </div>
+          {!canActivate ? (
+            <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
+              Read-only
+            </div>
+          ) : null}
           <div className="mt-4 space-y-3">
             {protocols.map((protocol) => {
               const isExpanded = protocol.id === libraryProtocolId;
@@ -92,6 +103,17 @@ export default function ProtocolLibrarySection({
                             <dd className="mt-1">{protocol.failure}</dd>
                           </div>
                         </dl>
+                        {canActivate ? (
+                          <div className="pt-4">
+                            <button
+                              type="button"
+                              className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                              onClick={() => onActivateProtocol(protocol.id)}
+                            >
+                              Activate protocol
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}

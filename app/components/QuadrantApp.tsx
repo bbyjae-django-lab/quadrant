@@ -85,7 +85,7 @@ const getDashboardViewModel = ({
 }) => {
   const runActive = runStatus === "active";
   const latestRun = runHistory[0] ?? null;
-  const showFreeRunComplete = !isPro && hasCompletedRun;
+  const showFreeRunComplete = false;
   const activeRunState = coerceActiveRunState(
     runActive && activeProtocol
       ? "active"
@@ -468,23 +468,12 @@ export default function QuadrantApp({
         setObservedBehaviourIds([]);
       }
     }
-    if (storedHasCompletedRun === "true") {
+    if (isPro && storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
     }
-    if (storedRunHistory) {
+    if (isPro && storedRunHistory) {
       try {
-        const parsedHistory = JSON.parse(storedRunHistory) as Array<{
-          id: string;
-          protocolId: string;
-          protocolName: string;
-          startedAt: string | null;
-          endedAt: string;
-          result: "Completed" | "Failed" | "Ended";
-          cleanDays: number;
-          observedBehaviourIds?: string[];
-          observedBehaviourLogCounts?: Record<string, number>;
-          notes?: Array<{ date: string; note: string }>;
-        }>;
+        const parsedHistory = JSON.parse(storedRunHistory) as RunHistoryEntry[];
         setRunHistory(
           parsedHistory.map((entry) => ({
             ...entry,
@@ -497,9 +486,11 @@ export default function QuadrantApp({
       } catch {
         setRunHistory([]);
       }
+    } else if (!isPro) {
+      setRunHistory([]);
     }
 
-  }, []);
+  }, [isPro]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showCheckInModal) {
@@ -554,8 +545,16 @@ export default function QuadrantApp({
       "observedBehaviourIds",
       JSON.stringify(clampObservedBehaviours(observedBehaviourIds)),
     );
-    localStorage.setItem("hasCompletedRun", hasCompletedRun ? "true" : "false");
-    localStorage.setItem("runHistory", JSON.stringify(runHistory));
+    if (isPro) {
+      localStorage.setItem(
+        "hasCompletedRun",
+        hasCompletedRun ? "true" : "false",
+      );
+      localStorage.setItem("runHistory", JSON.stringify(runHistory));
+    } else {
+      localStorage.removeItem("hasCompletedRun");
+      localStorage.removeItem("runHistory");
+    }
   }, [
     activeProblemId,
     activeProtocolId,
@@ -567,6 +566,7 @@ export default function QuadrantApp({
     observedBehaviourIds,
     hasCompletedRun,
     runHistory,
+    isPro,
   ]);
 
   const selectedProtocol = confirmProtocolId
@@ -602,8 +602,8 @@ export default function QuadrantApp({
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
   const runEnded = runStatus === "ended";
-  const canStartNewRun = isPro || !hasCompletedRun;
-  const freeRunCompleted = hasCompletedRun;
+  const canStartNewRun = !runActive;
+  const freeRunCompleted = isPro ? hasCompletedRun : false;
   const freeRunComplete = !isPro && freeRunCompleted;
 
   const protocolOrder = [
@@ -655,7 +655,7 @@ export default function QuadrantApp({
       { followed: boolean; note?: string; observedBehaviourIds?: string[] }
     >,
   ) => {
-    if (!activeProtocolId || !activeProtocol) {
+    if (!isPro || !activeProtocolId || !activeProtocol) {
       return;
     }
     const cleanDays = Object.values(snapshot).filter(
@@ -781,19 +781,19 @@ export default function QuadrantApp({
     setStreak(newStreak);
     if (!followed) {
       setRunStatus("failed");
-      if (!isPro) {
-        setHasCompletedRun(true);
-      }
       setRunEndContext({ result: "Failed", cleanDays });
-      appendRunHistory("Failed", updatedCheckIns);
+      if (isPro) {
+        appendRunHistory("Failed", updatedCheckIns);
+      }
       setShowRunEndedModal(true);
       setShowCheckInModal(false);
       return;
     } else if (!isPro && newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
-      setHasCompletedRun(true);
       setRunEndContext({ result: "Completed", cleanDays });
-      appendRunHistory("Completed", updatedCheckIns);
+      if (isPro) {
+        appendRunHistory("Completed", updatedCheckIns);
+      }
       setShowRunEndedModal(true);
     }
     setCheckInNote(noteValue);
@@ -842,26 +842,24 @@ export default function QuadrantApp({
     setRunEndContext(null);
   };
 
-  const runHistoryRows = runHistory.map((entry) => ({
-    id: entry.id,
-    protocol: entry.protocolName,
-    result: entry.result,
-    days: entry.cleanDays,
-    strip: buildHistoryStrip(entry.cleanDays, entry.result, RUN_LENGTH),
-  }));
+  const runHistoryRows = isPro
+    ? runHistory.map((entry) => ({
+        id: entry.id,
+        protocol: entry.protocolName,
+        result: entry.result,
+        days: entry.cleanDays,
+        strip: buildHistoryStrip(entry.cleanDays, entry.result, RUN_LENGTH),
+      }))
+    : [];
   const selectedRun =
-    selectedRunId && runHistory.length > 0
+    isPro && selectedRunId && runHistory.length > 0
       ? runHistory.find((entry) => entry.id === selectedRunId) ?? null
       : null;
   const selectedRunProtocol = selectedRun
     ? protocolById[selectedRun.protocolId]
     : null;
-  const visibleRunHistoryRows = isPro
-    ? runHistoryRows
-    : runHistoryRows.slice(0, 1);
-  const runHistoryCount = isPro
-    ? runHistoryRows.length
-    : visibleRunHistoryRows.length;
+  const visibleRunHistoryRows = isPro ? runHistoryRows : [];
+  const runHistoryCount = isPro ? runHistoryRows.length : 0;
   const runEndHistoryStrip =
     runEndContext !== null
       ? buildHistoryStrip(runEndContext.cleanDays, runEndContext.result, RUN_LENGTH)
@@ -1031,6 +1029,19 @@ export default function QuadrantApp({
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
   const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
+  const runEndPrimaryLabel = !isPro
+    ? "Start another run"
+    : runEndCopy?.primaryLabel ?? "";
+  const focusProtocolLibrary = () => {
+    setIsProtocolLibraryCollapsed(false);
+    if (typeof window !== "undefined") {
+      window.requestAnimationFrame(() => {
+        document
+          .getElementById("protocol-library")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
 
   return (
@@ -1078,24 +1089,50 @@ export default function QuadrantApp({
               }}
             />
             <div className="space-y-10">
-              <RunHistorySection
-                collapsed={isRunHistoryCollapsedResolved}
-                count={dashboardViewModel.runHistory.count}
-                rows={dashboardViewModel.runHistory.visibleRows}
-                onToggle={() =>
-                  setIsRunHistoryCollapsed(
-                    (collapsed) =>
-                      !(
-                        collapsed ??
-                        dashboardViewModel.defaults.runHistoryCollapsed
-                      ),
-                  )
-                }
-                onRowClick={(rowId) => {
-                  setSelectedRunId(rowId);
-                  setShowRunDetail(true);
-                }}
-              />
+              {isPro ? (
+                <RunHistorySection
+                  collapsed={isRunHistoryCollapsedResolved}
+                  count={dashboardViewModel.runHistory.count}
+                  rows={dashboardViewModel.runHistory.visibleRows}
+                  onToggle={() =>
+                    setIsRunHistoryCollapsed(
+                      (collapsed) =>
+                        !(
+                          collapsed ??
+                          dashboardViewModel.defaults.runHistoryCollapsed
+                        ),
+                    )
+                  }
+                  onRowClick={(rowId) => {
+                    setSelectedRunId(rowId);
+                    setShowRunDetail(true);
+                  }}
+                />
+              ) : (
+                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between text-left"
+                    onClick={() => {
+                      if (typeof window !== "undefined") {
+                        window.location.href = "/pricing";
+                      }
+                    }}
+                  >
+                    <div>
+                      <h2 className="text-lg font-semibold text-zinc-900">
+                        Run history
+                      </h2>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Pro remembers runs.
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-zinc-400">
+                      Pro
+                    </span>
+                  </button>
+                </section>
+              )}
               <PatternInsightsSection
                 collapsed={isPatternInsightsCollapsedResolved}
                 onToggle={() =>
@@ -1120,6 +1157,15 @@ export default function QuadrantApp({
                 collapsed={isProtocolLibraryCollapsedResolved}
                 protocols={orderedProtocols}
                 libraryProtocolId={libraryProtocolId}
+                canActivate={dashboardViewModel.activeRunState === "inactive"}
+                onActivateProtocol={(protocolId) => {
+                  if (isPro) {
+                    setConfirmProtocolId(protocolId);
+                    return;
+                  }
+                  activateProtocol(protocolId, null);
+                }}
+                sectionId="protocol-library"
                 onToggle={() =>
                   setIsProtocolLibraryCollapsed(
                     (collapsed) =>
@@ -1241,7 +1287,7 @@ export default function QuadrantApp({
           maxObservedBehaviours={MAX_OBSERVED_BEHAVIOURS}
         />
       ) : null}
-      {selectedProtocol && view === "protocols" ? (
+      {selectedProtocol ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
           <div className="flex w-full max-w-xl max-h-[85vh] flex-col rounded-2xl bg-white p-6 shadow-xl">
             <div className="space-y-2">
@@ -1374,12 +1420,22 @@ export default function QuadrantApp({
           runEndCopy={runEndCopy}
           runEndContext={runEndContext}
           historyStrip={runEndHistoryStrip}
+          primaryLabel={runEndPrimaryLabel}
           onPrimaryAction={() => {
+            if (!isPro) {
+              clearActiveProtocol();
+              focusProtocolLibrary();
+              return;
+            }
             if (typeof window !== "undefined") {
               window.location.href = "/pricing";
             }
           }}
           onClose={() => {
+            if (!isPro) {
+              clearActiveProtocol();
+              return;
+            }
             if (runEndContext.result === "Failed") {
               clearActiveProtocol();
               return;
@@ -1389,7 +1445,7 @@ export default function QuadrantApp({
           }}
         />
       ) : null}
-      {showRunDetail && selectedRun && selectedRunProtocol ? (
+      {showRunDetail && selectedRun && selectedRunProtocol && isPro ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-start justify-between gap-4">

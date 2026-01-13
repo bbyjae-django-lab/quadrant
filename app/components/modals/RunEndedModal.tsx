@@ -6,6 +6,7 @@ type RunEndedModalProps = {
   runEndCopy: RunEndCopy;
   runEndContext: RunEndContext;
   historyStrip: string[];
+  primaryLabel: string;
   onPrimaryAction: () => void;
   onClose: () => void;
 };
@@ -14,6 +15,7 @@ export default function RunEndedModal({
   runEndCopy,
   runEndContext,
   historyStrip,
+  primaryLabel,
   onPrimaryAction,
   onClose,
 }: RunEndedModalProps) {
@@ -80,7 +82,7 @@ export default function RunEndedModal({
               className="rounded-full bg-zinc-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
               onClick={onPrimaryAction}
             >
-              {runEndCopy.primaryLabel}
+              {primaryLabel}
             </button>
           </div>
         </div>
