@@ -989,7 +989,7 @@ export default function QuadrantApp({
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
       <main
-        className={`w-full max-w-3xl rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-8)] shadow-[var(--shadow-1)] sm:p-[var(--space-10)] ${
+        className={`w-full max-w-3xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)] ${
           runEndModalOpen ? "pointer-events-none select-none" : ""
         }`}
         aria-hidden={runEndModalOpen}
@@ -1007,7 +1007,7 @@ export default function QuadrantApp({
         </div>
 
         {view === "dashboard" && (
-          <section className="mt-10 space-y-6">
+          <section className="mt-8 space-y-6">
             <ActiveRunSection
               activeRunState={dashboardViewModel.activeRunState}
               activeProtocol={activeProtocol}
@@ -1137,7 +1137,7 @@ export default function QuadrantApp({
         )}
 
         {view === "protocols" && (
-          <section className="mt-10 space-y-6">
+          <section className="mt-8 space-y-6">
             <div className="space-y-2">
               <h1 className="text-2xl font-semibold text-zinc-900">
                 Protocol library
@@ -1150,19 +1150,21 @@ export default function QuadrantApp({
               {orderedProtocols.map((protocol) => {
                 const isExpanded = protocol.id === libraryProtocolId;
                 return (
-                  <div
-                    key={protocol.id}
-                    className={`rounded-xl border transition ${
-                      isExpanded ? "border-zinc-900 bg-zinc-50" : "border-[var(--border-color)]"
-                    }`}
+                <div
+                  key={protocol.id}
+                  className={`rounded-[var(--radius-card)] border transition ${
+                    isExpanded
+                      ? "border-[var(--border-color)] bg-zinc-50"
+                      : "border-[var(--border-color)] bg-white"
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:bg-zinc-50"
+                    onClick={() => {
+                      setLibraryProtocolId(isExpanded ? null : protocol.id);
+                    }}
                   >
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:border-zinc-400"
-                      onClick={() => {
-                        setLibraryProtocolId(isExpanded ? null : protocol.id);
-                      }}
-                    >
                       <div>
                         <div className="text-sm font-semibold text-zinc-900">
                           {protocol.name}
@@ -1176,7 +1178,7 @@ export default function QuadrantApp({
                       </span>
                     </button>
                     {isExpanded ? (
-                      <div className="border-t border-[var(--border-color)] bg-white/60 px-[var(--space-4)] py-[var(--space-4)]">
+                      <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
                         <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
                           <dl className="space-y-4 text-sm text-zinc-700">
                             <div>
@@ -1253,7 +1255,7 @@ export default function QuadrantApp({
                 {selectedProtocol.name}
               </h2>
             </div>
-            <div className="mt-5 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 text-sm text-zinc-700">
+            <div className="mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 text-sm text-zinc-700">
               <div className="space-y-2">
                 {selectedProtocol.commonBehaviourRemoved ? (
                   <div className="whitespace-normal break-words">
@@ -1271,7 +1273,7 @@ export default function QuadrantApp({
                 </div>
               </div>
               {isPro ? (
-                <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
+                <div className="ui-inset p-[var(--space-4)]">
                   <button
                     type="button"
                     className="flex w-full items-center justify-between text-left text-sm font-semibold text-zinc-900"
@@ -1346,7 +1348,7 @@ export default function QuadrantApp({
                 </div>
               ) : null}
             </div>
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <div className="mt-4 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
                 className="btn btn-secondary text-sm"
@@ -1427,7 +1429,7 @@ export default function QuadrantApp({
                 Close
               </button>
             </div>
-            <dl className="mt-6 space-y-4 text-sm text-zinc-700">
+            <dl className="mt-4 space-y-4 text-sm text-zinc-700">
               <div>
                 <dt className="text-xs font-semibold tracking-wide text-zinc-500">
                   Rule
@@ -1455,7 +1457,7 @@ export default function QuadrantApp({
                 </div>
               </div>
             </dl>
-            <div className="mt-6 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
+            <div className="ui-inset mt-4 p-[var(--space-4)]">
               <div className="text-xs font-semibold tracking-wide text-zinc-500">
                 This run
               </div>
@@ -1481,7 +1483,7 @@ export default function QuadrantApp({
               </div>
             </div>
             {selectedRun.notes && selectedRun.notes.length > 0 ? (
-              <div className="mt-6 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-4)]">
+              <div className="ui-inset mt-4 p-[var(--space-4)]">
                 <div className="text-xs font-semibold tracking-wide text-zinc-500">
                   Notes
                 </div>
@@ -1489,7 +1491,7 @@ export default function QuadrantApp({
                   {selectedRun.notes.map((entry) => (
                     <div
                       key={`run-note-${entry.date}`}
-                      className="rounded-lg border border-[var(--border-color)] bg-zinc-50 px-[var(--space-3)] py-[var(--space-2)]"
+                      className="ui-inset px-[var(--space-3)] py-[var(--space-2)]"
                     >
                       <div className="text-xs text-zinc-500">{entry.date}</div>
                       <div className="mt-1 text-sm text-zinc-700">

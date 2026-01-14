@@ -39,7 +39,7 @@ export default function ProtocolLibrarySection({
       {!collapsed ? (
         <>
           {!canActivate ? (
-            <div className="mt-1 text-xs font-semibold tracking-wide text-zinc-400">
+            <div className="mt-2 text-xs font-semibold tracking-wide text-zinc-400">
               Read-only
             </div>
           ) : null}
@@ -49,13 +49,15 @@ export default function ProtocolLibrarySection({
               return (
                 <div
                   key={protocol.id}
-                  className={`rounded-xl border transition ${
-                    isExpanded ? "border-zinc-900 bg-zinc-50" : "border-[var(--border-color)]"
+                  className={`rounded-[var(--radius-card)] border transition ${
+                    isExpanded
+                      ? "border-[var(--border-color)] bg-zinc-50"
+                      : "border-[var(--border-color)] bg-white"
                   }`}
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:border-zinc-400"
+                    className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:bg-zinc-50"
                     onClick={() => {
                       onSelectProtocol(isExpanded ? null : protocol.id);
                     }}
@@ -73,7 +75,7 @@ export default function ProtocolLibrarySection({
                     </span>
                   </button>
                   {isExpanded ? (
-                    <div className="border-t border-[var(--border-color)] bg-white/60 px-[var(--space-4)] py-[var(--space-4)]">
+                    <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
                       <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
                         <dl className="space-y-4 text-sm text-zinc-700">
                           <div>

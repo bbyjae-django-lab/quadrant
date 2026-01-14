@@ -29,10 +29,10 @@ export default function RunHistorySection({
       </button>
       {!collapsed ? (
         <>
-          <div className="mt-1 text-[11px] font-semibold tracking-wide text-zinc-400">
+        <div className="mt-2 text-xs font-semibold tracking-wide text-zinc-400">
             Recent
           </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border-color)]">
+        <div className="mt-4 overflow-hidden rounded-[var(--radius-card)] border border-[var(--border-color)]">
             {rows.length > 0 ? (
               <div className="divide-y divide-zinc-100 text-sm text-zinc-600">
                 {rows.map((row) => {
@@ -44,7 +44,7 @@ export default function RunHistorySection({
                     <button
                       key={row.id}
                       type="button"
-                      className="w-full cursor-pointer px-5 py-3.5 text-left hover:bg-zinc-50"
+                      className="w-full cursor-pointer px-[var(--space-4)] py-[var(--space-3)] text-left hover:bg-zinc-50"
                       onClick={() => onRowClick(row.id)}
                     >
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

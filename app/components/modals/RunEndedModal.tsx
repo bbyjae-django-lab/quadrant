@@ -52,13 +52,13 @@ export default function RunEndedModal({
             ✕
           </button>
         </div>
-        <div className="h-4" />
+        <div className="h-[var(--space-4)]" />
         <div className="space-y-2 text-sm text-zinc-700">
           {runEndCopy.reframeLines.map((line) => (
             <p key={line}>{line}</p>
           ))}
         </div>
-        <div className="mt-6">
+        <div className="ui-inset mt-4 p-[var(--space-4)]">
           <div className="text-xs font-semibold tracking-wide text-zinc-500">
             This run
           </div>
@@ -79,7 +79,7 @@ export default function RunEndedModal({
             ))}
           </div>
         </div>
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-3">
           <div>
             <button
               type="button"

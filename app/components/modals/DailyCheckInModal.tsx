@@ -52,7 +52,7 @@ export default function DailyCheckInModal({
             Close
           </button>
         </div>
-        <div className="mt-6 space-y-6">
+        <div className="mt-4 space-y-4">
           <div className="space-y-2">
             <label
               htmlFor="check-in-note"
@@ -65,7 +65,7 @@ export default function DailyCheckInModal({
               value={checkInNote}
               onChange={(event) => onChangeNote(event.target.value)}
               placeholder="One sentence is enough."
-              className="min-h-[88px] w-full rounded-xl border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+              className="min-h-[88px] w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
             />
           </div>
           <div className="flex flex-wrap gap-3">
@@ -85,7 +85,7 @@ export default function DailyCheckInModal({
             </button>
           </div>
           {isPro && availableObservedBehaviours.length > 0 ? (
-            <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
+            <div className="ui-inset p-[var(--space-4)]">
               <div className="text-sm font-semibold text-zinc-900">
                 Did any of these occur today?
               </div>

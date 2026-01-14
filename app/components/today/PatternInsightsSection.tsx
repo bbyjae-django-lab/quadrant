@@ -39,7 +39,7 @@ export default function PatternInsightsSection({
       </button>
       {!collapsed ? (
         <>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-2 text-xs text-zinc-500">
             Pro preserves behavioural evidence across runs. Patterns surface whether you want them to or not.
           </p>
           {!isPro ? (

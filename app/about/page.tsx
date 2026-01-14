@@ -3,9 +3,9 @@
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-10">
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-[var(--space-12)]">
         <header className="space-y-3">
-          <h1 className="text-3xl font-semibold text-zinc-900">
+          <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
             About Quadrant
           </h1>
         </header>
@@ -14,7 +14,7 @@ export default function AboutPage() {
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             What this system is
           </h2>
-          <div className="mt-4 space-y-4 text-base leading-7 text-zinc-700">
+          <div className="mt-3 space-y-3 text-base leading-7 text-zinc-700">
             <p>Quadrant is a behavioural enforcement system.</p>
             <p>
               It exists for traders who already know the rules — and don’t
@@ -39,7 +39,7 @@ export default function AboutPage() {
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             What Quadrant is not
           </h2>
-          <div className="mt-4 space-y-4 text-base leading-7 text-zinc-700">
+          <div className="mt-3 space-y-3 text-base leading-7 text-zinc-700">
             <ul className="ml-4 list-disc space-y-2">
               <li>Quadrant is not a journal.</li>
               <li>It is not a coach.</li>
@@ -57,7 +57,7 @@ export default function AboutPage() {
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             Why it’s built this way
           </h2>
-          <div className="mt-4 space-y-4 text-base leading-7 text-zinc-700">
+          <div className="mt-3 space-y-3 text-base leading-7 text-zinc-700">
             <p>Most trading errors are not caused by a lack of knowledge.</p>
             <p>They are caused by reflex:</p>
             <ul className="ml-4 list-disc space-y-2">
@@ -85,7 +85,7 @@ export default function AboutPage() {
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             Free vs Pro (re-grounding, not selling)
           </h2>
-          <div className="mt-4 space-y-2 text-base leading-7 text-zinc-700">
+          <div className="mt-3 space-y-2 text-base leading-7 text-zinc-700">
             <p>Free enforces behaviour.</p>
             <p>Pro remembers it.</p>
             <p>Free allows unlimited runs, but nothing persists.</p>
@@ -104,7 +104,7 @@ export default function AboutPage() {
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             On control and responsibility
           </h2>
-          <div className="mt-4 space-y-2 text-base leading-7 text-zinc-700">
+          <div className="mt-3 space-y-2 text-base leading-7 text-zinc-700">
             <p>Quadrant assumes you are capable.</p>
             <p>If a rule is violated, the system does not ask why.</p>
             <p>It records that it happened.</p>

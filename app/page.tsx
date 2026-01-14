@@ -46,8 +46,8 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-16">
-        <section className="space-y-5">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
+        <section className="space-y-4">
           <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
             Quadrant
           </p>

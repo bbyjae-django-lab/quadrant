@@ -21,7 +21,7 @@ export default function InsightCard({
 }: InsightCardProps) {
   return (
     <div
-      className={`rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-5)] ${
+      className={`ui-surface p-[var(--space-5)] ${
         isLocked ? "bg-zinc-50" : "bg-white"
       } ${className ?? ""}`}
       aria-disabled={isLocked}
@@ -53,7 +53,7 @@ export default function InsightCard({
           {isLocked ? "—" : value}
         </div>
         {isLocked && lockReason ? (
-          <div className="text-[11px] text-zinc-400">{lockReason}</div>
+          <div className="text-xs text-zinc-400">{lockReason}</div>
         ) : null}
         {!isLocked && subtitle ? (
           <div className="text-xs text-zinc-500">{subtitle}</div>

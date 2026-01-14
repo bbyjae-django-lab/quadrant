@@ -89,7 +89,7 @@ export default function ActiveRunSection({
           <div className="mt-3 text-xs font-medium text-zinc-500">
             Clean days: {successfulDays}/{runLength}
           </div>
-          <div className="mt-5 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
               className="btn btn-primary text-sm"
@@ -118,7 +118,7 @@ export default function ActiveRunSection({
             ) : null}
           </div>
           {showSwitchConfirm ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
+            <div className="ui-inset mt-4 flex flex-wrap items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
               <span>Switching protocols resets your current run.</span>
               <div className="flex gap-2">
                 <button
@@ -139,7 +139,7 @@ export default function ActiveRunSection({
             </div>
           ) : null}
           {showEndRunConfirm ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
+            <div className="ui-inset mt-4 flex flex-wrap items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
               <span>Ending locks this run in history.</span>
               <div className="flex gap-2">
                 <button
@@ -199,7 +199,7 @@ export default function ActiveRunSection({
           </div>
           <p className="mt-4 text-sm text-zinc-600">{runSummaryLine}</p>
           {showFreeRunComplete ? (
-            <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)] text-zinc-900">
+            <div className="ui-inset mt-4 p-[var(--space-4)] text-zinc-900">
               <div className="space-y-2">
                 <div className="text-sm font-semibold">Free run complete.</div>
                 <p className="text-sm text-zinc-600">

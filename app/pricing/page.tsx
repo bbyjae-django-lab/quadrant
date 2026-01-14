@@ -19,7 +19,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-12">
+      <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
         <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
           <a
             href="/dashboard"
@@ -28,7 +28,7 @@ export default function PricingPage() {
             Back to Today
           </a>
         </div>
-        <section className="space-y-4">
+        <section className="space-y-3">
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
             Pricing
           </h1>
@@ -38,12 +38,12 @@ export default function PricingPage() {
         </section>
 
         <section className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-6)] shadow-[var(--shadow-1)]">
+          <div className="ui-surface p-[var(--space-6)]">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-zinc-900">Free</h2>
               <p className="text-sm text-zinc-500">Experience constraint.</p>
             </div>
-            <ul className="mt-6 space-y-2 text-sm text-zinc-700">
+            <ul className="mt-4 space-y-2 text-sm text-zinc-700">
               <li>One active protocol</li>
               <li>Daily check-in</li>
               <li>Run ends on violation</li>
@@ -72,7 +72,7 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              className="btn btn-primary mt-5"
+              className="btn btn-primary mt-4"
               onClick={handleUpgrade}
             >
               Upgrade to Pro
