@@ -409,7 +409,6 @@ export default function QuadrantApp({
     useState<string[]>([]);
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
   const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
-  const [isPro, setIsPro] = useState(false);
   const [libraryProtocolId, setLibraryProtocolId] = useState<string | null>(
     null,
   );
@@ -438,6 +437,7 @@ export default function QuadrantApp({
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
       getAdapter({
@@ -914,12 +914,10 @@ export default function QuadrantApp({
       setShowRunEndedModal(true);
       setShowCheckInModal(false);
       return;
-    } else if (!isPro && newStreak >= RUN_LENGTH) {
+    } else if (newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
       setRunEndContext({ result: "Completed", cleanDays });
-      if (isPro) {
-        appendRunHistory("Completed", updatedCheckIns);
-      }
+      appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
     }
     setCheckInNote(noteValue);
@@ -1072,9 +1070,7 @@ export default function QuadrantApp({
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
   const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
-  const runEndPrimaryLabel = !isPro
-    ? "Start another run"
-    : runEndCopy?.primaryLabel ?? "";
+  const runEndPrimaryLabel = runEndCopy?.primaryLabel ?? "Start another run";
   const requireAuth = () => {
     if (isAuthed) {
       return false;
@@ -1511,7 +1507,7 @@ export default function QuadrantApp({
           runEndContext={runEndContext}
           historyStrip={runEndHistoryStrip}
           primaryLabel={runEndPrimaryLabel}
-          showFreeNotice={!isPro}
+          showFreeNotice={!isAuthed}
           freeActionLabel={
             runEndContext?.result === "Completed"
               ? "Save this run → Pro"
