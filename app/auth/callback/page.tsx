@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
+  const [message, setMessage] = useState("Signing you in…");
 
   useEffect(() => {
     const finalize = async () => {
@@ -22,6 +23,23 @@ export default function AuthCallbackPage() {
       } else {
         await client.auth.getSession();
       }
+      const fromModal =
+        typeof window !== "undefined" &&
+        localStorage.getItem("auth_from_modal") === "true";
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("auth_from_modal");
+      }
+      if (window.opener || fromModal) {
+        try {
+          window.opener?.postMessage({ type: "quadrant-auth" }, "*");
+          window.close();
+          setMessage("Signed in. You can close this tab.");
+          return;
+        } catch {
+          setMessage("Signed in. You can close this tab.");
+          return;
+        }
+      }
       router.replace("/");
     };
     finalize();
@@ -29,8 +47,7 @@ export default function AuthCallbackPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-sm text-zinc-600">
-      Signing you in…
+      {message}
     </div>
   );
 }
-

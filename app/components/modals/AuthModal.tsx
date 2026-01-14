@@ -12,17 +12,24 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSendLink = async () => {
     if (!email.trim()) {
       return;
     }
+    setError(null);
     setSubmitting(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth_from_modal", "true");
+    }
     const { error } = await signInWithOtp(email.trim());
     setSubmitting(false);
     if (!error) {
       setSent(true);
+      return;
     }
+    setError("Unable to send link.");
   };
 
   return (
@@ -46,7 +53,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               placeholder="you@example.com"
             />
           </label>
-          {sent ? (
+          {submitting ? (
+            <p className="text-sm text-zinc-600">Sending…</p>
+          ) : sent ? (
             <p className="text-sm text-zinc-600">
               Check your email for the link.
             </p>
@@ -69,6 +78,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               </button>
             </div>
           )}
+          {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
         </div>
       </div>
     </div>

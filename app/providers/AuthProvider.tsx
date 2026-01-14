@@ -79,4 +79,3 @@ export default function AuthProvider({
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-

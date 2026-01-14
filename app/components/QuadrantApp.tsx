@@ -314,7 +314,7 @@ export default function QuadrantApp({
   const router = useRouter();
   const pathname = usePathname();
   const isDashboardRoute = pathname === "/dashboard";
-  const { user, isAuthed } = useAuth();
+  const { user, isAuthed, authLoading } = useAuth();
   const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
     null,
   );
@@ -361,6 +361,9 @@ export default function QuadrantApp({
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [runCheckinsByRunId, setRunCheckinsByRunId] = useState<
+    Record<string, CheckinRecord[]>
+  >({});
   const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
@@ -389,7 +392,18 @@ export default function QuadrantApp({
   }, [isAuthed, showAuthModal]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (authLoading) {
+      return;
+    }
+    setSelectedRunId(null);
+    setShowRunDetail(false);
+    setIsRunHistoryCollapsed(null);
+    setIsPatternInsightsCollapsed(null);
+    setIsProtocolLibraryCollapsed(null);
+  }, [authLoading, isAuthed]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || authLoading) {
       return;
     }
 
@@ -469,6 +483,9 @@ export default function QuadrantApp({
         setObservedBehaviourIds([]);
       }
     }
+    if (authLoading) {
+      return;
+    }
     if (isPro && storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
     }
@@ -477,20 +494,29 @@ export default function QuadrantApp({
         let active = true;
         storageAdapter
           .loadRuns()
-          .then((runs) => {
+          .then(async (runs) => {
             if (!active) {
               return;
             }
-            setRunHistory(
-              runs.map((entry) => ({
-                ...entry,
-                observedBehaviourIds: clampObservedBehaviours(
-                  entry.observedBehaviourIds,
-                ),
-                observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
-              })),
-            );
+            const normalized = runs.map((entry) => ({
+              ...entry,
+              observedBehaviourIds: clampObservedBehaviours(
+                entry.observedBehaviourIds,
+              ),
+              observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+            }));
+            setRunHistory(normalized);
             setHasCompletedRun(runs.length > 0);
+            const checkinsByRunId: Record<string, CheckinRecord[]> = {};
+            await Promise.all(
+              normalized.map(async (entry) => {
+                const checkins = await storageAdapter.loadCheckins(entry.id);
+                checkinsByRunId[entry.id] = checkins;
+              }),
+            );
+            if (active) {
+              setRunCheckinsByRunId(checkinsByRunId);
+            }
           })
           .catch(() => {
             if (!active) {
@@ -514,17 +540,21 @@ export default function QuadrantApp({
               observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
             })),
           );
+          setRunCheckinsByRunId({});
         } catch {
           setRunHistory([]);
+          setRunCheckinsByRunId({});
         }
       } else {
         setRunHistory([]);
+        setRunCheckinsByRunId({});
       }
     } else {
       setRunHistory([]);
+      setRunCheckinsByRunId({});
     }
 
-  }, [isPro, isAuthed, storageAdapter]);
+  }, [isPro, isAuthed, storageAdapter, authLoading]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showCheckInModal) {
@@ -912,27 +942,59 @@ export default function QuadrantApp({
   const isProtocolLibraryCollapsedResolved =
     isProtocolLibraryCollapsed ??
     dashboardViewModel.defaults.protocolLibraryCollapsed;
-  const completedRunsCount = runHistory.filter(
-    (entry) => entry.result === "Completed",
-  ).length;
-  const enabledBehaviourIds = new Set<string>();
-  observedBehaviourIds.forEach((id) => enabledBehaviourIds.add(id));
-  runHistory.forEach((entry) =>
-    entry.observedBehaviourIds?.forEach((id) => enabledBehaviourIds.add(id)),
-  );
-
-  const longestCleanRun = runHistory.reduce(
-    (max, entry) => Math.max(max, entry.cleanDays),
-    0,
-  );
+  const failedRuns = runHistory.filter((entry) => entry.result === "Failed");
   const uniqueProtocolsAttempted = new Set(
     runHistory.map((entry) => entry.protocolId),
   ).size;
+  const longestCleanRun = runHistory.reduce((max, entry) => {
+    const checkins = runCheckinsByRunId[entry.id] ?? [];
+    const cleanCount = checkins.filter(
+      (checkin) => checkin.result === "clean",
+    ).length;
+    return Math.max(max, cleanCount);
+  }, 0);
+  const protocolFailureCounts = failedRuns.reduce<Record<string, number>>(
+    (acc, entry) => {
+      acc[entry.protocolId] = (acc[entry.protocolId] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+  const mostFrequentFailureCount = Math.max(
+    0,
+    ...Object.values(protocolFailureCounts),
+  );
+  const failureDayCounts = failedRuns.reduce<Record<number, number>>(
+    (acc, entry) => {
+      const checkins = runCheckinsByRunId[entry.id] ?? [];
+      const violated = checkins.filter(
+        (checkin) => checkin.result === "violated",
+      );
+      const violationDay =
+        violated.length > 0
+          ? Math.max(...violated.map((checkin) => checkin.dayIndex))
+          : null;
+      if (violationDay) {
+        acc[violationDay] = (acc[violationDay] ?? 0) + 1;
+      }
+      return acc;
+    },
+    {},
+  );
+  const failureDayMode = Object.entries(failureDayCounts).reduce<
+    { day: number; count: number } | null
+  >((best, [dayKey, count]) => {
+    const day = Number(dayKey);
+    if (!best || count > best.count || (count === best.count && day < best.day)) {
+      return { day, count };
+    }
+    return best;
+  }, null);
 
   const patternInsights = [
     {
       title: "Most frequent breaking behaviour",
-      isUnlocked: enabledBehaviourIds.size >= 2 && completedRunsCount >= 5,
+      isUnlocked: isPro,
       requirement: "Requires memory across runs.",
       value: "You keep breaking the same rule.",
       subtitle:
@@ -941,7 +1003,7 @@ export default function QuadrantApp({
     },
     {
       title: "Longest clean run",
-      isUnlocked: completedRunsCount >= 2,
+      isUnlocked: isPro,
       requirement: "Requires memory across runs.",
       value: "Your longest stretch of alignment.",
       subtitle:
@@ -949,7 +1011,7 @@ export default function QuadrantApp({
     },
     {
       title: "Where runs usually fail",
-      isUnlocked: completedRunsCount >= 2,
+      isUnlocked: isPro,
       requirement: "Requires repeated outcomes to surface.",
       value: "Your runs don’t fail randomly.",
       subtitle:
@@ -957,7 +1019,7 @@ export default function QuadrantApp({
     },
     {
       title: "Constraint switching",
-      isUnlocked: uniqueProtocolsAttempted >= 2,
+      isUnlocked: isPro,
       requirement: "Requires multiple completed runs.",
       value: "You change rules instead of changing behaviour.",
       subtitle:
