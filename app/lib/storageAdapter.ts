@@ -64,16 +64,26 @@ export const LocalAdapter: StorageAdapter = {
       return [];
     }
     try {
-      const parsed = JSON.parse(stored) as Record<
-        string,
-        { followed: boolean; note?: string }
-      >;
-      return Object.entries(parsed).map(([date, entry], index) => ({
+      const parsed = JSON.parse(stored) as
+        | Array<{ dayIndex: number; date: string; followed: boolean; note?: string }>
+        | Record<string, { followed: boolean; note?: string }>;
+      if (Array.isArray(parsed)) {
+        return parsed.map((entry, index) => ({
+          id: `${entry.date}-${index}`,
+          runId: _runId,
+          dayIndex: entry.dayIndex,
+          result: entry.followed ? "clean" : "violated",
+          note: entry.note,
+          createdAt: new Date(entry.date).toISOString(),
+        }));
+      }
+      const sortedDates = Object.keys(parsed).sort();
+      return sortedDates.map((date, index) => ({
         id: `${date}-${index}`,
         runId: _runId,
-        dayIndex: index,
-        result: entry.followed ? "clean" : "violated",
-        note: entry.note,
+        dayIndex: index + 1,
+        result: parsed[date].followed ? "clean" : "violated",
+        note: parsed[date].note,
         createdAt: new Date(date).toISOString(),
       }));
     } catch {

@@ -51,7 +51,7 @@ export default function PatternInsightsSection({
               className="btn-tertiary mt-3"
               onClick={onViewPricing}
             >
-              See pricing
+              Sign in
             </button>
           ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">

@@ -71,34 +71,17 @@ const persistRunHistory = (history: RunHistoryEntry[]) => {
   localStorage.setItem("runHistory", JSON.stringify(history));
 };
 
-const getDayIndex = (startDate: string | null, date: string) => {
-  if (!startDate) {
-    return 0;
-  }
-  const start = new Date(startDate);
-  const target = new Date(date);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(target.getTime())) {
-    return 0;
-  }
-  const diff = target.getTime() - start.getTime();
-  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-};
-
 const buildCheckinsFromSnapshot = (
   runId: string,
-  startDate: string | null,
-  snapshot: Record<
-    string,
-    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-  >,
+  snapshot: CheckInEntry[],
 ): CheckinRecord[] => {
-  return Object.entries(snapshot).map(([date, entry], index) => ({
-    id: `${runId}-${date}-${index}`,
+  return snapshot.map((entry, index) => ({
+    id: `${runId}-${entry.dayIndex}-${index}`,
     runId,
-    dayIndex: getDayIndex(startDate, date),
+    dayIndex: entry.dayIndex,
     result: entry.followed ? "clean" : "violated",
     note: entry.note,
-    createdAt: new Date(date).toISOString(),
+    createdAt: new Date(entry.date).toISOString(),
   }));
 };
 
@@ -125,11 +108,7 @@ const getDashboardViewModel = ({
   const latestRun = runHistory[0] ?? null;
   const showFreeRunComplete = false;
   const activeRunState = coerceActiveRunState(
-    runActive && activeProtocol
-      ? "active"
-      : latestRun
-        ? "summary"
-        : "inactive",
+    runActive && activeProtocol ? "active" : "inactive",
   );
 
   return {
@@ -153,14 +132,9 @@ const getDashboardViewModel = ({
   };
 };
 
-const getObservedBehaviourLogCounts = (
-  snapshot: Record<
-    string,
-    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-  >,
-) => {
+const getObservedBehaviourLogCounts = (snapshot: CheckInEntry[]) => {
   const counts: Record<string, number> = {};
-  Object.values(snapshot).forEach((entry) => {
+  snapshot.forEach((entry) => {
     if (!entry.observedBehaviourIds) {
       return;
     }
@@ -269,45 +243,24 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
-const getPreviousDate = (dateKey: string) => {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() - 1);
-  const nextYear = date.getFullYear();
-  const nextMonth = String(date.getMonth() + 1).padStart(2, "0");
-  const nextDay = String(date.getDate()).padStart(2, "0");
-  return `${nextYear}-${nextMonth}-${nextDay}`;
+type CheckInEntry = {
+  dayIndex: number;
+  date: string;
+  followed: boolean;
+  note?: string;
+  observedBehaviourIds?: string[];
 };
 
-const getDateOffset = (dateKey: string, offset: number) => {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-  date.setDate(date.getDate() + offset);
-  const nextYear = date.getFullYear();
-  const nextMonth = String(date.getMonth() + 1).padStart(2, "0");
-  const nextDay = String(date.getDate()).padStart(2, "0");
-  return `${nextYear}-${nextMonth}-${nextDay}`;
-};
-
-const buildRunTracker = (
-  startDate: string | null,
-  length: number,
-  checkIns: Record<
-    string,
-    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-  >,
-) => {
-  if (!startDate) {
-    return Array.from({ length }, () => "▢");
-  }
-  return Array.from({ length }, (_, index) => {
-    const dateKey = getDateOffset(startDate, index);
-    const entry = checkIns[dateKey];
-    if (!entry) {
-      return "▢";
+const buildRunTracker = (length: number, checkIns: CheckInEntry[]) => {
+  const symbols = Array.from({ length }, () => "▢");
+  checkIns.forEach((entry) => {
+    const index = entry.dayIndex - 1;
+    if (index < 0 || index >= length) {
+      return;
     }
-    return entry.followed ? "✓" : "✕";
+    symbols[index] = entry.followed ? "✓" : "✕";
   });
+  return symbols;
 };
 
 const buildHistoryStrip = (
@@ -326,52 +279,30 @@ const buildHistoryStrip = (
   return symbols;
 };
 
-const computeCurrentRun = (
-  checkIns: Record<
-    string,
-    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-  >,
-  todayKey: string,
-) => {
-  if (!checkIns[todayKey]?.followed) {
-    return 0;
-  }
+const computeCurrentRun = (checkIns: CheckInEntry[]) => {
   let count = 0;
-  let cursor = todayKey;
-  while (checkIns[cursor]?.followed) {
+  for (let index = checkIns.length - 1; index >= 0; index -= 1) {
+    if (!checkIns[index]?.followed) {
+      break;
+    }
     count += 1;
-    cursor = getPreviousDate(cursor);
   }
   return count;
 };
 
-const computeBestRun = (
-  checkIns: Record<
-    string,
-    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-  >,
-) => {
-  const keys = Object.keys(checkIns).sort();
+const computeBestRun = (checkIns: CheckInEntry[]) => {
   let best = 0;
   let current = 0;
-  let previousKey: string | null = null;
-  for (const key of keys) {
-    const entry = checkIns[key];
+  checkIns.forEach((entry) => {
     if (!entry.followed) {
       current = 0;
-      previousKey = key;
-      continue;
+      return;
     }
-    if (previousKey && getPreviousDate(key) === previousKey && current > 0) {
-      current += 1;
-    } else {
-      current = 1;
-    }
+    current += 1;
     if (current > best) {
       best = current;
     }
-    previousKey = key;
-  }
+  });
   return best;
 };
 
@@ -396,19 +327,13 @@ export default function QuadrantApp({
   >("idle");
   const [runStartDate, setRunStartDate] = useState<string | null>(null);
   const [streak, setStreak] = useState(0);
-  const [checkIns, setCheckIns] = useState<
-    Record<
-      string,
-      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-    >
-  >({});
+  const [checkIns, setCheckIns] = useState<CheckInEntry[]>([]);
   const [observedBehaviourIds, setObservedBehaviourIds] = useState<string[]>(
     [],
   );
   const [observedBehaviourLogSelection, setObservedBehaviourLogSelection] =
     useState<string[]>([]);
   const [hasCompletedRun, setHasCompletedRun] = useState(false);
-  const [showSwitchConfirm, setShowSwitchConfirm] = useState(false);
   const [libraryProtocolId, setLibraryProtocolId] = useState<string | null>(
     null,
   );
@@ -434,7 +359,6 @@ export default function QuadrantApp({
   >([]);
   const [observedBehaviourError, setObservedBehaviourError] = useState("");
   const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const isPro = isAuthed;
@@ -512,13 +436,27 @@ export default function QuadrantApp({
     }
     if (storedCheckIns) {
       try {
-    const parsedCheckIns = JSON.parse(storedCheckIns) as Record<
-      string,
-      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-    >;
-        setCheckIns(parsedCheckIns);
+        const parsedCheckIns = JSON.parse(storedCheckIns) as
+          | CheckInEntry[]
+          | Record<
+              string,
+              { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+            >;
+        if (Array.isArray(parsedCheckIns)) {
+          setCheckIns(parsedCheckIns);
+        } else {
+          const sortedDates = Object.keys(parsedCheckIns).sort();
+          const converted = sortedDates.map((date, index) => ({
+            dayIndex: index + 1,
+            date,
+            followed: parsedCheckIns[date]?.followed ?? false,
+            note: parsedCheckIns[date]?.note,
+            observedBehaviourIds: parsedCheckIns[date]?.observedBehaviourIds,
+          }));
+          setCheckIns(converted);
+        }
       } catch {
-        setCheckIns({});
+        setCheckIns([]);
       }
     }
     if (storedObservedBehaviours) {
@@ -594,11 +532,11 @@ export default function QuadrantApp({
     }
 
     const today = getLocalDateString();
-    const todayEntry = checkIns[today];
-    if (todayEntry) {
-      setCheckInNote(todayEntry.note ?? "");
+    const latestEntry = checkIns[checkIns.length - 1];
+    if (latestEntry && latestEntry.date === today) {
+      setCheckInNote(latestEntry.note ?? "");
       setObservedBehaviourLogSelection(
-        clampObservedBehaviours(todayEntry.observedBehaviourIds),
+        clampObservedBehaviours(latestEntry.observedBehaviourIds),
       );
     } else {
       setCheckInNote("");
@@ -681,24 +619,19 @@ export default function QuadrantApp({
 
   const todayKey = getLocalDateString();
   const bestRun = computeBestRun(checkIns);
-  const successfulDays = Object.values(checkIns).filter(
-    (entry) => entry.followed,
-  ).length;
+  const successfulDays = checkIns.filter((entry) => entry.followed).length;
   const freeProgressCount = Math.min(successfulDays, RUN_LENGTH);
   const progressCount = isPro ? successfulDays : freeProgressCount;
-  const runTrackerSymbols = buildRunTracker(runStartDate, RUN_LENGTH, checkIns);
-  const recentCheckInKeys = Object.keys(checkIns).sort().slice(-14);
+  const runTrackerSymbols = buildRunTracker(RUN_LENGTH, checkIns);
+  const recentCheckIns = checkIns.slice(-14);
   const recentCheckInSymbols = [
-    ...Array.from({ length: 14 - recentCheckInKeys.length }, () => "▢"),
-    ...recentCheckInKeys.map((key) =>
-      checkIns[key]?.followed ? "✓" : "✕",
-    ),
+    ...Array.from({ length: 14 - recentCheckIns.length }, () => "▢"),
+    ...recentCheckIns.map((entry) => (entry.followed ? "✓" : "✕")),
   ];
 
   const runActive = runStatus === "active";
   const runComplete = runStatus === "completed";
   const runFailed = runStatus === "failed";
-  const runEnded = runStatus === "ended";
   const canStartNewRun = !runActive;
   const freeRunCompleted = isPro ? hasCompletedRun : false;
   const freeRunComplete = !isPro && freeRunCompleted;
@@ -742,16 +675,19 @@ export default function QuadrantApp({
     setRunStatus("idle");
     setRunStartDate(null);
     setStreak(0);
-    setCheckIns({});
+    setCheckIns([]);
     setObservedBehaviourIds([]);
     setCheckInNote("");
-    setShowEndRunConfirm(false);
     setShowRunDetail(false);
     setSelectedRunId(null);
     setShowRunEndedModal(false);
     setRunEndContext(null);
     setShowCheckInModal(false);
     setConfirmProtocolId(null);
+    setIsRunHistoryCollapsed(null);
+    setIsPatternInsightsCollapsed(null);
+    setIsProtocolLibraryCollapsed(null);
+    setLibraryProtocolId(null);
     if (options?.clearLocal && typeof window !== "undefined") {
       localStorage.removeItem("checkIns");
       localStorage.removeItem("runHistory");
@@ -761,22 +697,17 @@ export default function QuadrantApp({
 
   const appendRunHistory = (
     result: "Completed" | "Failed" | "Ended",
-    snapshot: Record<
-      string,
-      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-    >,
+    snapshot: CheckInEntry[],
   ) => {
     if (!isPro || !activeProtocolId || !activeProtocol) {
       return;
     }
-    const cleanDays = Object.values(snapshot).filter(
-      (entry) => entry.followed,
-    ).length;
-    const notes = Object.entries(snapshot)
-      .filter(([, value]) => value.note && value.note.trim().length > 0)
-      .map(([date, value]) => ({
-        date,
-        note: value.note as string,
+    const cleanDays = snapshot.filter((entry) => entry.followed).length;
+    const notes = snapshot
+      .filter((entry) => entry.note && entry.note.trim().length > 0)
+      .map((entry) => ({
+        date: entry.date,
+        note: entry.note as string,
       }));
     const entry = {
       id: `${activeProtocolId}-${Date.now()}`,
@@ -803,11 +734,7 @@ export default function QuadrantApp({
     });
     if (storageAdapter.isSupabase) {
       void storageAdapter.saveRun(entry);
-      const checkins = buildCheckinsFromSnapshot(
-        entry.id,
-        runStartDate ?? activatedAt,
-        snapshot,
-      );
+      const checkins = buildCheckinsFromSnapshot(entry.id, snapshot);
       checkins.forEach((checkin) => {
         void storageAdapter.addCheckin(checkin);
       });
@@ -827,12 +754,11 @@ export default function QuadrantApp({
     setRunStatus("active");
     setRunStartDate(today);
     setStreak(0);
-    setCheckIns({});
+    setCheckIns([]);
     setObservedBehaviourIds(
       isPro ? clampObservedBehaviours(observedIds) : [],
     );
     setCheckInNote("");
-    setShowEndRunConfirm(false);
     setLibraryProtocolId(null);
     router.push("/dashboard");
     focusActiveRun();
@@ -856,26 +782,7 @@ export default function QuadrantApp({
     setObservedBehaviourError("");
   };
 
-  const handleSwitchProtocol = () => {
-    if (!isPro) {
-      return;
-    }
-    setShowSwitchConfirm(true);
-  };
-
-  const handleConfirmSwitch = () => {
-    setShowSwitchConfirm(false);
-    clearActiveProtocol();
-    setConfirmProtocolId(null);
-    router.push("/protocols");
-  };
-
-  const persistCheckIns = (
-    nextCheckIns: Record<
-      string,
-      { followed: boolean; note?: string; observedBehaviourIds?: string[] }
-    >,
-  ) => {
+  const persistCheckIns = (nextCheckIns: CheckInEntry[]) => {
     setCheckIns(nextCheckIns);
   };
 
@@ -888,22 +795,24 @@ export default function QuadrantApp({
     }
     const noteValue = checkInNote.trim();
     const dateStamp = getLocalDateString();
-    const updatedCheckIns = {
-      ...checkIns,
-      [dateStamp]: {
-        followed,
-        note: noteValue || undefined,
-        observedBehaviourIds:
-          followed && isPro
-            ? clampObservedBehaviours(observedBehaviourLogSelection)
-            : undefined,
-      },
+    const lastEntry = checkIns[checkIns.length - 1];
+    const nextEntry: CheckInEntry = {
+      dayIndex: lastEntry?.date === dateStamp ? lastEntry.dayIndex : checkIns.length + 1,
+      date: dateStamp,
+      followed,
+      note: noteValue || undefined,
+      observedBehaviourIds:
+        followed && isPro
+          ? clampObservedBehaviours(observedBehaviourLogSelection)
+          : undefined,
     };
+    const updatedCheckIns =
+      lastEntry?.date === dateStamp
+        ? [...checkIns.slice(0, -1), nextEntry]
+        : [...checkIns, nextEntry];
     persistCheckIns(updatedCheckIns);
-    const cleanDays = Object.values(updatedCheckIns).filter(
-      (entry) => entry.followed,
-    ).length;
-    const newStreak = computeCurrentRun(updatedCheckIns, dateStamp);
+    const cleanDays = updatedCheckIns.filter((entry) => entry.followed).length;
+    const newStreak = computeCurrentRun(updatedCheckIns);
     setStreak(newStreak);
     if (!followed) {
       setRunStatus("failed");
@@ -936,9 +845,8 @@ export default function QuadrantApp({
     setRunStatus("idle");
     setRunStartDate(null);
     setStreak(0);
-    setCheckIns({});
+    setCheckIns([]);
     setObservedBehaviourIds([]);
-    setShowSwitchConfirm(false);
     setShowRunDetail(false);
     setShowRunEndedModal(false);
     setRunEndContext(null);
@@ -955,16 +863,6 @@ export default function QuadrantApp({
   const availableObservedBehaviours = observedBehaviours.filter((behaviour) =>
     observedBehaviourIds.includes(behaviour.id),
   );
-
-  const handleEndRun = () => {
-    if (!isPro || !runActive) {
-      return;
-    }
-    setRunStatus("ended");
-    appendRunHistory("Ended", checkIns);
-    setShowEndRunConfirm(false);
-    setRunEndContext(null);
-  };
 
   const runHistoryRows = isPro
     ? runHistory.map((entry) => ({
@@ -1139,18 +1037,9 @@ export default function QuadrantApp({
               latestRunStrip={latestRunStrip}
               runSummaryLine={runSummaryLine}
               showFreeRunComplete={dashboardViewModel.showFreeRunComplete}
-              isPro={isPro}
-              showSwitchConfirm={showSwitchConfirm}
-              showEndRunConfirm={showEndRunConfirm}
               sectionId="active-run"
               onCheckIn={handleCheckInClick}
               onStartRun={focusProtocolLibrary}
-              onEndRunRequest={() => setShowEndRunConfirm(true)}
-              onSwitchProtocol={handleSwitchProtocol}
-              onCancelSwitch={() => setShowSwitchConfirm(false)}
-              onConfirmSwitch={handleConfirmSwitch}
-              onCancelEndRun={() => setShowEndRunConfirm(false)}
-              onConfirmEndRun={handleEndRun}
               onViewPricing={() => {
                 if (typeof window !== "undefined") {
                   window.location.href = "/pricing";
@@ -1200,12 +1089,10 @@ export default function QuadrantApp({
                         type="button"
                         className="btn-tertiary mt-3"
                         onClick={() => {
-                          if (typeof window !== "undefined") {
-                            window.location.href = "/pricing";
-                          }
+                          setShowAuthModal(true);
                         }}
                       >
-                        See pricing
+                        Sign in
                       </button>
                     </div>
                     <span className="text-xs font-semibold text-zinc-400">
@@ -1231,9 +1118,7 @@ export default function QuadrantApp({
                 isPro={isPro}
                 patternInsights={patternInsights}
                 onViewPricing={() => {
-                  if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
-                  }
+                  setShowAuthModal(true);
                 }}
               />
 
@@ -1521,20 +1406,9 @@ export default function QuadrantApp({
           }}
           onPrimaryAction={() => {
             clearActiveProtocol({ clearLocal: !isPro });
-            focusProtocolLibrary();
           }}
           onClose={() => {
-            if (!isPro) {
-              clearActiveProtocol({ clearLocal: true });
-              focusProtocolLibrary();
-              return;
-            }
-            if (runEndContext.result === "Failed") {
-              clearActiveProtocol();
-              return;
-            }
-            setShowRunEndedModal(false);
-            setRunEndContext(null);
+            clearActiveProtocol({ clearLocal: !isPro });
           }}
         />
       ) : null}

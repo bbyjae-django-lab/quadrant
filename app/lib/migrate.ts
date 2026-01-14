@@ -1,29 +1,7 @@
-import type { RunHistoryEntry } from "../types";
 import { getSupabaseClient } from "./supabaseClient";
 import { LocalAdapter, createSupabaseAdapter } from "./storageAdapter";
 
 const MIGRATION_FLAG = "quadrant_migrated_to_supabase";
-
-const parseDate = (value: string | null | undefined) => {
-  if (!value) {
-    return null;
-  }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return null;
-  }
-  return parsed;
-};
-
-const dayIndexFromDate = (startDate: string | null, date: string) => {
-  const start = parseDate(startDate);
-  const target = parseDate(date);
-  if (!start || !target) {
-    return 0;
-  }
-  const diff = target.getTime() - start.getTime();
-  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
-};
 
 export const hasMigratedToSupabase = () => {
   if (typeof window === "undefined") {
@@ -63,7 +41,7 @@ export const migrateLocalToSupabase = async (userId: string) => {
       const checkins = notes.map((note, index) => ({
         id: `${run.id}-${index}`,
         runId: run.id,
-        dayIndex: dayIndexFromDate(run.startedAt, note.date),
+        dayIndex: index + 1,
         result: "clean" as const,
         note: note.note,
         createdAt: new Date(note.date).toISOString(),
@@ -77,4 +55,3 @@ export const migrateLocalToSupabase = async (userId: string) => {
     console.warn("Supabase migration failed.", error);
   }
 };
-

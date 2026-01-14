@@ -12,18 +12,9 @@ type ActiveRunSectionProps = {
   latestRunStrip: string[];
   runSummaryLine: string;
   showFreeRunComplete: boolean;
-  isPro: boolean;
-  showSwitchConfirm: boolean;
-  showEndRunConfirm: boolean;
   sectionId?: string;
   onCheckIn: () => void;
   onStartRun: () => void;
-  onEndRunRequest: () => void;
-  onSwitchProtocol: () => void;
-  onCancelSwitch: () => void;
-  onConfirmSwitch: () => void;
-  onCancelEndRun: () => void;
-  onConfirmEndRun: () => void;
   onViewPricing: () => void;
 };
 
@@ -39,18 +30,9 @@ export default function ActiveRunSection({
   latestRunStrip,
   runSummaryLine,
   showFreeRunComplete,
-  isPro,
-  showSwitchConfirm,
-  showEndRunConfirm,
   sectionId,
   onCheckIn,
   onStartRun,
-  onEndRunRequest,
-  onSwitchProtocol,
-  onCancelSwitch,
-  onConfirmSwitch,
-  onCancelEndRun,
-  onConfirmEndRun,
   onViewPricing,
 }: ActiveRunSectionProps) {
   return (
@@ -100,67 +82,7 @@ export default function ActiveRunSection({
             >
               Daily check-in
             </button>
-            {isPro && runActive ? (
-              <button
-                type="button"
-                className="btn btn-secondary text-sm"
-                onClick={onEndRunRequest}
-              >
-                End run
-              </button>
-            ) : null}
-            {isPro && runActive ? (
-              <button
-                type="button"
-                className="btn btn-secondary text-sm"
-                onClick={onSwitchProtocol}
-              >
-                Switch protocol
-              </button>
-            ) : null}
           </div>
-          {showSwitchConfirm ? (
-            <div className="ui-inset mt-4 flex flex-wrap items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
-              <span>Switching protocols resets your current run.</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-secondary text-sm"
-                  onClick={onCancelSwitch}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary text-sm"
-                  onClick={onConfirmSwitch}
-                >
-                  Switch
-                </button>
-              </div>
-            </div>
-          ) : null}
-          {showEndRunConfirm ? (
-            <div className="ui-inset mt-4 flex flex-wrap items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
-              <span>Ending locks this run in history.</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn btn-secondary text-sm"
-                  onClick={onCancelEndRun}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary text-sm"
-                  onClick={onConfirmEndRun}
-                >
-                  End run
-                </button>
-              </div>
-            </div>
-          ) : null}
         </>
       ) : activeRunState === "summary" && latestRun ? (
         <>
