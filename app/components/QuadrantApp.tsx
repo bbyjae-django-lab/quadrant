@@ -735,7 +735,7 @@ export default function QuadrantApp({
     }
     return aIndex - bIndex;
   });
-  const clearActiveProtocol = () => {
+  const clearActiveProtocol = (options?: { clearLocal?: boolean }) => {
     setActiveProblemId(null);
     setActiveProtocolId(null);
     setActivatedAt(null);
@@ -747,10 +747,16 @@ export default function QuadrantApp({
     setCheckInNote("");
     setShowEndRunConfirm(false);
     setShowRunDetail(false);
+    setSelectedRunId(null);
     setShowRunEndedModal(false);
     setRunEndContext(null);
     setShowCheckInModal(false);
     setConfirmProtocolId(null);
+    if (options?.clearLocal && typeof window !== "undefined") {
+      localStorage.removeItem("checkIns");
+      localStorage.removeItem("runHistory");
+      localStorage.removeItem("hasCompletedRun");
+    }
   };
 
   const appendRunHistory = (
@@ -1198,9 +1204,6 @@ export default function QuadrantApp({
                         type="button"
                         className="btn-tertiary mt-3"
                         onClick={() => {
-                          if (requireAuth()) {
-                            return;
-                          }
                           if (typeof window !== "undefined") {
                             window.location.href = "/pricing";
                           }
@@ -1232,9 +1235,6 @@ export default function QuadrantApp({
                 isPro={isPro}
                 patternInsights={patternInsights}
                 onViewPricing={() => {
-                  if (requireAuth()) {
-                    return;
-                  }
                   if (typeof window !== "undefined") {
                     window.location.href = "/pricing";
                   }
@@ -1517,18 +1517,19 @@ export default function QuadrantApp({
               ? "Save this run → Pro"
               : "See pricing"
           }
+          showCloseButton={isPro}
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
               window.location.href = "/pricing";
             }
           }}
           onPrimaryAction={() => {
-            clearActiveProtocol();
+            clearActiveProtocol({ clearLocal: !isPro });
             focusProtocolLibrary();
           }}
           onClose={() => {
             if (!isPro) {
-              clearActiveProtocol();
+              clearActiveProtocol({ clearLocal: true });
               focusProtocolLibrary();
               return;
             }

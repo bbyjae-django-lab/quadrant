@@ -9,6 +9,7 @@ type RunEndedModalProps = {
   primaryLabel: string;
   showFreeNotice?: boolean;
   freeActionLabel?: string;
+  showCloseButton?: boolean;
   onUpgradeClick?: () => void;
   onPrimaryAction: () => void;
   onClose: () => void;
@@ -21,6 +22,7 @@ export default function RunEndedModal({
   primaryLabel,
   showFreeNotice = false,
   freeActionLabel = "See pricing",
+  showCloseButton = true,
   onUpgradeClick,
   onPrimaryAction,
   onClose,
@@ -55,14 +57,16 @@ export default function RunEndedModal({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            className="btn-tertiary"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            ✕
-          </button>
+          {showCloseButton ? (
+            <button
+              type="button"
+              className="btn-tertiary"
+              aria-label="Close"
+              onClick={onClose}
+            >
+              ✕
+            </button>
+          ) : null}
         </div>
         <div className="h-[var(--space-4)]" />
         <div className="space-y-2 text-sm text-zinc-700">
