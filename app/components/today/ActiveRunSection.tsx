@@ -54,13 +54,13 @@ export default function ActiveRunSection({
   return (
     <section
       id={sectionId}
-      className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+      className="ui-surface p-[var(--space-6)]"
     >
       {activeRunState === "active" && activeProtocol ? (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-zinc-900">Active run</h2>
-            <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+            <span className="rounded-[var(--radius-pill)] border border-[var(--border-color)] px-3 py-1 text-xs font-semibold text-zinc-500">
               Active
             </span>
           </div>
@@ -92,7 +92,7 @@ export default function ActiveRunSection({
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={onCheckIn}
               disabled={!runActive}
             >
@@ -101,7 +101,7 @@ export default function ActiveRunSection({
             {isPro && runActive ? (
               <button
                 type="button"
-                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={onEndRunRequest}
               >
                 End run
@@ -110,7 +110,7 @@ export default function ActiveRunSection({
             {isPro && runActive ? (
               <button
                 type="button"
-                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={onSwitchProtocol}
               >
                 Switch protocol
@@ -118,19 +118,19 @@ export default function ActiveRunSection({
             ) : null}
           </div>
           {showSwitchConfirm ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
               <span>Switching protocols resets your current run.</span>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
                   onClick={onCancelSwitch}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
                   onClick={onConfirmSwitch}
                 >
                   Switch
@@ -139,19 +139,19 @@ export default function ActiveRunSection({
             </div>
           ) : null}
           {showEndRunConfirm ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-600">
               <span>Ending locks this run in history.</span>
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
                   onClick={onCancelEndRun}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="rounded-full bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
                   onClick={onConfirmEndRun}
                 >
                   End run
@@ -199,7 +199,7 @@ export default function ActiveRunSection({
           </div>
           <p className="mt-4 text-sm text-zinc-600">{runSummaryLine}</p>
           {showFreeRunComplete ? (
-            <div className="mt-4 rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-900">
+            <div className="mt-4 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)] text-zinc-900">
               <div className="space-y-2">
                 <div className="text-sm font-semibold">Free run complete.</div>
                 <p className="text-sm text-zinc-600">
@@ -209,7 +209,7 @@ export default function ActiveRunSection({
               <div className="mt-4">
                 <button
                   type="button"
-                  className="rounded-full border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
+                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
                   onClick={onViewPricing}
                 >
                   View pricing
@@ -222,7 +222,7 @@ export default function ActiveRunSection({
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-semibold text-zinc-900">Active run</h2>
-            <span className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-500">
+            <span className="rounded-[var(--radius-pill)] border border-[var(--border-color)] px-3 py-1 text-xs font-semibold text-zinc-500">
               Inactive
             </span>
           </div>

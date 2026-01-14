@@ -987,9 +987,9 @@ export default function QuadrantApp({
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-zinc-900">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
       <main
-        className={`w-full max-w-3xl rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm sm:p-10 ${
+        className={`w-full max-w-3xl rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-8)] shadow-[var(--shadow-1)] sm:p-[var(--space-10)] ${
           runEndModalOpen ? "pointer-events-none select-none" : ""
         }`}
         aria-hidden={runEndModalOpen}
@@ -1058,7 +1058,7 @@ export default function QuadrantApp({
                   }}
                 />
               ) : (
-                <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <section className="ui-surface p-[var(--space-6)]">
                   <div className="flex w-full items-start justify-between text-left">
                     <div>
                       <h2 className="text-lg font-semibold text-zinc-900">
@@ -1153,12 +1153,12 @@ export default function QuadrantApp({
                   <div
                     key={protocol.id}
                     className={`rounded-xl border transition ${
-                      isExpanded ? "border-zinc-900 bg-zinc-50" : "border-zinc-200"
+                      isExpanded ? "border-zinc-900 bg-zinc-50" : "border-[var(--border-color)]"
                     }`}
                   >
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:border-zinc-400"
+                      className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:border-zinc-400"
                       onClick={() => {
                         setLibraryProtocolId(isExpanded ? null : protocol.id);
                       }}
@@ -1176,8 +1176,8 @@ export default function QuadrantApp({
                       </span>
                     </button>
                     {isExpanded ? (
-                      <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
-                        <div className="border-l border-zinc-200 pl-4">
+                      <div className="border-t border-[var(--border-color)] bg-white/60 px-[var(--space-4)] py-[var(--space-4)]">
+                        <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
                           <dl className="space-y-4 text-sm text-zinc-700">
                             <div>
                               <dt className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -1201,7 +1201,7 @@ export default function QuadrantApp({
                           <div className="flex flex-wrap gap-3 pt-4">
                             <button
                               type="button"
-                              className="rounded-full bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-5)] py-[var(--space-2)] text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={freeRunComplete}
                               onClick={() => {
                                 if (freeRunComplete) {
@@ -1243,8 +1243,8 @@ export default function QuadrantApp({
         />
       ) : null}
       {selectedProtocol ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
-          <div className="flex w-full max-w-xl max-h-[85vh] flex-col rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
+          <div className="flex w-full max-w-xl max-h-[85vh] flex-col ui-modal p-[var(--space-6)]">
             <div className="space-y-2">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
                 Activate protocol?
@@ -1271,7 +1271,7 @@ export default function QuadrantApp({
                 </div>
               </div>
               {isPro ? (
-                <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
                   <button
                     type="button"
                     className="flex w-full items-center justify-between text-left text-sm font-semibold text-zinc-900"
@@ -1349,7 +1349,7 @@ export default function QuadrantApp({
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
                 onClick={() => {
                   setConfirmProtocolId(null);
                   setShowObservedBehaviourPicker(false);
@@ -1361,7 +1361,7 @@ export default function QuadrantApp({
               </button>
               <button
                 type="button"
-                className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
                 onClick={handleActivateProtocol}
               >
                 Activate protocol
@@ -1408,8 +1408,8 @@ export default function QuadrantApp({
         />
       ) : null}
       {showRunDetail && selectedRun && selectedRunProtocol && isPro ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
+          <div className="w-full max-w-xl ui-modal p-[var(--space-6)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -1455,7 +1455,7 @@ export default function QuadrantApp({
                 </div>
               </div>
             </dl>
-            <div className="mt-6 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+            <div className="mt-6 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
               <div className="text-xs font-semibold tracking-wide text-zinc-500">
                 This run
               </div>
@@ -1472,7 +1472,7 @@ export default function QuadrantApp({
                         ? "border-zinc-300 bg-zinc-100 text-zinc-700"
                         : symbol === "✓"
                           ? "border-zinc-900 bg-zinc-900 text-white"
-                          : "border-zinc-200 text-zinc-600"
+                          : "border-[var(--border-color)] text-zinc-600"
                     }`}
                   >
                     {symbol}
@@ -1481,7 +1481,7 @@ export default function QuadrantApp({
               </div>
             </div>
             {selectedRun.notes && selectedRun.notes.length > 0 ? (
-              <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4">
+              <div className="mt-6 rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-4)]">
                 <div className="text-xs font-semibold tracking-wide text-zinc-500">
                   Notes
                 </div>
@@ -1489,7 +1489,7 @@ export default function QuadrantApp({
                   {selectedRun.notes.map((entry) => (
                     <div
                       key={`run-note-${entry.date}`}
-                      className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
+                      className="rounded-lg border border-[var(--border-color)] bg-zinc-50 px-[var(--space-3)] py-[var(--space-2)]"
                     >
                       <div className="text-xs text-zinc-500">{entry.date}</div>
                       <div className="mt-1 text-sm text-zinc-700">

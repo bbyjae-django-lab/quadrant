@@ -24,7 +24,7 @@ export default function ProtocolLibrarySection({
   return (
     <section
       id={sectionId}
-      className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm"
+      className="ui-surface p-[var(--space-6)]"
     >
       <button
         type="button"
@@ -50,12 +50,12 @@ export default function ProtocolLibrarySection({
                 <div
                   key={protocol.id}
                   className={`rounded-xl border transition ${
-                    isExpanded ? "border-zinc-900 bg-zinc-50" : "border-zinc-200"
+                    isExpanded ? "border-zinc-900 bg-zinc-50" : "border-[var(--border-color)]"
                   }`}
                 >
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:border-zinc-400"
+                    className="flex w-full items-center justify-between gap-3 px-[var(--space-4)] py-[var(--space-3)] text-left hover:border-zinc-400"
                     onClick={() => {
                       onSelectProtocol(isExpanded ? null : protocol.id);
                     }}
@@ -73,8 +73,8 @@ export default function ProtocolLibrarySection({
                     </span>
                   </button>
                   {isExpanded ? (
-                    <div className="border-t border-zinc-200 bg-white/60 px-4 py-4">
-                      <div className="border-l border-zinc-200 pl-4">
+                    <div className="border-t border-[var(--border-color)] bg-white/60 px-[var(--space-4)] py-[var(--space-4)]">
+                      <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
                         <dl className="space-y-4 text-sm text-zinc-700">
                           <div>
                             <dt className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -107,7 +107,7 @@ export default function ProtocolLibrarySection({
                           <div className="pt-4">
                             <button
                               type="button"
-                              className="rounded-full bg-zinc-900 px-5 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-5)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
                               onClick={() => onActivateProtocol(protocol.id)}
                             >
                               Activate protocol

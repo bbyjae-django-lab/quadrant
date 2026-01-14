@@ -24,11 +24,11 @@ export default function RunEndedModal({
   onClose,
 }: RunEndedModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-6 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
       <div
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-xl rounded-2xl bg-white p-8 shadow-xl"
+        className="w-full max-w-xl ui-modal p-[var(--space-8)]"
       >
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-3">
@@ -83,7 +83,7 @@ export default function RunEndedModal({
           <div>
             <button
               type="button"
-              className="rounded-full bg-zinc-800 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700"
+              className="rounded-[var(--radius-pill)] bg-zinc-800 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-700"
               onClick={onPrimaryAction}
             >
               {primaryLabel}

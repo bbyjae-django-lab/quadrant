@@ -45,7 +45,7 @@ export default function LandingPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-16">
         <section className="space-y-5">
           <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
@@ -61,7 +61,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
-              className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
               onClick={handleStartRun}
             >
               Start a run
@@ -94,7 +94,7 @@ export default function LandingPage() {
             How It Works
           </h2>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="ui-surface p-[var(--space-5)]">
               <div className="text-sm font-semibold text-zinc-900">
                 Choose a constraint
               </div>
@@ -102,7 +102,7 @@ export default function LandingPage() {
                 Pick a single rule you can’t negotiate.
               </p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="ui-surface p-[var(--space-5)]">
               <div className="text-sm font-semibold text-zinc-900">
                 Run it daily
               </div>
@@ -110,7 +110,7 @@ export default function LandingPage() {
                 Check in once. The record is binary.
               </p>
             </div>
-            <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="ui-surface p-[var(--space-5)]">
               <div className="text-sm font-semibold text-zinc-900">
                 Let the outcome stand
               </div>
@@ -155,7 +155,7 @@ export default function LandingPage() {
         <section className="space-y-3">
           <button
             type="button"
-            className="inline-flex rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="inline-flex rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
             onClick={handleStartRun}
           >
             Start a run

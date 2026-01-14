@@ -16,7 +16,7 @@ export default function RunHistorySection({
   onRowClick,
 }: RunHistorySectionProps) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="ui-surface p-[var(--space-6)]">
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
@@ -32,7 +32,7 @@ export default function RunHistorySection({
           <div className="mt-1 text-[11px] font-semibold tracking-wide text-zinc-400">
             Recent
           </div>
-          <div className="mt-4 overflow-hidden rounded-xl border border-zinc-200">
+        <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border-color)]">
             {rows.length > 0 ? (
               <div className="divide-y divide-zinc-100 text-sm text-zinc-600">
                 {rows.map((row) => {

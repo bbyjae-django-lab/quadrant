@@ -33,8 +33,8 @@ export default function DailyCheckInModal({
   maxObservedBehaviours,
 }: DailyCheckInModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-6">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
+      <div className="w-full max-w-lg ui-modal p-[var(--space-6)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-wide text-zinc-500">
@@ -65,27 +65,27 @@ export default function DailyCheckInModal({
               value={checkInNote}
               onChange={(event) => onChangeNote(event.target.value)}
               placeholder="One sentence is enough."
-              className="min-h-[88px] w-full rounded-xl border border-zinc-200 p-3 text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+              className="min-h-[88px] w-full rounded-xl border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
             />
           </div>
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
               onClick={onCleanDay}
             >
               No
             </button>
             <button
               type="button"
-              className="rounded-full border border-zinc-300 px-6 py-3 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+              className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
               onClick={onViolated}
             >
               Yes
             </button>
           </div>
           {isPro && availableObservedBehaviours.length > 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+            <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-zinc-50 p-[var(--space-4)]">
               <div className="text-sm font-semibold text-zinc-900">
                 Did any of these occur today?
               </div>

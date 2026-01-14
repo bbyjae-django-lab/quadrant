@@ -26,7 +26,7 @@ export default function PatternInsightsSection({
   onViewPricing,
 }: PatternInsightsSectionProps) {
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="ui-surface p-[var(--space-6)]">
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"

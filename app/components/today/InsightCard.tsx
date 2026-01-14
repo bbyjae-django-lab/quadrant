@@ -21,15 +21,15 @@ export default function InsightCard({
 }: InsightCardProps) {
   return (
     <div
-      className={`rounded-2xl border p-5 ${
-        isLocked ? "border-zinc-200 bg-zinc-50" : "border-zinc-200 bg-white"
+      className={`rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-5)] ${
+        isLocked ? "bg-zinc-50" : "bg-white"
       } ${className ?? ""}`}
       aria-disabled={isLocked}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="text-sm font-semibold text-zinc-700">{title}</div>
         {proBadge ? (
-          <div className="flex items-center gap-2 rounded-full border border-zinc-200 px-2 py-0.5 text-xs font-semibold text-zinc-500">
+        <div className="flex items-center gap-2 rounded-[var(--radius-pill)] border border-[var(--border-color)] px-2 py-0.5 text-xs font-semibold text-zinc-500">
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"

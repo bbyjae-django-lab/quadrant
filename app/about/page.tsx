@@ -2,7 +2,7 @@
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-10">
         <header className="space-y-3">
           <h1 className="text-3xl font-semibold text-zinc-900">
@@ -10,7 +10,7 @@ export default function AboutPage() {
           </h1>
         </header>
 
-        <section className="border-b border-zinc-200 pb-8">
+        <section className="border-b border-[var(--border-color)] pb-[var(--space-8)]">
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             What this system is
           </h2>
@@ -35,7 +35,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-b border-zinc-200 pb-8">
+        <section className="border-b border-[var(--border-color)] pb-[var(--space-8)]">
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             What Quadrant is not
           </h2>
@@ -53,7 +53,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-b border-zinc-200 pb-8">
+        <section className="border-b border-[var(--border-color)] pb-[var(--space-8)]">
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             Why it’s built this way
           </h2>
@@ -81,7 +81,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-b border-zinc-200 pb-8">
+        <section className="border-b border-[var(--border-color)] pb-[var(--space-8)]">
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             Free vs Pro (re-grounding, not selling)
           </h2>
@@ -100,7 +100,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-b border-zinc-200 pb-8">
+        <section className="border-b border-[var(--border-color)] pb-[var(--space-8)]">
           <h2 className="text-xs font-semibold tracking-wide text-zinc-500">
             On control and responsibility
           </h2>

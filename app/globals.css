@@ -3,6 +3,34 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --radius-card: 1rem;
+  --radius-modal: 1rem;
+  --radius-pill: 9999px;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.625;
+  --border-color: #e4e4e7;
+  --shadow-1: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 @theme inline {
@@ -23,4 +51,17 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.ui-surface {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+  background: #ffffff;
+  box-shadow: var(--shadow-1);
+}
+
+.ui-modal {
+  border-radius: var(--radius-modal);
+  background: #ffffff;
+  box-shadow: var(--shadow-1);
 }

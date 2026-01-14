@@ -18,7 +18,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 px-6 py-16 text-zinc-900">
+    <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-12">
         <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
           <a
@@ -38,7 +38,7 @@ export default function PricingPage() {
         </section>
 
         <section className="grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <div className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white p-[var(--space-6)] shadow-[var(--shadow-1)]">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-zinc-900">Free</h2>
               <p className="text-sm text-zinc-500">Experience constraint.</p>
@@ -51,7 +51,7 @@ export default function PricingPage() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-zinc-900 bg-zinc-900 p-6 text-white shadow-sm">
+          <div className="rounded-[var(--radius-card)] border border-zinc-900 bg-zinc-900 p-[var(--space-6)] text-white shadow-[var(--shadow-1)]">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Pro</h2>
               <p className="text-sm text-zinc-300">
@@ -72,7 +72,7 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              className="mt-5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-100"
+              className="mt-5 rounded-[var(--radius-pill)] bg-white px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-900 transition hover:bg-zinc-100"
               onClick={handleUpgrade}
             >
               Upgrade to Pro
