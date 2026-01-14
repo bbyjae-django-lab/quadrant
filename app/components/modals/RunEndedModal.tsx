@@ -8,6 +8,7 @@ type RunEndedModalProps = {
   historyStrip: string[];
   primaryLabel: string;
   showFreeNotice?: boolean;
+  freeActionLabel?: string;
   onUpgradeClick?: () => void;
   onPrimaryAction: () => void;
   onClose: () => void;
@@ -19,10 +20,15 @@ export default function RunEndedModal({
   historyStrip,
   primaryLabel,
   showFreeNotice = false,
+  freeActionLabel = "See pricing",
   onUpgradeClick,
   onPrimaryAction,
   onClose,
 }: RunEndedModalProps) {
+  const hasOutcomeHighlight =
+    runEndCopy.outcomeHighlight.trim().length > 0 ||
+    runEndCopy.outcomeSuffix.trim().length > 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
       <div
@@ -35,13 +41,19 @@ export default function RunEndedModal({
             <h2 className="text-2xl font-semibold text-zinc-900">
               {runEndCopy.title}
             </h2>
-            <p className="text-sm text-zinc-700">
-              {runEndCopy.outcomePrefix}
-              <strong className="font-semibold text-zinc-900">
-                {runEndCopy.outcomeHighlight}
-              </strong>
-              {runEndCopy.outcomeSuffix}
-            </p>
+            {hasOutcomeHighlight ? (
+              <p className="text-sm text-zinc-700">
+                {runEndCopy.outcomePrefix}
+                <strong className="font-semibold text-zinc-900">
+                  {runEndCopy.outcomeHighlight}
+                </strong>
+                {runEndCopy.outcomeSuffix}
+              </p>
+            ) : (
+              <p className="text-sm text-zinc-700">
+                {runEndCopy.outcomePrefix}
+              </p>
+            )}
           </div>
           <button
             type="button"
@@ -97,7 +109,7 @@ export default function RunEndedModal({
                 className="btn-tertiary mt-2"
                 onClick={onUpgradeClick}
               >
-                Upgrade to Pro to keep run history
+                {freeActionLabel}
               </button>
             </div>
           ) : null}

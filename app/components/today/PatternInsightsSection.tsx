@@ -33,31 +33,26 @@ export default function PatternInsightsSection({
         onClick={onToggle}
       >
         <h2 className="text-lg font-semibold text-zinc-900">
-          Pattern insights (Pro)
+          Pattern insights
         </h2>
         <span className="text-sm text-zinc-500">{collapsed ? ">" : "v"}</span>
       </button>
       {!collapsed ? (
         <>
           <p className="mt-2 text-xs text-zinc-500">
-            Pro preserves behavioural evidence across runs. Patterns surface whether you want them to or not.
+            Patterns emerge through repetition.
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Pro tracks them across runs.
           </p>
           {!isPro ? (
-            <>
-              <p className="mt-2 text-xs text-zinc-500">
-                No patterns yet.
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Free runs reset. Patterns require accumulation.
-              </p>
-              <button
-                type="button"
-                className="btn-tertiary mt-3"
-                onClick={onViewPricing}
-              >
-                Upgrade to Pro
-              </button>
-            </>
+            <button
+              type="button"
+              className="btn-tertiary mt-3"
+              onClick={onViewPricing}
+            >
+              See pricing
+            </button>
           ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {patternInsights.map((insight) => {

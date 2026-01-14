@@ -139,16 +139,13 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
   if (context.result === "Completed" && dayIndex === RUN_LENGTH) {
     return {
       title: "Run complete",
-      outcomePrefix: "You completed ",
-      outcomeHighlight: String(RUN_LENGTH),
-      outcomeSuffix: " clean trading days under this protocol.",
-      reframeLines: [
-        "This proves you can follow rules when they’re enforced.",
-        "The question now is whether this repeats — or fades.",
-      ],
-      primaryLabel: "Keep my run history",
-      primarySubtext: "$19 / month",
-      primarySupportingLine: "See what breaks first over time.",
+      outcomePrefix: "The protocol was completed without violation.",
+      outcomeHighlight: "",
+      outcomeSuffix: "",
+      reframeLines: [],
+      primaryLabel: "Start another run",
+      primarySubtext: "",
+      primarySupportingLine: "",
       secondaryLabel: "Close",
     };
   }
@@ -166,9 +163,9 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
         "Early failures usually mean the rule exposed a real reflex. That’s the point.",
         RUN_END_INSIGHT_LINE,
       ],
-      primaryLabel: "Keep my run history",
-      primarySubtext: "$19 / month",
-      primarySupportingLine: "See what breaks first over time.",
+      primaryLabel: "Start another run",
+      primarySubtext: "",
+      primarySupportingLine: "",
       secondaryLabel: "Close",
     };
   }
@@ -184,9 +181,9 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
         "This is where patterns usually show up — right before completion.",
         "What matters now is whether you let this reset silently… or keep the evidence.",
       ],
-      primaryLabel: "Keep my run history",
-      primarySubtext: "$19 / month",
-      primarySupportingLine: "See what breaks first over time.",
+      primaryLabel: "Start another run",
+      primarySubtext: "",
+      primarySupportingLine: "",
       secondaryLabel: "Close",
     };
   }
@@ -201,9 +198,9 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
       "Early failures usually mean the rule exposed a real reflex. That’s the point.",
       RUN_END_INSIGHT_LINE,
     ],
-    primaryLabel: "Keep my run history",
-    primarySubtext: "$19 / month",
-    primarySupportingLine: "See what breaks first over time.",
+    primaryLabel: "Start another run",
+    primarySubtext: "",
+    primarySupportingLine: "",
     secondaryLabel: "Close",
   };
 };
@@ -1025,6 +1022,7 @@ export default function QuadrantApp({
               showEndRunConfirm={showEndRunConfirm}
               sectionId="active-run"
               onCheckIn={handleCheckInClick}
+              onStartRun={focusProtocolLibrary}
               onEndRunRequest={() => setShowEndRunConfirm(true)}
               onSwitchProtocol={handleSwitchProtocol}
               onCancelSwitch={() => setShowSwitchConfirm(false)}
@@ -1379,20 +1377,19 @@ export default function QuadrantApp({
           historyStrip={runEndHistoryStrip}
           primaryLabel={runEndPrimaryLabel}
           showFreeNotice={!isPro}
+          freeActionLabel={
+            runEndContext?.result === "Completed"
+              ? "Save this run → Pro"
+              : "See pricing"
+          }
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
               window.location.href = "/pricing";
             }
           }}
           onPrimaryAction={() => {
-            if (!isPro) {
-              clearActiveProtocol();
-              focusProtocolLibrary();
-              return;
-            }
-            if (typeof window !== "undefined") {
-              window.location.href = "/pricing";
-            }
+            clearActiveProtocol();
+            focusProtocolLibrary();
           }}
           onClose={() => {
             if (!isPro) {
@@ -1502,6 +1499,49 @@ export default function QuadrantApp({
                 </div>
               </div>
             ) : null}
+          </div>
+        </div>
+      ) : null}
+      {showRunDetail && selectedRun && selectedRunProtocol && !isPro ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
+          <div className="w-full max-w-xl ui-modal p-[var(--space-6)]">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-semibold text-zinc-900">
+                  Run history
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="btn-tertiary"
+                onClick={() => setShowRunDetail(false)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="mt-4 text-sm text-zinc-700">
+              Run details are available in Pro.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="btn btn-primary text-sm"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/pricing";
+                  }
+                }}
+              >
+                See pricing
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary text-sm"
+                onClick={() => setShowRunDetail(false)}
+              >
+                Back to Today
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

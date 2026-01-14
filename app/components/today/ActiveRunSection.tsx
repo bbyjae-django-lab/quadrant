@@ -17,6 +17,7 @@ type ActiveRunSectionProps = {
   showEndRunConfirm: boolean;
   sectionId?: string;
   onCheckIn: () => void;
+  onStartRun: () => void;
   onEndRunRequest: () => void;
   onSwitchProtocol: () => void;
   onCancelSwitch: () => void;
@@ -43,6 +44,7 @@ export default function ActiveRunSection({
   showEndRunConfirm,
   sectionId,
   onCheckIn,
+  onStartRun,
   onEndRunRequest,
   onSwitchProtocol,
   onCancelSwitch,
@@ -221,14 +223,25 @@ export default function ActiveRunSection({
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold text-zinc-900">Active run</h2>
-            <span className="rounded-[var(--radius-pill)] border border-[var(--border-color)] px-3 py-1 text-xs font-semibold text-zinc-500">
-              Inactive
-            </span>
+            <h2 className="text-lg font-semibold text-zinc-900">
+              No active run.
+            </h2>
           </div>
-          <p className="mt-3 text-sm text-zinc-600">
-            Start a protocol to begin a run.
+          <p className="mt-2 text-sm text-zinc-600">
+            Select one protocol to enforce today.
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="btn btn-primary text-sm"
+              onClick={onStartRun}
+            >
+              Start a run
+            </button>
+            <a href="/about" className="btn-tertiary text-sm">
+              How this works
+            </a>
+          </div>
         </>
       )}
     </section>
