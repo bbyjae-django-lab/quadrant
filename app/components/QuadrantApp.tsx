@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
 import { observedBehaviours } from "../data/observedBehaviours";
@@ -14,6 +14,13 @@ import type {
   RunHistoryEntry,
   RunHistoryRow,
 } from "../types";
+import { useAuth } from "../providers/AuthProvider";
+import { getAdapter, type CheckinRecord } from "../lib/storageAdapter";
+import {
+  hasMigratedToSupabase,
+  migrateLocalToSupabase,
+} from "../lib/migrate";
+import AuthModal from "./modals/AuthModal";
 import DailyCheckInModal from "./modals/DailyCheckInModal";
 import RunEndedModal from "./modals/RunEndedModal";
 import ActiveRunSection from "./today/ActiveRunSection";
@@ -62,6 +69,37 @@ const persistRunHistory = (history: RunHistoryEntry[]) => {
     return;
   }
   localStorage.setItem("runHistory", JSON.stringify(history));
+};
+
+const getDayIndex = (startDate: string | null, date: string) => {
+  if (!startDate) {
+    return 0;
+  }
+  const start = new Date(startDate);
+  const target = new Date(date);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(target.getTime())) {
+    return 0;
+  }
+  const diff = target.getTime() - start.getTime();
+  return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
+};
+
+const buildCheckinsFromSnapshot = (
+  runId: string,
+  startDate: string | null,
+  snapshot: Record<
+    string,
+    { followed: boolean; note?: string; observedBehaviourIds?: string[] }
+  >,
+): CheckinRecord[] => {
+  return Object.entries(snapshot).map(([date, entry], index) => ({
+    id: `${runId}-${date}-${index}`,
+    runId,
+    dayIndex: getDayIndex(startDate, date),
+    result: entry.followed ? "clean" : "violated",
+    note: entry.note,
+    createdAt: new Date(date).toISOString(),
+  }));
 };
 
 const getDashboardViewModel = ({
@@ -345,6 +383,7 @@ export default function QuadrantApp({
   const router = useRouter();
   const pathname = usePathname();
   const isDashboardRoute = pathname === "/dashboard";
+  const { user, isAuthed } = useAuth();
   const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
     null,
   );
@@ -376,6 +415,7 @@ export default function QuadrantApp({
   );
   const [showRunDetail, setShowRunDetail] = useState(false);
   const [showRunEndedModal, setShowRunEndedModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [runEndContext, setRunEndContext] = useState<RunEndContext | null>(
     null,
   );
@@ -398,6 +438,32 @@ export default function QuadrantApp({
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const storageAdapter = useMemo(
+    () =>
+      getAdapter({
+        isAuthed,
+        isPro,
+        userId: user?.id ?? null,
+      }),
+    [isAuthed, isPro, user?.id],
+  );
+
+  useEffect(() => {
+    if (!isAuthed || !isPro || !user?.id) {
+      return;
+    }
+    if (hasMigratedToSupabase()) {
+      return;
+    }
+    void migrateLocalToSupabase(user.id);
+  }, [isAuthed, isPro, user?.id]);
+
+  useEffect(() => {
+    if (isAuthed && showAuthModal) {
+      setShowAuthModal(false);
+    }
+  }, [isAuthed, showAuthModal]);
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
@@ -468,26 +534,59 @@ export default function QuadrantApp({
     if (isPro && storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
     }
-    if (isPro && storedRunHistory) {
-      try {
-        const parsedHistory = JSON.parse(storedRunHistory) as RunHistoryEntry[];
-        setRunHistory(
-          parsedHistory.map((entry) => ({
-            ...entry,
-            observedBehaviourIds: clampObservedBehaviours(
-              entry.observedBehaviourIds,
-            ),
-            observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
-          })),
-        );
-      } catch {
+    if (isPro) {
+      if (isAuthed && storageAdapter.isSupabase) {
+        let active = true;
+        storageAdapter
+          .loadRuns()
+          .then((runs) => {
+            if (!active) {
+              return;
+            }
+            setRunHistory(
+              runs.map((entry) => ({
+                ...entry,
+                observedBehaviourIds: clampObservedBehaviours(
+                  entry.observedBehaviourIds,
+                ),
+                observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+              })),
+            );
+            setHasCompletedRun(runs.length > 0);
+          })
+          .catch(() => {
+            if (!active) {
+              return;
+            }
+            setRunHistory([]);
+          });
+        return () => {
+          active = false;
+        };
+      }
+      if (storedRunHistory) {
+        try {
+          const parsedHistory = JSON.parse(storedRunHistory) as RunHistoryEntry[];
+          setRunHistory(
+            parsedHistory.map((entry) => ({
+              ...entry,
+              observedBehaviourIds: clampObservedBehaviours(
+                entry.observedBehaviourIds,
+              ),
+              observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+            })),
+          );
+        } catch {
+          setRunHistory([]);
+        }
+      } else {
         setRunHistory([]);
       }
-    } else if (!isPro) {
+    } else {
       setRunHistory([]);
     }
 
-  }, [isPro]);
+  }, [isPro, isAuthed, storageAdapter]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showCheckInModal) {
@@ -542,7 +641,7 @@ export default function QuadrantApp({
       "observedBehaviourIds",
       JSON.stringify(clampObservedBehaviours(observedBehaviourIds)),
     );
-    if (isPro) {
+    if (isPro && !storageAdapter.isSupabase) {
       localStorage.setItem(
         "hasCompletedRun",
         hasCompletedRun ? "true" : "false",
@@ -564,6 +663,7 @@ export default function QuadrantApp({
     hasCompletedRun,
     runHistory,
     isPro,
+    storageAdapter,
   ]);
 
   const selectedProtocol = confirmProtocolId
@@ -690,9 +790,22 @@ export default function QuadrantApp({
     };
     setRunHistory((prev) => {
       const next = [entry, ...prev];
-      persistRunHistory(next);
+      if (!storageAdapter.isSupabase) {
+        persistRunHistory(next);
+      }
       return next;
     });
+    if (storageAdapter.isSupabase) {
+      void storageAdapter.saveRun(entry);
+      const checkins = buildCheckinsFromSnapshot(
+        entry.id,
+        runStartDate ?? activatedAt,
+        snapshot,
+      );
+      checkins.forEach((checkin) => {
+        void storageAdapter.addCheckin(checkin);
+      });
+    }
   };
 
   const activateProtocol = (
@@ -956,6 +1069,13 @@ export default function QuadrantApp({
   const runEndPrimaryLabel = !isPro
     ? "Start another run"
     : runEndCopy?.primaryLabel ?? "";
+  const requireAuth = () => {
+    if (isAuthed) {
+      return false;
+    }
+    setShowAuthModal(true);
+    return true;
+  };
   const focusProtocolLibrary = () => {
     setIsProtocolLibraryCollapsed(false);
     setIsRunHistoryCollapsed(true);
@@ -1041,16 +1161,22 @@ export default function QuadrantApp({
                   collapsed={isRunHistoryCollapsedResolved}
                   count={dashboardViewModel.runHistory.count}
                   rows={dashboardViewModel.runHistory.visibleRows}
-                  onToggle={() =>
+                  onToggle={() => {
+                    if (requireAuth()) {
+                      return;
+                    }
                     setIsRunHistoryCollapsed(
                       (collapsed) =>
                         !(
                           collapsed ??
                           dashboardViewModel.defaults.runHistoryCollapsed
                         ),
-                    )
-                  }
+                    );
+                  }}
                   onRowClick={(rowId) => {
+                    if (requireAuth()) {
+                      return;
+                    }
                     setSelectedRunId(rowId);
                     setShowRunDetail(true);
                   }}
@@ -1072,6 +1198,9 @@ export default function QuadrantApp({
                         type="button"
                         className="btn-tertiary mt-3"
                         onClick={() => {
+                          if (requireAuth()) {
+                            return;
+                          }
                           if (typeof window !== "undefined") {
                             window.location.href = "/pricing";
                           }
@@ -1088,18 +1217,24 @@ export default function QuadrantApp({
               )}
               <PatternInsightsSection
                 collapsed={isPatternInsightsCollapsedResolved}
-                onToggle={() =>
+                onToggle={() => {
+                  if (requireAuth()) {
+                    return;
+                  }
                   setIsPatternInsightsCollapsed(
                     (collapsed) =>
                       !(
                         collapsed ??
                         dashboardViewModel.defaults.patternInsightsCollapsed
                       ),
-                  )
-                }
+                  );
+                }}
                 isPro={isPro}
                 patternInsights={patternInsights}
                 onViewPricing={() => {
+                  if (requireAuth()) {
+                    return;
+                  }
                   if (typeof window !== "undefined") {
                     window.location.href = "/pricing";
                   }
@@ -1405,6 +1540,9 @@ export default function QuadrantApp({
             setRunEndContext(null);
           }}
         />
+      ) : null}
+      {showAuthModal ? (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
       ) : null}
       {showRunDetail && selectedRun && selectedRunProtocol && isPro ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
