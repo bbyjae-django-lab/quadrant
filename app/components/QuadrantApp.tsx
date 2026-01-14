@@ -999,7 +999,7 @@ export default function QuadrantApp({
           <div className="flex items-center gap-3">
             <a
               href="/about"
-              className="text-xs font-semibold text-zinc-400 hover:text-zinc-600"
+              className="btn-tertiary"
             >
               About Quadrant
             </a>
@@ -1072,7 +1072,7 @@ export default function QuadrantApp({
                       </p>
                       <button
                         type="button"
-                        className="mt-3 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                        className="btn-tertiary mt-3"
                         onClick={() => {
                           if (typeof window !== "undefined") {
                             window.location.href = "/pricing";
@@ -1201,7 +1201,7 @@ export default function QuadrantApp({
                           <div className="flex flex-wrap gap-3 pt-4">
                             <button
                               type="button"
-                              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-5)] py-[var(--space-2)] text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="btn btn-primary text-sm"
                               disabled={freeRunComplete}
                               onClick={() => {
                                 if (freeRunComplete) {
@@ -1349,7 +1349,7 @@ export default function QuadrantApp({
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
-                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="btn btn-secondary text-sm"
                 onClick={() => {
                   setConfirmProtocolId(null);
                   setShowObservedBehaviourPicker(false);
@@ -1361,7 +1361,7 @@ export default function QuadrantApp({
               </button>
               <button
                 type="button"
-                className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="btn btn-primary text-sm"
                 onClick={handleActivateProtocol}
               >
                 Activate protocol
@@ -1421,7 +1421,7 @@ export default function QuadrantApp({
               </div>
               <button
                 type="button"
-                className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+                className="btn-tertiary"
                 onClick={() => setShowRunDetail(false)}
               >
                 Close

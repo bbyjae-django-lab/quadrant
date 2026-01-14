@@ -61,14 +61,14 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
-              className="inline-flex rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="btn btn-primary text-sm"
               onClick={handleStartRun}
             >
               Start a run
             </button>
             <a
               href="/pricing"
-              className="text-sm font-semibold text-zinc-500 hover:text-zinc-700"
+              className="btn-tertiary text-sm"
             >
               Pricing
             </a>
@@ -135,7 +135,7 @@ export default function LandingPage() {
           </p>
           <a
             href="/pricing"
-            className="text-sm font-semibold text-zinc-500 hover:text-zinc-700"
+            className="btn-tertiary text-sm"
           >
             View pricing
           </a>
@@ -155,7 +155,7 @@ export default function LandingPage() {
         <section className="space-y-3">
           <button
             type="button"
-            className="inline-flex rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="btn btn-primary text-sm"
             onClick={handleStartRun}
           >
             Start a run

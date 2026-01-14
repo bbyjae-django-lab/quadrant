@@ -23,7 +23,7 @@ export default function PricingPage() {
         <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
           <a
             href="/dashboard"
-            className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+            className="btn-tertiary"
           >
             Back to Today
           </a>
@@ -51,7 +51,7 @@ export default function PricingPage() {
             </ul>
           </div>
 
-          <div className="rounded-[var(--radius-card)] border border-zinc-900 bg-zinc-900 p-[var(--space-6)] text-white shadow-[var(--shadow-1)]">
+          <div className="on-dark rounded-[var(--radius-card)] border border-zinc-900 bg-zinc-900 p-[var(--space-6)] text-white shadow-[var(--shadow-1)]">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold">Pro</h2>
               <p className="text-sm text-zinc-300">
@@ -72,7 +72,7 @@ export default function PricingPage() {
             </p>
             <button
               type="button"
-              className="mt-5 rounded-[var(--radius-pill)] bg-white px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-900 transition hover:bg-zinc-100"
+              className="btn btn-primary mt-5"
               onClick={handleUpgrade}
             >
               Upgrade to Pro

@@ -45,7 +45,7 @@ export default function RunEndedModal({
           </div>
           <button
             type="button"
-            className="text-sm font-semibold text-zinc-400 transition hover:text-zinc-600"
+            className="btn-tertiary"
             aria-label="Close"
             onClick={onClose}
           >
@@ -83,7 +83,7 @@ export default function RunEndedModal({
           <div>
             <button
               type="button"
-              className="rounded-[var(--radius-pill)] bg-zinc-800 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-700"
+              className="btn btn-primary text-sm"
               onClick={onPrimaryAction}
             >
               {primaryLabel}
@@ -94,7 +94,7 @@ export default function RunEndedModal({
               <p>This run won’t be saved.</p>
               <button
                 type="button"
-                className="mt-2 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                className="btn-tertiary mt-2"
                 onClick={onUpgradeClick}
               >
                 Upgrade to Pro to keep run history

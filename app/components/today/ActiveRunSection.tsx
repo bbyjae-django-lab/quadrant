@@ -92,7 +92,7 @@ export default function ActiveRunSection({
           <div className="mt-5 flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn btn-primary text-sm"
               onClick={onCheckIn}
               disabled={!runActive}
             >
@@ -101,7 +101,7 @@ export default function ActiveRunSection({
             {isPro && runActive ? (
               <button
                 type="button"
-                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="btn btn-secondary text-sm"
                 onClick={onEndRunRequest}
               >
                 End run
@@ -110,7 +110,7 @@ export default function ActiveRunSection({
             {isPro && runActive ? (
               <button
                 type="button"
-                className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+                className="btn btn-secondary text-sm"
                 onClick={onSwitchProtocol}
               >
                 Switch protocol
@@ -123,14 +123,14 @@ export default function ActiveRunSection({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  className="btn btn-secondary text-sm"
                   onClick={onCancelSwitch}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="btn btn-primary text-sm"
                   onClick={onConfirmSwitch}
                 >
                   Switch
@@ -144,14 +144,14 @@ export default function ActiveRunSection({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-700 transition hover:border-zinc-400"
+                  className="btn btn-secondary text-sm"
                   onClick={onCancelEndRun}
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="btn btn-primary text-sm"
                   onClick={onConfirmEndRun}
                 >
                   End run
@@ -209,7 +209,7 @@ export default function ActiveRunSection({
               <div className="mt-4">
                 <button
                   type="button"
-                  className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-4)] py-[var(--space-2)] text-xs font-semibold text-zinc-600 transition hover:border-zinc-400"
+                  className="btn btn-secondary text-sm"
                   onClick={onViewPricing}
                 >
                   View pricing

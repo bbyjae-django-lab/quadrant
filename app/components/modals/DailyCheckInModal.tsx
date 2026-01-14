@@ -46,7 +46,7 @@ export default function DailyCheckInModal({
           </div>
           <button
             type="button"
-            className="text-xs font-semibold text-zinc-500 hover:text-zinc-700"
+            className="btn-tertiary"
             onClick={onClose}
           >
             Close
@@ -71,14 +71,14 @@ export default function DailyCheckInModal({
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
-              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="btn btn-primary text-sm"
               onClick={onCleanDay}
             >
               No
             </button>
             <button
               type="button"
-              className="rounded-[var(--radius-pill)] border border-zinc-300 px-[var(--space-6)] py-[var(--space-3)] text-sm font-semibold text-zinc-700 transition hover:border-zinc-400"
+              className="btn btn-secondary text-sm"
               onClick={onViolated}
             >
               Yes

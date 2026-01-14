@@ -52,7 +52,7 @@ export default function PatternInsightsSection({
               </p>
               <button
                 type="button"
-                className="mt-3 text-xs font-semibold text-zinc-500 transition hover:text-zinc-700"
+                className="btn-tertiary mt-3"
                 onClick={onViewPricing}
               >
                 Upgrade to Pro

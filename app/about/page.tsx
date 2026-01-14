@@ -117,7 +117,7 @@ export default function AboutPage() {
         <div className="pt-2">
           <a
             href="/dashboard"
-            className="text-sm font-semibold text-zinc-500 hover:text-zinc-700"
+            className="btn-tertiary text-sm"
           >
             Return to active run
           </a>

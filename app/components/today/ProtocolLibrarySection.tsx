@@ -107,7 +107,7 @@ export default function ProtocolLibrarySection({
                           <div className="pt-4">
                             <button
                               type="button"
-                              className="rounded-[var(--radius-pill)] bg-zinc-900 px-[var(--space-5)] py-[var(--space-2)] text-xs font-semibold text-white transition hover:bg-zinc-800"
+                              className="btn btn-primary text-sm"
                               onClick={() => onActivateProtocol(protocol.id)}
                             >
                               Activate protocol
