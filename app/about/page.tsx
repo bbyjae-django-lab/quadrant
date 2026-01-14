@@ -114,6 +114,10 @@ export default function AboutPage() {
           </div>
         </section>
 
+        <div className="space-y-3 pt-2 text-base leading-7 text-zinc-700">
+          <p>Quadrant does not analyse trades. It enforces behaviour.</p>
+        </div>
+
         <div className="pt-2">
           <a
             href="/dashboard"
@@ -123,6 +127,21 @@ export default function AboutPage() {
           </a>
         </div>
       </main>
+      <footer className="mx-auto mt-[var(--space-12)] w-full max-w-2xl border-t border-[var(--border-color)] pt-[var(--space-6)] text-xs text-zinc-500">
+        <div className="space-y-1">
+          <p>No brokerage connection.</p>
+          <p>No trade data required.</p>
+          <p>Local-first. Data persists only when you choose Pro.</p>
+        </div>
+        <div className="mt-3 flex gap-4">
+          <a href="/about" className="btn-tertiary text-xs">
+            About
+          </a>
+          <a href="/pricing" className="btn-tertiary text-xs">
+            Pricing
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

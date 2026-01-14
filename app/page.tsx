@@ -165,6 +165,21 @@ export default function LandingPage() {
           </p>
         </section>
       </main>
+      <footer className="mx-auto mt-[var(--space-12)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-6)] text-xs text-zinc-500">
+        <div className="space-y-1">
+          <p>No brokerage connection.</p>
+          <p>No trade data required.</p>
+          <p>Local-first. Data persists only when you choose Pro.</p>
+        </div>
+        <div className="mt-3 flex gap-4">
+          <a href="/about" className="btn-tertiary text-xs">
+            About
+          </a>
+          <a href="/pricing" className="btn-tertiary text-xs">
+            Pricing
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }
