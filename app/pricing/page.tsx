@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const PRO_PRICE = 29;
 
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
+  const router = useRouter();
   const hasProEntitlement = false;
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
@@ -21,12 +23,13 @@ export default function PricingPage() {
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
         <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
-          <a
-            href="/dashboard"
+          <button
+            type="button"
             className="btn-tertiary"
+            onClick={() => router.back()}
           >
-            Back to Today
-          </a>
+            Back
+          </button>
         </div>
         <section className="space-y-3">
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
