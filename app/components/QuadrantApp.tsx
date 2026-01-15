@@ -411,22 +411,45 @@ export default function QuadrantApp({
   const pathname = usePathname();
   const isDashboardRoute = pathname === "/dashboard";
   const { user, isAuthed, authLoading } = useAuth();
+  const initialLocalSnapshot =
+    !isAuthed && typeof window !== "undefined" ? loadLocalActiveRun() : null;
+  const initialLocalCheckIns = initialLocalSnapshot
+    ? initialLocalSnapshot.checkins.map((entry) => ({
+        dayIndex: entry.dayIndex,
+        date: entry.createdAt.slice(0, 10),
+        followed: entry.result === "clean",
+        note: entry.note,
+      }))
+    : [];
   const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
     null,
   );
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
-  const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
-  const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [activatedAt, setActivatedAt] = useState<string | null>(null);
+  const [activeProtocolId, setActiveProtocolId] = useState<string | null>(
+    initialLocalSnapshot?.protocolId ?? null,
+  );
+  const [activeRunId, setActiveRunId] = useState<string | null>(
+    initialLocalSnapshot?.runId ?? null,
+  );
+  const [activatedAt, setActivatedAt] = useState<string | null>(
+    initialLocalSnapshot?.startedAt ?? null,
+  );
   const [checkInNote, setCheckInNote] = useState("");
   const [runStatus, setRunStatus] = useState<
     "idle" | "active" | "failed" | "completed" | "ended"
-  >("idle");
-  const [runStartDate, setRunStartDate] = useState<string | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [checkIns, setCheckIns] = useState<CheckInEntry[]>([]);
+  >(initialLocalSnapshot ? "active" : "idle");
+  const [runStartDate, setRunStartDate] = useState<string | null>(
+    initialLocalSnapshot?.startedAt
+      ? initialLocalSnapshot.startedAt.slice(0, 10)
+      : null,
+  );
+  const [streak, setStreak] = useState(
+    initialLocalCheckIns.filter((entry) => entry.followed).length,
+  );
+  const [checkIns, setCheckIns] =
+    useState<CheckInEntry[]>(initialLocalCheckIns);
   const [observedBehaviourIds, setObservedBehaviourIds] = useState<string[]>(
-    [],
+    clampObservedBehaviours(initialLocalSnapshot?.optionalTrackedBehaviours),
   );
   const [observedBehaviourLogSelection, setObservedBehaviourLogSelection] =
     useState<string[]>([]);
@@ -516,6 +539,37 @@ export default function QuadrantApp({
       return;
     }
 
+    if (!isAuthed) {
+      const snapshot = loadLocalActiveRun();
+      if (snapshot && snapshot.status === "active") {
+        setActiveRunId(snapshot.runId);
+        setActiveProtocolId(snapshot.protocolId);
+        setRunStatus("active");
+        setActivatedAt(snapshot.startedAt);
+        setRunStartDate(snapshot.startedAt.slice(0, 10));
+        setCheckIns(
+          snapshot.checkins.map((entry) => ({
+            dayIndex: entry.dayIndex,
+            date: entry.createdAt.slice(0, 10),
+            followed: entry.result === "clean",
+            note: entry.note,
+          })),
+        );
+        setStreak(
+          snapshot.checkins.filter((entry) => entry.result === "clean").length,
+        );
+        setObservedBehaviourIds(
+          clampObservedBehaviours(snapshot.optionalTrackedBehaviours),
+        );
+        setRunsLoading(false);
+        setHasHydrated(true);
+        return;
+      }
+      setRunsLoading(false);
+      setHasHydrated(true);
+      return;
+    }
+
     const storedActiveProblemId = localStorage.getItem("activeProblemId");
     const storedProtocolId = localStorage.getItem("activeProtocolId");
     const storedRunId = localStorage.getItem("activeRunId");
@@ -590,30 +644,6 @@ export default function QuadrantApp({
     }
     if (storedProtocolId && !storedRunId) {
       setActiveRunId(createRunId());
-    }
-    if (!isAuthed) {
-      const snapshot = loadLocalActiveRun();
-      if (snapshot && snapshot.status === "active") {
-        setActiveRunId(snapshot.runId);
-        setActiveProtocolId(snapshot.protocolId);
-        setRunStatus("active");
-        setActivatedAt(snapshot.startedAt);
-        setRunStartDate(snapshot.startedAt.slice(0, 10));
-        setCheckIns(
-          snapshot.checkins.map((entry) => ({
-            dayIndex: entry.dayIndex,
-            date: entry.createdAt.slice(0, 10),
-            followed: entry.result === "clean",
-            note: entry.note,
-          })),
-        );
-        setStreak(
-          snapshot.checkins.filter((entry) => entry.result === "clean").length,
-        );
-        setObservedBehaviourIds(
-          clampObservedBehaviours(snapshot.optionalTrackedBehaviours),
-        );
-      }
     }
     if (storedObservedBehaviours) {
       try {
