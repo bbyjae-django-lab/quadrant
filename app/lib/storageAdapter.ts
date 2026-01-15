@@ -19,6 +19,26 @@ export type StorageAdapter = {
   isSupabase: boolean;
 };
 
+const SUPABASE_READY_KEY = "quadrant_supabase_ready";
+
+export const isSupabaseReady = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+  return localStorage.getItem(SUPABASE_READY_KEY) === "true";
+};
+
+export const setSupabaseReady = (ready: boolean) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  if (ready) {
+    localStorage.setItem(SUPABASE_READY_KEY, "true");
+  } else {
+    localStorage.removeItem(SUPABASE_READY_KEY);
+  }
+};
+
 const parseLocalRunHistory = () => {
   if (typeof window === "undefined") {
     return [];
@@ -93,6 +113,150 @@ export const LocalAdapter: StorageAdapter = {
   addCheckin: async () => {},
 };
 
+export const loadSupabaseRunsWithCheckins = async (userId: string) => {
+  const client = getSupabaseClient();
+  if (!client) {
+    return { ok: false, hasData: false, runs: [], checkinsByRunId: {} };
+  }
+  const { data: runs, error: runError } = await client
+    .from("runs")
+    .select("id, protocol_id, protocol_name, status, started_at, ended_at")
+    .eq("user_id", userId)
+    .order("started_at", { ascending: false });
+  if (runError || !runs) {
+    console.warn(runError?.message ?? "Failed to load runs.");
+    return { ok: false, hasData: false, runs: [], checkinsByRunId: {} };
+  }
+  if (runs.length === 0) {
+    return { ok: true, hasData: false, runs: [], checkinsByRunId: {} };
+  }
+  const runIds = runs.map((run) => run.id);
+  const { data: checkins, error: checkinError } = await client
+    .from("checkins")
+    .select("id, run_id, day_index, result, note, created_at")
+    .eq("user_id", userId)
+    .in("run_id", runIds);
+  if (checkinError) {
+    console.warn(checkinError.message);
+  }
+  const mappedRuns: RunHistoryEntry[] = [];
+  runs.forEach((run) => {
+    const result = mapStatusToResult(run.status);
+    if (!result) {
+      return;
+    }
+    const runCheckins = checkins?.filter((item) => item.run_id === run.id) ?? [];
+    const cleanDays = runCheckins.filter(
+      (item) => item.result === "clean",
+    ).length;
+    const notes = runCheckins
+      .filter((item) => item.note && item.note.trim().length > 0)
+      .map((item) => ({
+        date: item.created_at?.slice(0, 10) ?? "",
+        note: item.note as string,
+      }));
+    mappedRuns.push({
+      id: run.id,
+      protocolId: run.protocol_id,
+      protocolName: run.protocol_name,
+      startedAt: run.started_at,
+      endedAt: run.ended_at ?? new Date().toISOString(),
+      result,
+      cleanDays,
+      observedBehaviourIds: [],
+      observedBehaviourLogCounts: {},
+      notes,
+    });
+  });
+  const checkinsByRunId = (checkins ?? []).reduce<Record<string, CheckinRecord[]>>(
+    (acc, item) => {
+      const entry: CheckinRecord = {
+        id: item.id,
+        runId: item.run_id,
+        dayIndex: item.day_index,
+        result: item.result,
+        note: item.note ?? undefined,
+        createdAt: item.created_at,
+      };
+      acc[item.run_id] = acc[item.run_id] ? [...acc[item.run_id], entry] : [entry];
+      return acc;
+    },
+    {},
+  );
+  return {
+    ok: true,
+    hasData: mappedRuns.length > 0,
+    runs: mappedRuns,
+    checkinsByRunId,
+  };
+};
+
+export const upsertSupabaseRun = async ({
+  userId,
+  id,
+  protocolId,
+  protocolName,
+  status,
+  startedAt,
+  endedAt,
+}: {
+  userId: string;
+  id: string;
+  protocolId: string;
+  protocolName: string;
+  status: "active" | "completed" | "failed" | "ended";
+  startedAt: string | null;
+  endedAt?: string | null;
+}) => {
+  const client = getSupabaseClient();
+  if (!client) {
+    return false;
+  }
+  const { error } = await client.from("runs").upsert({
+    id,
+    user_id: userId,
+    protocol_id: protocolId,
+    protocol_name: protocolName,
+    status,
+    started_at: startedAt,
+    ended_at: endedAt ?? null,
+  });
+  if (error) {
+    console.warn(error.message);
+    return false;
+  }
+  setSupabaseReady(true);
+  return true;
+};
+
+export const insertSupabaseCheckin = async ({
+  userId,
+  checkin,
+}: {
+  userId: string;
+  checkin: CheckinRecord;
+}) => {
+  const client = getSupabaseClient();
+  if (!client) {
+    return false;
+  }
+  const { error } = await client.from("checkins").insert({
+    id: checkin.id,
+    run_id: checkin.runId,
+    user_id: userId,
+    day_index: checkin.dayIndex,
+    result: checkin.result,
+    note: checkin.note ?? null,
+    created_at: checkin.createdAt,
+  });
+  if (error) {
+    console.warn(error.message);
+    return false;
+  }
+  setSupabaseReady(true);
+  return true;
+};
+
 const mapStatusToResult = (status: string): RunHistoryEntry["result"] | null => {
   if (status === "completed") {
     return "Completed";
@@ -137,7 +301,6 @@ export const createSupabaseAdapter = (userId: string): StorageAdapter => ({
       .in("run_id", runIds);
     if (checkinError) {
       console.warn(checkinError.message);
-      return LocalAdapter.loadRuns();
     }
     const mappedRuns: RunHistoryEntry[] = [];
     runs.forEach((run) => {
@@ -169,6 +332,9 @@ export const createSupabaseAdapter = (userId: string): StorageAdapter => ({
         notes,
       });
     });
+    if (mappedRuns.length > 0) {
+      setSupabaseReady(true);
+    }
     return mappedRuns;
   },
   saveRun: async (run) => {
@@ -258,14 +424,14 @@ export const createSupabaseAdapter = (userId: string): StorageAdapter => ({
 
 export const getAdapter = ({
   isAuthed,
-  isPro,
   userId,
+  supabaseReady,
 }: {
   isAuthed: boolean;
-  isPro: boolean;
   userId: string | null;
+  supabaseReady: boolean;
 }): StorageAdapter => {
-  if (isAuthed && isPro && userId) {
+  if (isAuthed && supabaseReady && userId) {
     const client = getSupabaseClient();
     if (client) {
       return createSupabaseAdapter(userId);

@@ -15,7 +15,15 @@ import type {
   RunHistoryRow,
 } from "../types";
 import { useAuth } from "../providers/AuthProvider";
-import { getAdapter, type CheckinRecord } from "../lib/storageAdapter";
+import {
+  getAdapter,
+  insertSupabaseCheckin,
+  isSupabaseReady,
+  loadSupabaseRunsWithCheckins,
+  setSupabaseReady,
+  upsertSupabaseRun,
+  type CheckinRecord,
+} from "../lib/storageAdapter";
 import {
   hasMigratedToSupabase,
   migrateLocalToSupabase,
@@ -220,6 +228,7 @@ const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
 const storageKeys = [
   "activeProblemId",
   "activeProtocolId",
+  "activeRunId",
   "activatedAt",
   "runStatus",
   "runStartDate",
@@ -241,6 +250,13 @@ const getLocalDateString = () => {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const createRunId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `run-${Date.now()}`;
 };
 
 type CheckInEntry = {
@@ -320,6 +336,7 @@ export default function QuadrantApp({
   );
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
   const [activeProtocolId, setActiveProtocolId] = useState<string | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [activatedAt, setActivatedAt] = useState<string | null>(null);
   const [checkInNote, setCheckInNote] = useState("");
   const [runStatus, setRunStatus] = useState<
@@ -364,15 +381,16 @@ export default function QuadrantApp({
   const [runCheckinsByRunId, setRunCheckinsByRunId] = useState<
     Record<string, CheckinRecord[]>
   >({});
+  const [supabaseReady, setSupabaseReadyState] = useState(false);
   const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
       getAdapter({
         isAuthed,
-        isPro,
         userId: user?.id ?? null,
+        supabaseReady,
       }),
-    [isAuthed, isPro, user?.id],
+    [isAuthed, user?.id, supabaseReady],
   );
 
   useEffect(() => {
@@ -392,6 +410,13 @@ export default function QuadrantApp({
   }, [isAuthed, showAuthModal]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    setSupabaseReadyState(isSupabaseReady());
+  }, [isAuthed, authLoading]);
+
+  useEffect(() => {
     if (authLoading) {
       return;
     }
@@ -409,6 +434,7 @@ export default function QuadrantApp({
 
     const storedActiveProblemId = localStorage.getItem("activeProblemId");
     const storedProtocolId = localStorage.getItem("activeProtocolId");
+    const storedRunId = localStorage.getItem("activeRunId");
     const storedActivatedAt = localStorage.getItem("activatedAt");
     const storedRunStatus = localStorage.getItem("runStatus");
     const storedRunStartDate = localStorage.getItem("runStartDate");
@@ -426,6 +452,9 @@ export default function QuadrantApp({
     }
     if (storedProtocolId) {
       setActiveProtocolId(storedProtocolId);
+    }
+    if (storedRunId) {
+      setActiveRunId(storedRunId);
     }
     if (storedActivatedAt) {
       setActivatedAt(storedActivatedAt);
@@ -489,72 +518,98 @@ export default function QuadrantApp({
     if (isPro && storedHasCompletedRun === "true") {
       setHasCompletedRun(true);
     }
-    if (isPro) {
-      if (isAuthed && storageAdapter.isSupabase) {
-        let active = true;
-        storageAdapter
-          .loadRuns()
-          .then(async (runs) => {
-            if (!active) {
-              return;
-            }
-            const normalized = runs.map((entry) => ({
-              ...entry,
-              observedBehaviourIds: clampObservedBehaviours(
-                entry.observedBehaviourIds,
-              ),
-              observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
-            }));
-            setRunHistory(normalized);
-            setHasCompletedRun(runs.length > 0);
-            const checkinsByRunId: Record<string, CheckinRecord[]> = {};
-            await Promise.all(
-              normalized.map(async (entry) => {
-                const checkins = await storageAdapter.loadCheckins(entry.id);
-                checkinsByRunId[entry.id] = checkins;
-              }),
+    if (isAuthed && user?.id) {
+      let active = true;
+      loadSupabaseRunsWithCheckins(user.id)
+        .then((result) => {
+          if (!active) {
+            return;
+          }
+          if (result.ok && result.hasData) {
+            setSupabaseReady(true);
+            setSupabaseReadyState(true);
+            setRunHistory(
+              result.runs.map((entry) => ({
+                ...entry,
+                observedBehaviourIds: clampObservedBehaviours(
+                  entry.observedBehaviourIds,
+                ),
+                observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+              })),
             );
-            if (active) {
-              setRunCheckinsByRunId(checkinsByRunId);
+            setHasCompletedRun(result.runs.length > 0);
+            setRunCheckinsByRunId(result.checkinsByRunId);
+            return;
+          }
+          if (storedRunHistory) {
+            try {
+              const parsedHistory = JSON.parse(
+                storedRunHistory,
+              ) as RunHistoryEntry[];
+              setRunHistory(
+                parsedHistory.map((entry) => ({
+                  ...entry,
+                  observedBehaviourIds: clampObservedBehaviours(
+                    entry.observedBehaviourIds,
+                  ),
+                  observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+                })),
+              );
+              setRunCheckinsByRunId({});
+            } catch {
+              setRunHistory([]);
+              setRunCheckinsByRunId({});
             }
-          })
-          .catch(() => {
-            if (!active) {
-              return;
+          }
+        })
+        .catch(() => {
+          if (!active) {
+            return;
+          }
+          if (storedRunHistory) {
+            try {
+              const parsedHistory = JSON.parse(
+                storedRunHistory,
+              ) as RunHistoryEntry[];
+              setRunHistory(
+                parsedHistory.map((entry) => ({
+                  ...entry,
+                  observedBehaviourIds: clampObservedBehaviours(
+                    entry.observedBehaviourIds,
+                  ),
+                  observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+                })),
+              );
+              setRunCheckinsByRunId({});
+            } catch {
+              setRunHistory([]);
+              setRunCheckinsByRunId({});
             }
-            setRunHistory([]);
-          });
-        return () => {
-          active = false;
-        };
-      }
-      if (storedRunHistory) {
-        try {
-          const parsedHistory = JSON.parse(storedRunHistory) as RunHistoryEntry[];
-          setRunHistory(
-            parsedHistory.map((entry) => ({
-              ...entry,
-              observedBehaviourIds: clampObservedBehaviours(
-                entry.observedBehaviourIds,
-              ),
-              observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
-            })),
-          );
-          setRunCheckinsByRunId({});
-        } catch {
-          setRunHistory([]);
-          setRunCheckinsByRunId({});
-        }
-      } else {
+          }
+        });
+      return () => {
+        active = false;
+      };
+    }
+    if (storedRunHistory) {
+      try {
+        const parsedHistory = JSON.parse(storedRunHistory) as RunHistoryEntry[];
+        setRunHistory(
+          parsedHistory.map((entry) => ({
+            ...entry,
+            observedBehaviourIds: clampObservedBehaviours(
+              entry.observedBehaviourIds,
+            ),
+            observedBehaviourLogCounts: entry.observedBehaviourLogCounts ?? {},
+          })),
+        );
+        setRunCheckinsByRunId({});
+      } catch {
         setRunHistory([]);
         setRunCheckinsByRunId({});
       }
-    } else {
-      setRunHistory([]);
-      setRunCheckinsByRunId({});
     }
-
-  }, [isPro, isAuthed, storageAdapter, authLoading]);
+  }, [isPro, isAuthed, user?.id, authLoading]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showCheckInModal) {
@@ -590,6 +645,11 @@ export default function QuadrantApp({
     } else {
       localStorage.removeItem("activeProtocolId");
     }
+    if (activeRunId) {
+      localStorage.setItem("activeRunId", activeRunId);
+    } else {
+      localStorage.removeItem("activeRunId");
+    }
 
     if (activatedAt) {
       localStorage.setItem("activatedAt", activatedAt);
@@ -622,6 +682,7 @@ export default function QuadrantApp({
   }, [
     activeProblemId,
     activeProtocolId,
+    activeRunId,
     activatedAt,
     runStatus,
     runStartDate,
@@ -698,9 +759,10 @@ export default function QuadrantApp({
     }
     return aIndex - bIndex;
   });
-  const clearActiveProtocol = (options?: { clearLocal?: boolean }) => {
+  const clearActiveProtocol = () => {
     setActiveProblemId(null);
     setActiveProtocolId(null);
+    setActiveRunId(null);
     setActivatedAt(null);
     setRunStatus("idle");
     setRunStartDate(null);
@@ -718,11 +780,6 @@ export default function QuadrantApp({
     setIsPatternInsightsCollapsed(null);
     setIsProtocolLibraryCollapsed(null);
     setLibraryProtocolId(null);
-    if (options?.clearLocal && typeof window !== "undefined") {
-      localStorage.removeItem("checkIns");
-      localStorage.removeItem("runHistory");
-      localStorage.removeItem("hasCompletedRun");
-    }
   };
 
   const appendRunHistory = (
@@ -740,7 +797,7 @@ export default function QuadrantApp({
         note: entry.note as string,
       }));
     const entry = {
-      id: `${activeProtocolId}-${Date.now()}`,
+      id: activeRunId ?? createRunId(),
       protocolId: activeProtocolId,
       protocolName: activeProtocol.name,
       startedAt: activatedAt,
@@ -757,16 +814,32 @@ export default function QuadrantApp({
     };
     setRunHistory((prev) => {
       const next = [entry, ...prev];
-      if (!storageAdapter.isSupabase) {
-        persistRunHistory(next);
-      }
+      persistRunHistory(next);
       return next;
     });
-    if (storageAdapter.isSupabase) {
-      void storageAdapter.saveRun(entry);
+    if (isAuthed && user?.id) {
+      void upsertSupabaseRun({
+        userId: user.id,
+        id: entry.id,
+        protocolId: entry.protocolId,
+        protocolName: entry.protocolName,
+        status: result.toLowerCase() as "completed" | "failed" | "ended",
+        startedAt: entry.startedAt,
+        endedAt: entry.endedAt,
+      }).then((success) => {
+        if (success) {
+          setSupabaseReadyState(true);
+        }
+      });
       const checkins = buildCheckinsFromSnapshot(entry.id, snapshot);
       checkins.forEach((checkin) => {
-        void storageAdapter.addCheckin(checkin);
+        void insertSupabaseCheckin({ userId: user.id, checkin }).then(
+          (success) => {
+            if (success) {
+              setSupabaseReadyState(true);
+            }
+          },
+        );
       });
     }
   };
@@ -781,6 +854,8 @@ export default function QuadrantApp({
     setActivatedAt(timestamp);
     setActiveProblemId(problemId);
     setActiveProtocolId(protocolId);
+    const nextRunId = activeRunId ?? createRunId();
+    setActiveRunId(nextRunId);
     setRunStatus("active");
     setRunStartDate(today);
     setStreak(0);
@@ -790,6 +865,21 @@ export default function QuadrantApp({
     );
     setCheckInNote("");
     setLibraryProtocolId(null);
+    if (isAuthed && user?.id) {
+      void upsertSupabaseRun({
+        userId: user.id,
+        id: nextRunId,
+        protocolId,
+        protocolName: protocolById[protocolId]?.name ?? "Protocol",
+        status: "active",
+        startedAt: timestamp,
+        endedAt: null,
+      }).then((success) => {
+        if (success) {
+          setSupabaseReadyState(true);
+        }
+      });
+    }
     router.push("/dashboard");
     focusActiveRun();
   };
@@ -844,6 +934,23 @@ export default function QuadrantApp({
     const cleanDays = updatedCheckIns.filter((entry) => entry.followed).length;
     const newStreak = computeCurrentRun(updatedCheckIns);
     setStreak(newStreak);
+    if (isAuthed && user?.id && activeRunId) {
+      const checkinRecord: CheckinRecord = {
+        id: `${activeRunId}-${nextEntry.dayIndex}`,
+        runId: activeRunId,
+        dayIndex: nextEntry.dayIndex,
+        result: followed ? "clean" : "violated",
+        note: nextEntry.note,
+        createdAt: new Date(nextEntry.date).toISOString(),
+      };
+      void insertSupabaseCheckin({ userId: user.id, checkin: checkinRecord }).then(
+        (success) => {
+          if (success) {
+            setSupabaseReadyState(true);
+          }
+        },
+      );
+    }
     if (!followed) {
       setRunStatus("failed");
       setRunEndContext({ result: "Failed", cleanDays });
@@ -991,41 +1098,74 @@ export default function QuadrantApp({
     return best;
   }, null);
 
+  const mostFrequentProtocolId = Object.entries(protocolFailureCounts).reduce<
+    { id: string; count: number } | null
+  >((best, [id, count]) => {
+    if (!best || count > best.count) {
+      return { id, count };
+    }
+    return best;
+  }, null);
+  const switchCount = runHistory
+    .slice()
+    .reverse()
+    .reduce(
+      (acc, entry, index, arr) => {
+        if (index === 0) {
+          return { last: entry.protocolId, count: 0 };
+        }
+        if (entry.protocolId !== acc.last) {
+          return { last: entry.protocolId, count: acc.count + 1 };
+        }
+        return acc;
+      },
+      { last: "", count: 0 },
+    ).count;
   const patternInsights = [
-    {
-      title: "Most frequent breaking behaviour",
-      isUnlocked: isPro,
-      requirement: "Requires memory across runs.",
-      value: "You keep breaking the same rule.",
-      subtitle:
-        "This behaviour appears more often than any other across your runs.",
-      className: "md:col-span-2",
-    },
-    {
-      title: "Longest clean run",
-      isUnlocked: isPro,
-      requirement: "Requires memory across runs.",
-      value: "Your longest stretch of alignment.",
-      subtitle:
-        "The maximum number of consecutive clean days you’ve completed without violation.",
-    },
-    {
-      title: "Where runs usually fail",
-      isUnlocked: isPro,
-      requirement: "Requires repeated outcomes to surface.",
-      value: "Your runs don’t fail randomly.",
-      subtitle:
-        "Most violations occur at the same point in the run.",
-    },
-    {
-      title: "Constraint switching",
-      isUnlocked: isPro,
-      requirement: "Requires multiple completed runs.",
-      value: "You change rules instead of changing behaviour.",
-      subtitle:
-        "Tracks how often you abandon one constraint for another.",
-    },
-  ];
+    mostFrequentProtocolId
+      ? {
+          title: "Most frequent breaking behaviour",
+          isUnlocked: true,
+          requirement: "Requires memory across runs.",
+          value:
+            protocolById[mostFrequentProtocolId.id]?.name ??
+            mostFrequentProtocolId.id,
+          subtitle:
+            "This behaviour appears more often than any other across your runs.",
+          className: "md:col-span-2",
+        }
+      : null,
+    runHistory.length > 0
+      ? {
+          title: "Longest clean run",
+          isUnlocked: true,
+          requirement: "Requires memory across runs.",
+          value: `${longestCleanRun} clean days`,
+          subtitle:
+            "The maximum number of consecutive clean days you’ve completed without violation.",
+        }
+      : null,
+    failureDayMode
+      ? {
+          title: "Where runs usually fail",
+          isUnlocked: true,
+          requirement: "Requires repeated outcomes to surface.",
+          value: `Day ${failureDayMode.day}`,
+          subtitle:
+            "Most violations occur at the same point in the run.",
+        }
+      : null,
+    runHistory.length > 1
+      ? {
+          title: "Constraint switching",
+          isUnlocked: true,
+          requirement: "Requires multiple completed runs.",
+          value: `${switchCount} switches`,
+          subtitle:
+            "Tracks how often you abandon one constraint for another.",
+        }
+      : null,
+  ].filter((insight): insight is NonNullable<typeof insight> => Boolean(insight));
   const runSummaryLine = RUN_END_INSIGHT_LINE;
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
@@ -1467,10 +1607,10 @@ export default function QuadrantApp({
             }
           }}
           onPrimaryAction={() => {
-            clearActiveProtocol({ clearLocal: !isPro });
+            clearActiveProtocol();
           }}
           onClose={() => {
-            clearActiveProtocol({ clearLocal: !isPro });
+            clearActiveProtocol();
           }}
         />
       ) : null}
