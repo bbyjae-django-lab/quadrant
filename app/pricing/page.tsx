@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const PRO_PRICE = 19;
+const PRO_PRICE = 29;
 
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
