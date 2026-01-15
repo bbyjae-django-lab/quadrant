@@ -105,6 +105,16 @@ const mapCheckinsToEntries = (checkins: CheckinRecord[]): CheckInEntry[] => {
     }));
 };
 
+const formatTieList = (items: string[]) => {
+  if (items.length <= 1) {
+    return items[0] ?? "";
+  }
+  if (items.length === 2) {
+    return `${items[0]} and ${items[1]}`;
+  }
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+};
+
 const getDashboardViewModel = ({
   isPro,
   runStatus,
@@ -394,6 +404,7 @@ export default function QuadrantApp({
     Record<string, CheckinRecord[]>
   >({});
   const [runsLoading, setRunsLoading] = useState(true);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [supabaseReady, setSupabaseReadyState] = useState(false);
   const isPro = isAuthed;
   const storageAdapter = useMemo(
@@ -423,7 +434,7 @@ export default function QuadrantApp({
   }, [isAuthed, showAuthModal]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || !hasHydrated) {
       return;
     }
     setSupabaseReadyState(isSupabaseReady());
@@ -434,6 +445,7 @@ export default function QuadrantApp({
       return;
     }
     setRunsLoading(true);
+    setHasHydrated(false);
     setSelectedRunId(null);
     setShowRunDetail(false);
     setIsRunHistoryCollapsed(null);
@@ -572,6 +584,7 @@ export default function QuadrantApp({
               );
             }
             setRunsLoading(false);
+            setHasHydrated(true);
             return;
           }
           if (storedRunHistory) {
@@ -590,13 +603,16 @@ export default function QuadrantApp({
               );
               setRunCheckinsByRunId({});
               setRunsLoading(false);
+              setHasHydrated(true);
             } catch {
               setRunHistory([]);
               setRunCheckinsByRunId({});
               setRunsLoading(false);
+              setHasHydrated(true);
             }
           }
           setRunsLoading(false);
+          setHasHydrated(true);
         })
         .catch(() => {
           if (!active) {
@@ -618,13 +634,16 @@ export default function QuadrantApp({
               );
               setRunCheckinsByRunId({});
               setRunsLoading(false);
+              setHasHydrated(true);
             } catch {
               setRunHistory([]);
               setRunCheckinsByRunId({});
               setRunsLoading(false);
+              setHasHydrated(true);
             }
           }
           setRunsLoading(false);
+          setHasHydrated(true);
         });
       return () => {
         active = false;
@@ -644,13 +663,16 @@ export default function QuadrantApp({
         );
         setRunCheckinsByRunId({});
         setRunsLoading(false);
+        setHasHydrated(true);
       } catch {
         setRunHistory([]);
         setRunCheckinsByRunId({});
         setRunsLoading(false);
+        setHasHydrated(true);
       }
     } else {
       setRunsLoading(false);
+      setHasHydrated(true);
     }
   }, [isPro, isAuthed, user?.id, authLoading]);
 
@@ -736,6 +758,7 @@ export default function QuadrantApp({
     runHistory,
     isPro,
     storageAdapter,
+    hasHydrated,
   ]);
 
   const selectedProtocol = confirmProtocolId
@@ -1117,13 +1140,14 @@ export default function QuadrantApp({
   const failureDayCounts = failedRuns.reduce<Record<number, number>>(
     (acc, entry) => {
       const checkins = runCheckinsByRunId[entry.id] ?? [];
-      const violated = checkins.filter(
-        (checkin) => checkin.result === "violated",
-      );
-      const violationDay =
-        violated.length > 0
-          ? Math.max(...violated.map((checkin) => checkin.dayIndex))
-          : null;
+      const violationDay = checkins
+        .filter((checkin) => checkin.result === "violated")
+        .reduce<number | null>((minDay, checkin) => {
+          if (minDay === null || checkin.dayIndex < minDay) {
+            return checkin.dayIndex;
+          }
+          return minDay;
+        }, null);
       if (violationDay) {
         acc[violationDay] = (acc[violationDay] ?? 0) + 1;
       }
@@ -1131,24 +1155,26 @@ export default function QuadrantApp({
     },
     {},
   );
-  const failureDayMode = Object.entries(failureDayCounts).reduce<
-    { day: number; count: number } | null
-  >((best, [dayKey, count]) => {
-    const day = Number(dayKey);
-    if (!best || count > best.count || (count === best.count && day < best.day)) {
-      return { day, count };
-    }
-    return best;
-  }, null);
+  const topFailureDayCount = Math.max(0, ...Object.values(failureDayCounts));
+  const tiedFailureDays = Object.entries(failureDayCounts)
+    .filter(([, count]) => count === topFailureDayCount)
+    .map(([day]) => Number(day))
+    .sort((a, b) => a - b);
+  const failureDayDisplay =
+    tiedFailureDays.length === 0
+      ? ""
+      : tiedFailureDays.length === 1
+        ? `Day ${tiedFailureDays[0]}`
+        : tiedFailureDays.length === 2
+          ? `Days ${tiedFailureDays[0]} and ${tiedFailureDays[1]}`
+          : `Days ${tiedFailureDays[0]}-${tiedFailureDays[tiedFailureDays.length - 1]}`;
 
-  const mostFrequentProtocolId = Object.entries(protocolFailureCounts).reduce<
-    { id: string; count: number } | null
-  >((best, [id, count]) => {
-    if (!best || count > best.count) {
-      return { id, count };
-    }
-    return best;
-  }, null);
+  const mostFrequentProtocolIds = Object.entries(protocolFailureCounts)
+    .filter(([, count]) => count === mostFrequentFailureCount)
+    .map(([id]) => id);
+  const mostFrequentProtocolNames = mostFrequentProtocolIds.map(
+    (id) => protocolById[id]?.name ?? id,
+  );
   const switchCount = runHistory
     .slice()
     .reverse()
@@ -1164,20 +1190,29 @@ export default function QuadrantApp({
       },
       { last: "", count: 0 },
     ).count;
-  const mostFrequentProtocolName =
-    mostFrequentProtocolId?.id
-      ? protocolById[mostFrequentProtocolId.id]?.name ??
-        mostFrequentProtocolId.id
-      : "";
   const hasRuns = runHistory.length > 0;
+  const hasEnoughFrequencyData =
+    runHistory.length >= 5 && failedRuns.length >= 3;
+  const mostFrequentValue = hasEnoughFrequencyData
+    ? mostFrequentProtocolNames.length > 1
+      ? `Tie: ${formatTieList(mostFrequentProtocolNames)}`
+      : mostFrequentProtocolNames[0] ?? "Not enough data yet"
+    : "Not enough data yet";
+  const hasEnoughFailureDayData = failedRuns.length >= 3;
+  const failureDayValue =
+    hasEnoughFailureDayData && failureDayDisplay
+      ? failureDayDisplay
+      : "Not enough data yet";
   const patternInsights = [
     {
       title: "Most frequent breaking behaviour",
-      isUnlocked: Boolean(mostFrequentProtocolId),
+      isUnlocked: true,
       requirement: "Requires memory across runs.",
-      value: mostFrequentProtocolName,
+      value: mostFrequentValue,
       subtitle:
-        "This behaviour appears more often than any other across your runs.",
+        hasEnoughFrequencyData
+          ? "This behaviour appears more often than any other across your runs."
+          : null,
       className: "md:col-span-2",
     },
     {
@@ -1190,10 +1225,12 @@ export default function QuadrantApp({
     },
     {
       title: "Where runs usually fail",
-      isUnlocked: Boolean(failureDayMode),
+      isUnlocked: true,
       requirement: "Requires repeated outcomes to surface.",
-      value: failureDayMode ? `Day ${failureDayMode.day}` : "",
-      subtitle: "Most violations occur at the same point in the run.",
+      value: failureDayValue,
+      subtitle: hasEnoughFailureDayData
+        ? "Most violations occur at the same point in the run."
+        : null,
     },
     {
       title: "Constraint switching",
@@ -1244,7 +1281,7 @@ export default function QuadrantApp({
     }
   };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
-  const activeRunLoading = authLoading || runsLoading;
+  const activeRunLoading = authLoading || runsLoading || !hasHydrated;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
@@ -1349,9 +1386,6 @@ export default function QuadrantApp({
               <PatternInsightsSection
                 collapsed={isPatternInsightsCollapsedResolved}
                 onToggle={() => {
-                  if (requireAuth()) {
-                    return;
-                  }
                   setIsPatternInsightsCollapsed(
                     (collapsed) =>
                       !(
