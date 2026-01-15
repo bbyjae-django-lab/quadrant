@@ -158,6 +158,20 @@ const formatTieList = (items: string[]) => {
   return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 };
 
+const mergeCheckinsByDay = (local: CheckInEntry[], remote: CheckInEntry[]) => {
+  if (remote.length === 0) {
+    return local;
+  }
+  const byDay = new Map<number, CheckInEntry>();
+  local.forEach((entry) => {
+    byDay.set(entry.dayIndex, entry);
+  });
+  remote.forEach((entry) => {
+    byDay.set(entry.dayIndex, entry);
+  });
+  return Array.from(byDay.values()).sort((a, b) => a.dayIndex - b.dayIndex);
+};
+
 const getDashboardViewModel = ({
   isPro,
   runStatus,
@@ -489,6 +503,17 @@ export default function QuadrantApp({
   const [supabaseReady, setSupabaseReadyState] = useState(false);
   const activateModalRef = useRef<HTMLDivElement | null>(null);
   const runDetailModalRef = useRef<HTMLDivElement | null>(null);
+  const checkInsRef = useRef<CheckInEntry[]>(checkIns);
+  const activeRunIdRef = useRef<string | null>(activeRunId);
+  const hydrateRequestRef = useRef(0);
+
+  useEffect(() => {
+    checkInsRef.current = checkIns;
+  }, [checkIns]);
+
+  useEffect(() => {
+    activeRunIdRef.current = activeRunId;
+  }, [activeRunId]);
   const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
@@ -527,6 +552,7 @@ export default function QuadrantApp({
     if (authLoading) {
       return;
     }
+    hydrateRequestRef.current += 1;
     setRunsLoading(true);
     setHasHydrated(false);
     setSelectedRunId(null);
@@ -664,10 +690,11 @@ export default function QuadrantApp({
       setHasCompletedRun(true);
     }
     if (isAuthed && user?.id) {
+      const requestId = hydrateRequestRef.current;
       let active = true;
       loadSupabaseRunsWithCheckins(user.id)
         .then((result) => {
-          if (!active) {
+          if (!active || requestId !== hydrateRequestRef.current) {
             return;
           }
           if (result.ok && result.hasData) {
@@ -685,6 +712,12 @@ export default function QuadrantApp({
             setHasCompletedRun(result.runs.length > 0);
             setRunCheckinsByRunId(result.checkinsByRunId);
             if (result.activeRun) {
+              const existingRunId = activeRunIdRef.current;
+              if (existingRunId && existingRunId !== result.activeRun.id) {
+                setRunsLoading(false);
+                setHasHydrated(true);
+                return;
+              }
               setActiveRunId(result.activeRun.id);
               setActiveProtocolId(result.activeRun.protocol_id);
               setRunStatus("active");
@@ -697,9 +730,16 @@ export default function QuadrantApp({
               const activeCheckins =
                 result.checkinsByRunId[result.activeRun.id] ?? [];
               const mappedCheckins = mapCheckinsToEntries(activeCheckins);
-              setCheckIns(mappedCheckins);
+              const existingCheckins = checkInsRef.current;
+              const merged = mergeCheckinsByDay(
+                existingCheckins,
+                mappedCheckins,
+              );
+              if (mappedCheckins.length > 0 || existingCheckins.length === 0) {
+                setCheckIns(merged);
+              }
               setStreak(
-                mappedCheckins.filter((entry) => entry.followed).length,
+                merged.filter((entry) => entry.followed).length,
               );
             }
             setRunsLoading(false);
