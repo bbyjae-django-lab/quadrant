@@ -233,6 +233,12 @@ const getObservedBehaviourLogCounts = (snapshot: CheckInEntry[]) => {
   return counts;
 };
 
+const mapRunResultToEndResult = (
+  result: RunHistoryEntry["result"],
+): RunEndContext["result"] => {
+  return result === "Completed" ? "Completed" : "Failed";
+};
+
 const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
   const dayIndex = context.cleanDays;
 
@@ -1576,7 +1582,7 @@ export default function QuadrantApp({
         if (runHistory.length > 0) {
           const latest = runHistory[0];
           setRunEndContext({
-            result: latest.result,
+            result: mapRunResultToEndResult(latest.result),
             cleanDays: latest.cleanDays,
           });
         } else if (
@@ -1588,9 +1594,7 @@ export default function QuadrantApp({
             result:
               runStatus === "completed"
                 ? "Completed"
-                : runStatus === "failed"
-                  ? "Failed"
-                  : "Ended",
+                : "Failed",
             cleanDays: checkIns.filter((entry) => entry.followed).length,
           });
         } else {
