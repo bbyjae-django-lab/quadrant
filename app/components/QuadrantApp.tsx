@@ -1221,7 +1221,7 @@ export default function QuadrantApp({
       setRunStatus("failed");
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
-        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+        localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
       }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
@@ -1238,7 +1238,7 @@ export default function QuadrantApp({
       setRunStatus("completed");
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
-        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+        localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
       }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
@@ -1552,20 +1552,65 @@ export default function QuadrantApp({
       return;
     }
     const storedModal = localStorage.getItem(DASHBOARD_MODAL_KEY);
-    if (storedModal !== "checkin") {
+    if (!storedModal) {
       setModalIntentHandled(true);
       return;
     }
-    const today = getLocalDateString();
-    const latestEntry = checkIns[checkIns.length - 1];
-    const hasCheckInToday = latestEntry?.date === today;
-    if (runActive && !hasCheckInToday) {
-      setShowCheckInModal(true);
-    } else {
-      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+    if (storedModal === "checkin") {
+      const today = getLocalDateString();
+      const latestEntry = checkIns[checkIns.length - 1];
+      const hasCheckInToday = latestEntry?.date === today;
+      if (runActive && !hasCheckInToday) {
+        setShowCheckInModal(true);
+      } else {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      }
+      setModalIntentHandled(true);
+      return;
     }
-    setModalIntentHandled(true);
-  }, [hasHydrated, modalIntentHandled, runActive, checkIns]);
+    if (storedModal === "runEnded") {
+      if (runActive) {
+        return;
+      }
+      if (!runEndContext) {
+        if (runHistory.length > 0) {
+          const latest = runHistory[0];
+          setRunEndContext({
+            result: latest.result,
+            cleanDays: latest.cleanDays,
+          });
+        } else if (
+          runStatus === "failed" ||
+          runStatus === "completed" ||
+          runStatus === "ended"
+        ) {
+          setRunEndContext({
+            result:
+              runStatus === "completed"
+                ? "Completed"
+                : runStatus === "failed"
+                  ? "Failed"
+                  : "Ended",
+            cleanDays: checkIns.filter((entry) => entry.followed).length,
+          });
+        } else {
+          localStorage.removeItem(DASHBOARD_MODAL_KEY);
+          setModalIntentHandled(true);
+          return;
+        }
+      }
+      setShowRunEndedModal(true);
+      setModalIntentHandled(true);
+    }
+  }, [
+    hasHydrated,
+    modalIntentHandled,
+    runActive,
+    checkIns,
+    runEndContext,
+    runHistory,
+    runStatus,
+  ]);
 
   useEffect(() => {
     if (!selectedProtocol) {
@@ -2072,13 +2117,22 @@ export default function QuadrantApp({
           showCloseButton={isPro}
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
+              localStorage.removeItem(DASHBOARD_MODAL_KEY);
+            }
+            if (typeof window !== "undefined") {
               window.location.href = "/pricing";
             }
           }}
           onPrimaryAction={() => {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(DASHBOARD_MODAL_KEY);
+            }
             clearActiveProtocol();
           }}
           onClose={() => {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(DASHBOARD_MODAL_KEY);
+            }
             clearActiveProtocol();
           }}
         />
