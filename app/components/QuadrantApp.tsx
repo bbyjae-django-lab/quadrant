@@ -1164,12 +1164,13 @@ export default function QuadrantApp({
       if (!activeRunId || !activeProtocolId || !activeProtocol || !activatedAt) {
         return;
       }
-      const snapshotCheckins = updatedCheckIns.map((entry) => ({
-        dayIndex: entry.dayIndex,
-        result: entry.followed ? "clean" : "violated",
-        note: entry.note,
-        createdAt: new Date(entry.date).toISOString(),
-      }));
+      const snapshotCheckins: LocalActiveRunSnapshot["checkins"] =
+        updatedCheckIns.map((entry) => ({
+          dayIndex: entry.dayIndex,
+          result: entry.followed ? "clean" : "violated",
+          note: entry.note,
+          createdAt: new Date(entry.date).toISOString(),
+        }));
       saveLocalActiveRun({
         runId: activeRunId,
         protocolId: activeProtocolId,
