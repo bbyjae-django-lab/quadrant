@@ -485,14 +485,16 @@ export default function QuadrantApp({
     if (storedActivatedAt) {
       setActivatedAt(storedActivatedAt);
     }
-    if (
+    const isValidStoredStatus =
       storedRunStatus === "idle" ||
       storedRunStatus === "active" ||
       storedRunStatus === "failed" ||
       storedRunStatus === "completed" ||
-      storedRunStatus === "ended"
-    ) {
+      storedRunStatus === "ended";
+    if (isValidStoredStatus) {
       setRunStatus(storedRunStatus);
+    } else if (storedProtocolId) {
+      setRunStatus("active");
     }
     if (storedRunStartDate) {
       setRunStartDate(storedRunStartDate);
@@ -527,6 +529,9 @@ export default function QuadrantApp({
       } catch {
         setCheckIns([]);
       }
+    }
+    if (storedProtocolId && !storedRunId) {
+      setActiveRunId(createRunId());
     }
     if (storedObservedBehaviours) {
       try {
@@ -946,6 +951,18 @@ export default function QuadrantApp({
         }
       });
     }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("activeProtocolId", protocolId);
+      localStorage.setItem("activeRunId", nextRunId);
+      localStorage.setItem("runStatus", "active");
+      localStorage.setItem("activatedAt", timestamp);
+      localStorage.setItem("runStartDate", today);
+      localStorage.setItem("checkIns", JSON.stringify([]));
+      localStorage.setItem(
+        "observedBehaviourIds",
+        JSON.stringify(clampObservedBehaviours(observedIds)),
+      );
+    }
     router.push("/dashboard");
     focusActiveRun();
   };
@@ -1019,6 +1036,10 @@ export default function QuadrantApp({
     }
     if (!followed) {
       setRunStatus("failed");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("runStatus", "failed");
+        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
+      }
       setRunEndContext({ result: "Failed", cleanDays });
       if (isPro) {
         appendRunHistory("Failed", updatedCheckIns);
@@ -1028,6 +1049,10 @@ export default function QuadrantApp({
       return;
     } else if (newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("runStatus", "completed");
+        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
+      }
       setRunEndContext({ result: "Completed", cleanDays });
       appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
