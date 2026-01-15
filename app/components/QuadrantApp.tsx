@@ -90,12 +90,21 @@ const loadLocalActiveRun = (): LocalActiveRunSnapshot | null => {
   }
   try {
     const parsed = JSON.parse(stored) as LocalActiveRunSnapshot;
-    if (parsed && parsed.status === "active") {
+    if (
+      parsed &&
+      parsed.status === "active" &&
+      parsed.runId &&
+      parsed.protocolId &&
+      parsed.protocolName &&
+      parsed.startedAt &&
+      Array.isArray(parsed.checkins)
+    ) {
       return parsed;
     }
   } catch {
     return null;
   }
+  clearLocalActiveRun();
   return null;
 };
 
@@ -1122,6 +1131,9 @@ export default function QuadrantApp({
       );
     }
     if (!isAuthed) {
+      if (!activeRunId || !activeProtocolId || !activeProtocol || !activatedAt) {
+        return;
+      }
       const snapshotCheckins = updatedCheckIns.map((entry) => ({
         dayIndex: entry.dayIndex,
         result: entry.followed ? "clean" : "violated",
@@ -1129,11 +1141,11 @@ export default function QuadrantApp({
         createdAt: new Date(entry.date).toISOString(),
       }));
       saveLocalActiveRun({
-        runId: activeRunId ?? createRunId(),
-        protocolId: activeProtocolId ?? "",
-        protocolName: activeProtocol?.name ?? "Protocol",
+        runId: activeRunId,
+        protocolId: activeProtocolId,
+        protocolName: activeProtocol.name,
         status: "active",
-        startedAt: activatedAt ?? new Date().toISOString(),
+        startedAt: activatedAt,
         checkins: snapshotCheckins,
         optionalTrackedBehaviours: clampObservedBehaviours(observedBehaviourIds),
       });
