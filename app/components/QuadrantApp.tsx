@@ -619,7 +619,7 @@ export default function QuadrantApp({
         setStreak(parsedStreak);
       }
     }
-    if (storedCheckIns) {
+    if (!isAuthed && storedCheckIns) {
       try {
         const parsedCheckIns = JSON.parse(storedCheckIns) as
           | CheckInEntry[]
