@@ -39,6 +39,7 @@ import RunHistorySection from "./today/RunHistorySection";
 const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
 const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
+const DASHBOARD_MODAL_KEY = "dashboard_modal";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -1220,6 +1221,9 @@ export default function QuadrantApp({
       setRunStatus("failed");
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      }
+      if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
       }
@@ -1234,6 +1238,9 @@ export default function QuadrantApp({
       setRunStatus("completed");
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      }
+      if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
       }
@@ -1242,6 +1249,9 @@ export default function QuadrantApp({
       setShowRunEndedModal(true);
     }
     setCheckInNote(noteValue);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+    }
     setShowCheckInModal(false);
   };
 
@@ -1268,6 +1278,9 @@ export default function QuadrantApp({
   const handleCheckInClick = () => {
     if (!runActive) {
       return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(DASHBOARD_MODAL_KEY, "checkin");
     }
     setShowCheckInModal(true);
   };
@@ -1525,12 +1538,34 @@ export default function QuadrantApp({
     }
   };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
+  const [modalIntentHandled, setModalIntentHandled] = useState(false);
+  const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const closeActivateProtocolModal = () => {
     setConfirmProtocolId(null);
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
     setObservedBehaviourError("");
   };
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !hasHydrated || modalIntentHandled) {
+      return;
+    }
+    const storedModal = localStorage.getItem(DASHBOARD_MODAL_KEY);
+    if (storedModal !== "checkin") {
+      setModalIntentHandled(true);
+      return;
+    }
+    const today = getLocalDateString();
+    const latestEntry = checkIns[checkIns.length - 1];
+    const hasCheckInToday = latestEntry?.date === today;
+    if (runActive && !hasCheckInToday) {
+      setShowCheckInModal(true);
+    } else {
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+    }
+    setModalIntentHandled(true);
+  }, [hasHydrated, modalIntentHandled, runActive, checkIns]);
 
   useEffect(() => {
     if (!selectedProtocol) {
@@ -1619,8 +1654,6 @@ export default function QuadrantApp({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [showRunDetail]);
-  const activeRunLoading = authLoading || runsLoading || !hasHydrated;
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
       <main
@@ -1863,7 +1896,12 @@ export default function QuadrantApp({
         <DailyCheckInModal
           checkInNote={checkInNote}
           onChangeNote={setCheckInNote}
-          onClose={() => setShowCheckInModal(false)}
+          onClose={() => {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(DASHBOARD_MODAL_KEY);
+            }
+            setShowCheckInModal(false);
+          }}
           onCleanDay={() => {
             handleSaveCheckIn(true);
           }}
