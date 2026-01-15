@@ -1972,13 +1972,23 @@ export default function QuadrantApp({
             aria-modal="true"
             className="flex w-full max-w-xl max-h-[85vh] flex-col ui-modal p-[var(--space-6)]"
           >
-            <div className="space-y-2">
-              <p className="text-xs font-semibold tracking-wide text-zinc-500">
-                Activate protocol?
-              </p>
-              <h2 className="text-xl font-semibold text-zinc-900">
-                {selectedProtocol.name}
-              </h2>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold tracking-wide text-zinc-500">
+                  Activate protocol?
+                </p>
+                <h2 className="text-xl font-semibold text-zinc-900">
+                  {selectedProtocol.name}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="btn-tertiary"
+                aria-label="Close"
+                onClick={closeActivateProtocolModal}
+              >
+                ✕
+              </button>
             </div>
             <div className="mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto pr-1 text-sm text-zinc-700">
               <div className="space-y-2">

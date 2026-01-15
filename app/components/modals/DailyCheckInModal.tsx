@@ -96,9 +96,10 @@ export default function DailyCheckInModal({
           <button
             type="button"
             className="btn-tertiary"
+            aria-label="Close"
             onClick={onClose}
           >
-            Close
+            ✕
           </button>
         </div>
         <div className="mt-4 space-y-4">

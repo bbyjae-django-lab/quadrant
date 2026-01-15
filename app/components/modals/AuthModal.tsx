@@ -88,6 +88,14 @@ export default function AuthModal({ onClose }: AuthModalProps) {
               Sign in to preserve history
             </h2>
           </div>
+          <button
+            type="button"
+            className="btn-tertiary"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            ✕
+          </button>
         </div>
         <div className="mt-4 space-y-4">
           <label className="text-sm font-semibold text-zinc-700">
