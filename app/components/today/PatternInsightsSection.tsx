@@ -15,6 +15,8 @@ type PatternInsightsSectionProps = {
   onToggle: () => void;
   isPro: boolean;
   patternInsights: PatternInsight[];
+  showEmptyState?: boolean;
+  emptyStateMessage?: string;
   onViewPricing: () => void;
 };
 
@@ -23,6 +25,8 @@ export default function PatternInsightsSection({
   onToggle,
   isPro,
   patternInsights,
+  showEmptyState = false,
+  emptyStateMessage,
   onViewPricing,
 }: PatternInsightsSectionProps) {
   return (
@@ -39,12 +43,20 @@ export default function PatternInsightsSection({
       </button>
       {!collapsed ? (
         <>
-          <p className="mt-2 text-xs text-zinc-500">
-            Patterns emerge through repetition.
-          </p>
-          <p className="mt-1 text-xs text-zinc-500">
-            Pro tracks them across runs.
-          </p>
+          {showEmptyState ? (
+            <p className="mt-2 text-xs text-zinc-500">
+              {emptyStateMessage}
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 text-xs text-zinc-500">
+                Patterns emerge through repetition.
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Pro tracks them across runs.
+              </p>
+            </>
+          )}
           {!isPro ? (
             <button
               type="button"

@@ -93,6 +93,18 @@ const buildCheckinsFromSnapshot = (
   }));
 };
 
+const mapCheckinsToEntries = (checkins: CheckinRecord[]): CheckInEntry[] => {
+  return checkins
+    .slice()
+    .sort((a, b) => a.dayIndex - b.dayIndex)
+    .map((checkin) => ({
+      dayIndex: checkin.dayIndex,
+      date: checkin.createdAt.slice(0, 10),
+      followed: checkin.result === "clean",
+      note: checkin.note,
+    }));
+};
+
 const getDashboardViewModel = ({
   isPro,
   runStatus,
@@ -381,6 +393,7 @@ export default function QuadrantApp({
   const [runCheckinsByRunId, setRunCheckinsByRunId] = useState<
     Record<string, CheckinRecord[]>
   >({});
+  const [runsLoading, setRunsLoading] = useState(true);
   const [supabaseReady, setSupabaseReadyState] = useState(false);
   const isPro = isAuthed;
   const storageAdapter = useMemo(
@@ -420,6 +433,7 @@ export default function QuadrantApp({
     if (authLoading) {
       return;
     }
+    setRunsLoading(true);
     setSelectedRunId(null);
     setShowRunDetail(false);
     setIsRunHistoryCollapsed(null);
@@ -539,6 +553,25 @@ export default function QuadrantApp({
             );
             setHasCompletedRun(result.runs.length > 0);
             setRunCheckinsByRunId(result.checkinsByRunId);
+            if (result.activeRun) {
+              setActiveRunId(result.activeRun.id);
+              setActiveProtocolId(result.activeRun.protocol_id);
+              setRunStatus("active");
+              setActivatedAt(result.activeRun.started_at);
+              setRunStartDate(
+                result.activeRun.started_at
+                  ? result.activeRun.started_at.slice(0, 10)
+                  : null,
+              );
+              const activeCheckins =
+                result.checkinsByRunId[result.activeRun.id] ?? [];
+              const mappedCheckins = mapCheckinsToEntries(activeCheckins);
+              setCheckIns(mappedCheckins);
+              setStreak(
+                mappedCheckins.filter((entry) => entry.followed).length,
+              );
+            }
+            setRunsLoading(false);
             return;
           }
           if (storedRunHistory) {
@@ -556,11 +589,14 @@ export default function QuadrantApp({
                 })),
               );
               setRunCheckinsByRunId({});
+              setRunsLoading(false);
             } catch {
               setRunHistory([]);
               setRunCheckinsByRunId({});
+              setRunsLoading(false);
             }
           }
+          setRunsLoading(false);
         })
         .catch(() => {
           if (!active) {
@@ -581,11 +617,14 @@ export default function QuadrantApp({
                 })),
               );
               setRunCheckinsByRunId({});
+              setRunsLoading(false);
             } catch {
               setRunHistory([]);
               setRunCheckinsByRunId({});
+              setRunsLoading(false);
             }
           }
+          setRunsLoading(false);
         });
       return () => {
         active = false;
@@ -604,10 +643,14 @@ export default function QuadrantApp({
           })),
         );
         setRunCheckinsByRunId({});
+        setRunsLoading(false);
       } catch {
         setRunHistory([]);
         setRunCheckinsByRunId({});
+        setRunsLoading(false);
       }
+    } else {
+      setRunsLoading(false);
     }
   }, [isPro, isAuthed, user?.id, authLoading]);
 
@@ -1121,51 +1164,48 @@ export default function QuadrantApp({
       },
       { last: "", count: 0 },
     ).count;
+  const mostFrequentProtocolName =
+    mostFrequentProtocolId?.id
+      ? protocolById[mostFrequentProtocolId.id]?.name ??
+        mostFrequentProtocolId.id
+      : "";
+  const hasRuns = runHistory.length > 0;
   const patternInsights = [
-    mostFrequentProtocolId
-      ? {
-          title: "Most frequent breaking behaviour",
-          isUnlocked: true,
-          requirement: "Requires memory across runs.",
-          value:
-            protocolById[mostFrequentProtocolId.id]?.name ??
-            mostFrequentProtocolId.id,
-          subtitle:
-            "This behaviour appears more often than any other across your runs.",
-          className: "md:col-span-2",
-        }
-      : null,
-    runHistory.length > 0
-      ? {
-          title: "Longest clean run",
-          isUnlocked: true,
-          requirement: "Requires memory across runs.",
-          value: `${longestCleanRun} clean days`,
-          subtitle:
-            "The maximum number of consecutive clean days you’ve completed without violation.",
-        }
-      : null,
-    failureDayMode
-      ? {
-          title: "Where runs usually fail",
-          isUnlocked: true,
-          requirement: "Requires repeated outcomes to surface.",
-          value: `Day ${failureDayMode.day}`,
-          subtitle:
-            "Most violations occur at the same point in the run.",
-        }
-      : null,
-    runHistory.length > 1
-      ? {
-          title: "Constraint switching",
-          isUnlocked: true,
-          requirement: "Requires multiple completed runs.",
-          value: `${switchCount} switches`,
-          subtitle:
-            "Tracks how often you abandon one constraint for another.",
-        }
-      : null,
-  ].filter((insight): insight is NonNullable<typeof insight> => Boolean(insight));
+    {
+      title: "Most frequent breaking behaviour",
+      isUnlocked: Boolean(mostFrequentProtocolId),
+      requirement: "Requires memory across runs.",
+      value: mostFrequentProtocolName,
+      subtitle:
+        "This behaviour appears more often than any other across your runs.",
+      className: "md:col-span-2",
+    },
+    {
+      title: "Longest clean run",
+      isUnlocked: hasRuns,
+      requirement: "Requires memory across runs.",
+      value: `${longestCleanRun} clean days`,
+      subtitle:
+        "The maximum number of consecutive clean days you’ve completed without violation.",
+    },
+    {
+      title: "Where runs usually fail",
+      isUnlocked: Boolean(failureDayMode),
+      requirement: "Requires repeated outcomes to surface.",
+      value: failureDayMode ? `Day ${failureDayMode.day}` : "",
+      subtitle: "Most violations occur at the same point in the run.",
+    },
+    {
+      title: "Constraint switching",
+      isUnlocked: runHistory.length > 1,
+      requirement: "Requires multiple completed runs.",
+      value: `${switchCount} switches`,
+      subtitle: "Tracks how often you abandon one constraint for another.",
+    },
+  ];
+  const patternInsightsEmpty = runHistory.length === 0;
+  const patternInsightsEmptyMessage =
+    "No patterns yet — complete a few runs to unlock insights.";
   const runSummaryLine = RUN_END_INSIGHT_LINE;
   const runEndModalOpen =
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
@@ -1204,6 +1244,7 @@ export default function QuadrantApp({
     }
   };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
+  const activeRunLoading = authLoading || runsLoading;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
@@ -1232,6 +1273,7 @@ export default function QuadrantApp({
               activeProtocol={activeProtocol}
               activeRuleText={activeRuleText}
               runActive={runActive}
+              loading={activeRunLoading}
               runTrackerSymbols={runTrackerSymbols}
               successfulDays={successfulDays}
               runLength={RUN_LENGTH}
@@ -1254,6 +1296,7 @@ export default function QuadrantApp({
                   collapsed={isRunHistoryCollapsedResolved}
                   count={dashboardViewModel.runHistory.count}
                   rows={dashboardViewModel.runHistory.visibleRows}
+                  loading={runsLoading}
                   onToggle={() => {
                     if (requireAuth()) {
                       return;
@@ -1319,6 +1362,8 @@ export default function QuadrantApp({
                 }}
                 isPro={isPro}
                 patternInsights={patternInsights}
+                showEmptyState={patternInsightsEmpty}
+                emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
                   setShowAuthModal(true);
                 }}

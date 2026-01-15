@@ -5,6 +5,7 @@ type ActiveRunSectionProps = {
   activeProtocol: Protocol | null;
   activeRuleText: string;
   runActive: boolean;
+  loading?: boolean;
   runTrackerSymbols: string[];
   successfulDays: number;
   runLength: number;
@@ -23,6 +24,7 @@ export default function ActiveRunSection({
   activeProtocol,
   activeRuleText,
   runActive,
+  loading = false,
   runTrackerSymbols,
   successfulDays,
   runLength,
@@ -35,6 +37,16 @@ export default function ActiveRunSection({
   onStartRun,
   onViewPricing,
 }: ActiveRunSectionProps) {
+  if (loading && activeRunState !== "active") {
+    return (
+      <section className="ui-surface p-[var(--space-6)]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900">Active run</h2>
+        </div>
+        <p className="mt-2 text-sm text-zinc-600">Loading...</p>
+      </section>
+    );
+  }
   return (
     <section
       id={sectionId}

@@ -4,6 +4,7 @@ type RunHistorySectionProps = {
   collapsed: boolean;
   count: number;
   rows: RunHistoryRow[];
+  loading?: boolean;
   onToggle: () => void;
   onRowClick: (rowId: string) => void;
 };
@@ -12,6 +13,7 @@ export default function RunHistorySection({
   collapsed,
   count,
   rows,
+  loading = false,
   onToggle,
   onRowClick,
 }: RunHistorySectionProps) {
@@ -23,7 +25,7 @@ export default function RunHistorySection({
         onClick={onToggle}
       >
         <h2 className="text-lg font-semibold text-zinc-900">
-          Run history ({count})
+          Run history ({loading ? "…" : count})
         </h2>
         <span className="text-sm text-zinc-500">{collapsed ? ">" : "v"}</span>
       </button>

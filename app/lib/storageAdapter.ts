@@ -113,10 +113,25 @@ export const LocalAdapter: StorageAdapter = {
   addCheckin: async () => {},
 };
 
+type SupabaseRunRow = {
+  id: string;
+  protocol_id: string;
+  protocol_name: string;
+  status: string;
+  started_at: string | null;
+  ended_at: string | null;
+};
+
 export const loadSupabaseRunsWithCheckins = async (userId: string) => {
   const client = getSupabaseClient();
   if (!client) {
-    return { ok: false, hasData: false, runs: [], checkinsByRunId: {} };
+    return {
+      ok: false,
+      hasData: false,
+      runs: [],
+      checkinsByRunId: {},
+      activeRun: null,
+    };
   }
   const { data: runs, error: runError } = await client
     .from("runs")
@@ -125,10 +140,22 @@ export const loadSupabaseRunsWithCheckins = async (userId: string) => {
     .order("started_at", { ascending: false });
   if (runError || !runs) {
     console.warn(runError?.message ?? "Failed to load runs.");
-    return { ok: false, hasData: false, runs: [], checkinsByRunId: {} };
+    return {
+      ok: false,
+      hasData: false,
+      runs: [],
+      checkinsByRunId: {},
+      activeRun: null,
+    };
   }
   if (runs.length === 0) {
-    return { ok: true, hasData: false, runs: [], checkinsByRunId: {} };
+    return {
+      ok: true,
+      hasData: false,
+      runs: [],
+      checkinsByRunId: {},
+      activeRun: null,
+    };
   }
   const runIds = runs.map((run) => run.id);
   const { data: checkins, error: checkinError } = await client
@@ -139,8 +166,17 @@ export const loadSupabaseRunsWithCheckins = async (userId: string) => {
   if (checkinError) {
     console.warn(checkinError.message);
   }
+  const typedRuns = runs as SupabaseRunRow[];
+  const activeRun =
+    typedRuns
+      .filter((run) => run.status === "active")
+      .sort((a, b) => {
+        const aTime = a.started_at ? new Date(a.started_at).getTime() : 0;
+        const bTime = b.started_at ? new Date(b.started_at).getTime() : 0;
+        return bTime - aTime;
+      })[0] ?? null;
   const mappedRuns: RunHistoryEntry[] = [];
-  runs.forEach((run) => {
+  typedRuns.forEach((run) => {
     const result = mapStatusToResult(run.status);
     if (!result) {
       return;
@@ -185,9 +221,10 @@ export const loadSupabaseRunsWithCheckins = async (userId: string) => {
   );
   return {
     ok: true,
-    hasData: mappedRuns.length > 0,
+    hasData: typedRuns.length > 0,
     runs: mappedRuns,
     checkinsByRunId,
+    activeRun,
   };
 };
 
