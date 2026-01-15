@@ -40,6 +40,7 @@ const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
 const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 const DASHBOARD_MODAL_KEY = "dashboard_modal";
+const ENDED_RUN_ID_KEY = "ended_run_id";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -233,16 +234,12 @@ const getObservedBehaviourLogCounts = (snapshot: CheckInEntry[]) => {
   return counts;
 };
 
-const mapRunResultToEndResult = (
-  result: RunHistoryEntry["result"],
-): RunEndContext["result"] => {
-  return result === "Completed" ? "Completed" : "Failed";
-};
-
 const getRunEndCopy = (context: RunEndContext): RunEndCopy => {
   const dayIndex = context.cleanDays;
+  const normalizedResult =
+    context.result === "Completed" ? "Completed" : "Failed";
 
-  if (context.result === "Completed" && dayIndex === RUN_LENGTH) {
+  if (normalizedResult === "Completed" && dayIndex === RUN_LENGTH) {
     return {
       title: "Run complete",
       outcomePrefix: "The protocol was completed without violation.",
@@ -1228,6 +1225,9 @@ export default function QuadrantApp({
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
+        if (activeRunId) {
+          localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
+        }
       }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
@@ -1245,6 +1245,9 @@ export default function QuadrantApp({
       clearLocalActiveRun();
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
+        if (activeRunId) {
+          localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
+        }
       }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
@@ -1579,11 +1582,19 @@ export default function QuadrantApp({
         return;
       }
       if (!runEndContext) {
-        if (runHistory.length > 0) {
-          const latest = runHistory[0];
+        const storedEndedRunId =
+          typeof window !== "undefined"
+            ? localStorage.getItem(ENDED_RUN_ID_KEY)
+            : null;
+        const endedRun =
+          storedEndedRunId && runHistory.length > 0
+            ? runHistory.find((entry) => entry.id === storedEndedRunId) ??
+              runHistory[0]
+            : runHistory[0];
+        if (endedRun) {
           setRunEndContext({
-            result: mapRunResultToEndResult(latest.result),
-            cleanDays: latest.cleanDays,
+            result: endedRun.result,
+            cleanDays: endedRun.cleanDays,
           });
         } else if (
           runStatus === "failed" ||
@@ -1594,11 +1605,14 @@ export default function QuadrantApp({
             result:
               runStatus === "completed"
                 ? "Completed"
-                : "Failed",
+                : runStatus === "ended"
+                  ? "Ended"
+                  : "Failed",
             cleanDays: checkIns.filter((entry) => entry.followed).length,
           });
         } else {
           localStorage.removeItem(DASHBOARD_MODAL_KEY);
+          localStorage.removeItem(ENDED_RUN_ID_KEY);
           setModalIntentHandled(true);
           return;
         }
@@ -2132,6 +2146,7 @@ export default function QuadrantApp({
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             if (typeof window !== "undefined") {
               window.location.href = "/pricing";
@@ -2140,12 +2155,14 @@ export default function QuadrantApp({
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             clearActiveProtocol();
           }}
           onClose={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             clearActiveProtocol();
           }}

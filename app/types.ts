@@ -33,7 +33,7 @@ export type RunHistoryRow = {
 };
 
 export type RunEndContext = {
-  result: "Failed" | "Completed";
+  result: RunResult;
   cleanDays: number;
 };
 
