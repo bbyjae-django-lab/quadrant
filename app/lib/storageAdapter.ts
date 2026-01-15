@@ -277,15 +277,20 @@ export const insertSupabaseCheckin = async ({
   if (!client) {
     return false;
   }
-  const { error } = await client.from("checkins").insert({
-    id: checkin.id,
-    run_id: checkin.runId,
-    user_id: userId,
-    day_index: checkin.dayIndex,
-    result: checkin.result,
-    note: checkin.note ?? null,
-    created_at: checkin.createdAt,
-  });
+  const { error } = await client
+    .from("checkins")
+    .upsert(
+      {
+        id: checkin.id,
+        run_id: checkin.runId,
+        user_id: userId,
+        day_index: checkin.dayIndex,
+        result: checkin.result,
+        note: checkin.note ?? null,
+        created_at: checkin.createdAt,
+      },
+      { onConflict: "id" },
+    );
   if (error) {
     console.warn(error.message);
     return false;

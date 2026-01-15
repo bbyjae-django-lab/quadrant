@@ -412,7 +412,7 @@ export default function QuadrantApp({
   const isDashboardRoute = pathname === "/dashboard";
   const { user, isAuthed, authLoading } = useAuth();
   const initialLocalSnapshot =
-    !isAuthed && typeof window !== "undefined" ? loadLocalActiveRun() : null;
+    typeof window !== "undefined" ? loadLocalActiveRun() : null;
   const initialLocalCheckIns = initialLocalSnapshot
     ? initialLocalSnapshot.checkins.map((entry) => ({
         dayIndex: entry.dayIndex,
@@ -945,9 +945,7 @@ export default function QuadrantApp({
     return aIndex - bIndex;
   });
   const clearActiveProtocol = () => {
-    if (!isAuthed) {
-      clearLocalActiveRun();
-    }
+    clearLocalActiveRun();
     setActiveProblemId(null);
     setActiveProtocolId(null);
     setActiveRunId(null);
@@ -1068,17 +1066,15 @@ export default function QuadrantApp({
         }
       });
     }
-    if (!isAuthed) {
-      saveLocalActiveRun({
-        runId: nextRunId,
-        protocolId,
-        protocolName: protocolById[protocolId]?.name ?? "Protocol",
-        status: "active",
-        startedAt: timestamp,
-        checkins: [],
-        optionalTrackedBehaviours: clampObservedBehaviours(observedIds),
-      });
-    }
+    saveLocalActiveRun({
+      runId: nextRunId,
+      protocolId,
+      protocolName: protocolById[protocolId]?.name ?? "Protocol",
+      status: "active",
+      startedAt: timestamp,
+      checkins: [],
+      optionalTrackedBehaviours: clampObservedBehaviours(observedIds),
+    });
     if (typeof window !== "undefined") {
       localStorage.setItem("activeProtocolId", protocolId);
       localStorage.setItem("activeRunId", nextRunId);
@@ -1162,10 +1158,7 @@ export default function QuadrantApp({
         },
       );
     }
-    if (!isAuthed) {
-      if (!activeRunId || !activeProtocolId || !activeProtocol || !activatedAt) {
-        return;
-      }
+    if (activeRunId && activeProtocolId && activeProtocol && activatedAt) {
       const snapshotCheckins: LocalActiveRunSnapshot["checkins"] =
         updatedCheckIns.map((entry) => ({
           dayIndex: entry.dayIndex,
@@ -1185,9 +1178,7 @@ export default function QuadrantApp({
     }
     if (!followed) {
       setRunStatus("failed");
-      if (!isAuthed) {
-        clearLocalActiveRun();
-      }
+      clearLocalActiveRun();
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
@@ -1201,9 +1192,7 @@ export default function QuadrantApp({
       return;
     } else if (newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
-      if (!isAuthed) {
-        clearLocalActiveRun();
-      }
+      clearLocalActiveRun();
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
