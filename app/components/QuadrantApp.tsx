@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
 import { observedBehaviours } from "../data/observedBehaviours";
@@ -487,6 +487,8 @@ export default function QuadrantApp({
   const [runsLoading, setRunsLoading] = useState(true);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [supabaseReady, setSupabaseReadyState] = useState(false);
+  const activateModalRef = useRef<HTMLDivElement | null>(null);
+  const runDetailModalRef = useRef<HTMLDivElement | null>(null);
   const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
@@ -1353,6 +1355,32 @@ export default function QuadrantApp({
   const mostFrequentProtocolNames = mostFrequentProtocolIds.map(
     (id) => protocolById[id]?.name ?? id,
   );
+  const observedBehaviourCounts = runHistory.reduce<Record<string, number>>(
+    (acc, entry) => {
+      const counts = entry.observedBehaviourLogCounts ?? {};
+      Object.entries(counts).forEach(([id, count]) => {
+        acc[id] = (acc[id] ?? 0) + count;
+      });
+      return acc;
+    },
+    {},
+  );
+  const mostCommonObservedBehaviour = Object.entries(
+    observedBehaviourCounts,
+  ).reduce<{ id: string; count: number } | null>((best, [id, count]) => {
+    if (!best || count > best.count) {
+      return { id, count };
+    }
+    return best;
+  }, null);
+  const observedBehaviourLabel = mostCommonObservedBehaviour
+    ? observedBehaviours.find(
+        (behaviour) => behaviour.id === mostCommonObservedBehaviour.id,
+      )?.label ?? mostCommonObservedBehaviour.id
+    : "";
+  const observedBehaviourValue = mostCommonObservedBehaviour
+    ? `${observedBehaviourLabel} (${mostCommonObservedBehaviour.count})`
+    : "Not enough data yet";
   const switchCount = runHistory
     .slice()
     .reverse()
@@ -1417,6 +1445,15 @@ export default function QuadrantApp({
       value: `${switchCount} switches`,
       subtitle: "Tracks how often you abandon one constraint for another.",
     },
+    {
+      title: "Most common observed behaviour",
+      isUnlocked: true,
+      requirement: "Requires memory across runs.",
+      value: observedBehaviourValue,
+      subtitle: mostCommonObservedBehaviour
+        ? null
+        : "Tag optional behaviours during check-ins to surface patterns.",
+    },
   ];
   const patternInsightsEmpty = runHistory.length === 0;
   const patternInsightsEmptyMessage =
@@ -1459,6 +1496,100 @@ export default function QuadrantApp({
     }
   };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
+  const closeActivateProtocolModal = () => {
+    setConfirmProtocolId(null);
+    setShowObservedBehaviourPicker(false);
+    setObservedBehaviourSelection([]);
+    setObservedBehaviourError("");
+  };
+
+  useEffect(() => {
+    if (!selectedProtocol) {
+      return;
+    }
+    const modal = activateModalRef.current;
+    if (!modal) {
+      return;
+    }
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(
+      modal.querySelectorAll<HTMLElement>(focusableSelector),
+    ).filter((el) => !el.hasAttribute("disabled"));
+    focusables[0]?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeActivateProtocolModal();
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) {
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedProtocol]);
+
+  useEffect(() => {
+    if (!showRunDetail) {
+      return;
+    }
+    const modal = runDetailModalRef.current;
+    if (!modal) {
+      return;
+    }
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(
+      modal.querySelectorAll<HTMLElement>(focusableSelector),
+    ).filter((el) => !el.hasAttribute("disabled"));
+    focusables[0]?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setShowRunDetail(false);
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) {
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showRunDetail]);
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
 
   return (
@@ -1719,7 +1850,12 @@ export default function QuadrantApp({
       ) : null}
       {selectedProtocol ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
-          <div className="flex w-full max-w-xl max-h-[85vh] flex-col ui-modal p-[var(--space-6)]">
+          <div
+            ref={activateModalRef}
+            role="dialog"
+            aria-modal="true"
+            className="flex w-full max-w-xl max-h-[85vh] flex-col ui-modal p-[var(--space-6)]"
+          >
             <div className="space-y-2">
               <p className="text-xs font-semibold tracking-wide text-zinc-500">
                 Activate protocol?
@@ -1762,22 +1898,36 @@ export default function QuadrantApp({
                   {showObservedBehaviourPicker ? (
                     <div className="mt-3 space-y-3">
                       <p className="text-xs text-zinc-500">
-                        Tracked for insight. Does not end your run.
+                        Select up to 2. Tracked for insight only — does not end
+                        your run.
+                      </p>
+                      <p className="text-xs text-zinc-500">
+                        {observedBehaviourSelection.length >=
+                        MAX_OBSERVED_BEHAVIOURS
+                          ? "Max 2 selected"
+                          : `${observedBehaviourSelection.length} selected`}
                       </p>
                       <div className="space-y-2">
                         {observedBehaviours.map((behaviour) => {
                           const isChecked = observedBehaviourSelection.includes(
                             behaviour.id,
                           );
+                          const atLimit =
+                            observedBehaviourSelection.length >=
+                            MAX_OBSERVED_BEHAVIOURS;
+                          const isDisabled = !isChecked && atLimit;
                           return (
                             <label
                               key={behaviour.id}
-                              className="flex items-start gap-3 text-sm text-zinc-700"
+                              className={`flex items-start gap-3 text-sm text-zinc-700 ${
+                                isDisabled ? "opacity-60" : ""
+                              }`}
                             >
                               <input
                                 type="checkbox"
                                 className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
                                 checked={isChecked}
+                                disabled={isDisabled}
                                 onChange={() => {
                                   setObservedBehaviourError("");
                                   if (isChecked) {
@@ -1825,12 +1975,7 @@ export default function QuadrantApp({
               <button
                 type="button"
                 className="btn btn-secondary text-sm"
-                onClick={() => {
-                  setConfirmProtocolId(null);
-                  setShowObservedBehaviourPicker(false);
-                  setObservedBehaviourSelection([]);
-                  setObservedBehaviourError("");
-                }}
+                onClick={closeActivateProtocolModal}
               >
                 Cancel
               </button>
@@ -1876,7 +2021,12 @@ export default function QuadrantApp({
       ) : null}
       {showRunDetail && selectedRun && selectedRunProtocol && isPro ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
-          <div className="w-full max-w-xl ui-modal p-[var(--space-6)]">
+          <div
+            ref={runDetailModalRef}
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-xl ui-modal p-[var(--space-6)]"
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold tracking-wide text-zinc-500">

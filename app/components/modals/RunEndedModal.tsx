@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { RunEndContext, RunEndCopy } from "../../types";
 
 type RunEndedModalProps = {
@@ -30,10 +31,53 @@ export default function RunEndedModal({
   const hasOutcomeHighlight =
     runEndCopy.outcomeHighlight.trim().length > 0 ||
     runEndCopy.outcomeSuffix.trim().length > 0;
+  const modalRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const modal = modalRef.current;
+    if (!modal) {
+      return;
+    }
+    const focusableSelector =
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(
+      modal.querySelectorAll<HTMLElement>(focusableSelector),
+    ).filter((el) => !el.hasAttribute("disabled"));
+    focusables[0]?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) {
+        return;
+      }
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         className="w-full max-w-xl ui-modal p-[var(--space-8)]"
