@@ -38,6 +38,7 @@ import RunHistorySection from "./today/RunHistorySection";
 
 const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
+const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -77,6 +78,39 @@ const persistRunHistory = (history: RunHistoryEntry[]) => {
     return;
   }
   localStorage.setItem("runHistory", JSON.stringify(history));
+};
+
+const loadLocalActiveRun = (): LocalActiveRunSnapshot | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const stored = localStorage.getItem(ACTIVE_RUN_STORAGE_KEY);
+  if (!stored) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(stored) as LocalActiveRunSnapshot;
+    if (parsed && parsed.status === "active") {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+const saveLocalActiveRun = (snapshot: LocalActiveRunSnapshot) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem(ACTIVE_RUN_STORAGE_KEY, JSON.stringify(snapshot));
+};
+
+const clearLocalActiveRun = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
 };
 
 const buildCheckinsFromSnapshot = (
@@ -287,6 +321,21 @@ type CheckInEntry = {
   followed: boolean;
   note?: string;
   observedBehaviourIds?: string[];
+};
+
+type LocalActiveRunSnapshot = {
+  runId: string;
+  protocolId: string;
+  protocolName: string;
+  status: "active";
+  startedAt: string;
+  checkins: Array<{
+    dayIndex: number;
+    result: "clean" | "violated";
+    note?: string;
+    createdAt: string;
+  }>;
+  optionalTrackedBehaviours?: string[];
 };
 
 const buildRunTracker = (length: number, checkIns: CheckInEntry[]) => {
@@ -532,6 +581,30 @@ export default function QuadrantApp({
     }
     if (storedProtocolId && !storedRunId) {
       setActiveRunId(createRunId());
+    }
+    if (!isAuthed) {
+      const snapshot = loadLocalActiveRun();
+      if (snapshot && snapshot.status === "active") {
+        setActiveRunId(snapshot.runId);
+        setActiveProtocolId(snapshot.protocolId);
+        setRunStatus("active");
+        setActivatedAt(snapshot.startedAt);
+        setRunStartDate(snapshot.startedAt.slice(0, 10));
+        setCheckIns(
+          snapshot.checkins.map((entry) => ({
+            dayIndex: entry.dayIndex,
+            date: entry.createdAt.slice(0, 10),
+            followed: entry.result === "clean",
+            note: entry.note,
+          })),
+        );
+        setStreak(
+          snapshot.checkins.filter((entry) => entry.result === "clean").length,
+        );
+        setObservedBehaviourIds(
+          clampObservedBehaviours(snapshot.optionalTrackedBehaviours),
+        );
+      }
     }
     if (storedObservedBehaviours) {
       try {
@@ -831,6 +904,9 @@ export default function QuadrantApp({
     return aIndex - bIndex;
   });
   const clearActiveProtocol = () => {
+    if (!isAuthed) {
+      clearLocalActiveRun();
+    }
     setActiveProblemId(null);
     setActiveProtocolId(null);
     setActiveRunId(null);
@@ -951,6 +1027,17 @@ export default function QuadrantApp({
         }
       });
     }
+    if (!isAuthed) {
+      saveLocalActiveRun({
+        runId: nextRunId,
+        protocolId,
+        protocolName: protocolById[protocolId]?.name ?? "Protocol",
+        status: "active",
+        startedAt: timestamp,
+        checkins: [],
+        optionalTrackedBehaviours: clampObservedBehaviours(observedIds),
+      });
+    }
     if (typeof window !== "undefined") {
       localStorage.setItem("activeProtocolId", protocolId);
       localStorage.setItem("activeRunId", nextRunId);
@@ -1034,8 +1121,28 @@ export default function QuadrantApp({
         },
       );
     }
+    if (!isAuthed) {
+      const snapshotCheckins = updatedCheckIns.map((entry) => ({
+        dayIndex: entry.dayIndex,
+        result: entry.followed ? "clean" : "violated",
+        note: entry.note,
+        createdAt: new Date(entry.date).toISOString(),
+      }));
+      saveLocalActiveRun({
+        runId: activeRunId ?? createRunId(),
+        protocolId: activeProtocolId ?? "",
+        protocolName: activeProtocol?.name ?? "Protocol",
+        status: "active",
+        startedAt: activatedAt ?? new Date().toISOString(),
+        checkins: snapshotCheckins,
+        optionalTrackedBehaviours: clampObservedBehaviours(observedBehaviourIds),
+      });
+    }
     if (!followed) {
       setRunStatus("failed");
+      if (!isAuthed) {
+        clearLocalActiveRun();
+      }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
@@ -1049,6 +1156,9 @@ export default function QuadrantApp({
       return;
     } else if (newStreak >= RUN_LENGTH) {
       setRunStatus("completed");
+      if (!isAuthed) {
+        clearLocalActiveRun();
+      }
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
