@@ -55,7 +55,7 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            Quadrant enforces one trading rule at a time — daily, binary, and
+            Quadrant enforces one trading rule at a time — daily and
             non-negotiable.
           </p>
           <div className="flex flex-wrap items-center gap-4">
@@ -73,19 +73,8 @@ export default function LandingPage() {
               Pricing
             </a>
           </div>
-        </section>
-
-        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
-            What Quadrant Is
-          </h2>
-          <p>
-            Quadrant is a behavioural enforcement system for traders who already
-            know the rules but don’t consistently follow them. It doesn’t
-            journal, coach, motivate, or explain. You choose a protocol. You
-            check in once per day. If you violate it, the run ends. Nothing is
-            softened. Nothing is reinterpreted. The system records what actually
-            happens.
+          <p className="text-xs font-semibold text-zinc-500">
+            Free. No account required.
           </p>
         </section>
 
@@ -99,7 +88,7 @@ export default function LandingPage() {
                 Choose a constraint
               </div>
               <p className="mt-2 text-sm text-zinc-600">
-                Pick a single rule you can’t negotiate.
+                Pick one rule you don’t negotiate.
               </p>
             </div>
             <div className="ui-surface p-[var(--space-5)]">
@@ -121,37 +110,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
-            Free vs Pro
-          </h2>
-          <p className="text-base font-semibold text-zinc-900">
-            Free enforces behaviour. Pro remembers it.
-          </p>
-          <p>
-            Free lets you run protocols as many times as you want. Nothing is
-            saved. Pro keeps your runs. Patterns accumulate. Behaviour changes
-            because violations can’t hide.
-          </p>
-          <a
-            href="/pricing"
-            className="btn-tertiary text-sm"
-          >
-            View pricing
-          </a>
-        </section>
-
-        <section className="max-w-3xl space-y-3 text-base leading-7 text-zinc-700">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
-            Philosophy
-          </h2>
-          <p>
-            Quadrant assumes you are already capable. If a rule is violated, the
-            system doesn’t ask why. It records that it happened. Over time,
-            behaviour changes not through insight — but through exposure.
-          </p>
-        </section>
-
         <section className="space-y-3">
           <button
             type="button"
@@ -160,9 +118,6 @@ export default function LandingPage() {
           >
             Start a run
           </button>
-          <p className="text-xs font-semibold text-zinc-500">
-            Free. No account history required.
-          </p>
         </section>
       </main>
       <footer className="mx-auto mt-[var(--space-12)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-6)] text-xs text-zinc-500">
@@ -170,14 +125,6 @@ export default function LandingPage() {
           <p>No brokerage connection.</p>
           <p>No trade data required.</p>
           <p>Local-first. Data persists only when you choose Pro.</p>
-        </div>
-        <div className="mt-3 flex gap-4">
-          <a href="/about" className="btn-tertiary text-xs">
-            About
-          </a>
-          <a href="/pricing" className="btn-tertiary text-xs">
-            Pricing
-          </a>
         </div>
       </footer>
     </div>
