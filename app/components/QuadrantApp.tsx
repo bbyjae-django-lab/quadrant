@@ -42,6 +42,7 @@ const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 const DASHBOARD_MODAL_KEY = "dashboard_modal";
 const SELECTED_PROTOCOL_ID_KEY = "selected_protocol_id";
 const ENDED_RUN_ID_KEY = "ended_run_id";
+const DASHBOARD_MODAL_CONTEXT_KEY = "dashboard_modal_context";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -123,6 +124,52 @@ const clearLocalActiveRun = () => {
     return;
   }
   localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+};
+
+type RunEndedModalContext = {
+  result: RunResult;
+  protocolId: string;
+  protocolName: string;
+  cleanDays: number;
+  runLength: number;
+  endedAt: string;
+  isFree: boolean;
+};
+
+const saveRunEndedModalContext = (context: RunEndedModalContext) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.setItem(
+    DASHBOARD_MODAL_CONTEXT_KEY,
+    JSON.stringify(context),
+  );
+};
+
+const loadRunEndedModalContext = (): RunEndedModalContext | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const stored = localStorage.getItem(DASHBOARD_MODAL_CONTEXT_KEY);
+  if (!stored) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(stored) as RunEndedModalContext;
+    if (
+      parsed &&
+      typeof parsed.protocolId === "string" &&
+      typeof parsed.protocolName === "string" &&
+      typeof parsed.cleanDays === "number" &&
+      typeof parsed.runLength === "number" &&
+      typeof parsed.endedAt === "string"
+    ) {
+      return parsed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 const buildCheckinsFromSnapshot = (
@@ -1231,6 +1278,15 @@ export default function QuadrantApp({
           localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
         }
       }
+      saveRunEndedModalContext({
+        result: "Failed",
+        protocolId: activeProtocolId ?? "",
+        protocolName: activeProtocol?.name ?? "",
+        cleanDays,
+        runLength: RUN_LENGTH,
+        endedAt: new Date().toISOString(),
+        isFree: !isPro,
+      });
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "failed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
@@ -1251,6 +1307,15 @@ export default function QuadrantApp({
           localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
         }
       }
+      saveRunEndedModalContext({
+        result: "Completed",
+        protocolId: activeProtocolId ?? "",
+        protocolName: activeProtocol?.name ?? "",
+        cleanDays,
+        runLength: RUN_LENGTH,
+        endedAt: new Date().toISOString(),
+        isFree: !isPro,
+      });
       if (typeof window !== "undefined") {
         localStorage.setItem("runStatus", "completed");
         localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
@@ -1258,6 +1323,7 @@ export default function QuadrantApp({
       setRunEndContext({ result: "Completed", cleanDays });
       appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
+      return;
     }
     setCheckInNote(noteValue);
     if (typeof window !== "undefined") {
@@ -1629,25 +1695,31 @@ export default function QuadrantApp({
             result: endedRun.result,
             cleanDays: endedRun.cleanDays,
           });
-        } else if (
-          runStatus === "failed" ||
-          runStatus === "completed" ||
-          runStatus === "ended"
-        ) {
-          setRunEndContext({
-            result:
-              runStatus === "completed"
-                ? "Completed"
-                : runStatus === "ended"
-                  ? "Ended"
-                  : "Failed",
-            cleanDays: checkIns.filter((entry) => entry.followed).length,
-          });
         } else {
-          localStorage.removeItem(DASHBOARD_MODAL_KEY);
-          localStorage.removeItem(ENDED_RUN_ID_KEY);
-          setModalIntentHandled(true);
-          return;
+          const context = loadRunEndedModalContext();
+          if (context) {
+            setRunEndContext({
+              result: context.result,
+              cleanDays: context.cleanDays,
+            });
+          } else if (
+            runStatus === "failed" ||
+            runStatus === "completed" ||
+            runStatus === "ended"
+          ) {
+            setRunEndContext({
+              result:
+                runStatus === "completed"
+                  ? "Completed"
+                  : runStatus === "ended"
+                    ? "Ended"
+                    : "Failed",
+              cleanDays: checkIns.filter((entry) => entry.followed).length,
+            });
+          } else {
+            setModalIntentHandled(true);
+            return;
+          }
         }
       }
       setShowRunEndedModal(true);
@@ -2179,6 +2251,7 @@ export default function QuadrantApp({
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             if (typeof window !== "undefined") {
@@ -2188,6 +2261,7 @@ export default function QuadrantApp({
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             clearActiveProtocol();
@@ -2195,6 +2269,7 @@ export default function QuadrantApp({
           onClose={() => {
             if (typeof window !== "undefined") {
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
+              localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
             clearActiveProtocol();
