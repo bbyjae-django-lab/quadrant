@@ -1612,7 +1612,7 @@ export default function QuadrantApp({
       value: observedBehaviourValue,
       subtitle: mostCommonObservedBehaviour
         ? null
-        : "Tag optional behaviours during check-ins to surface patterns.",
+        : "Tag observed behaviours during check-ins to surface patterns.",
     },
   ];
   const patternInsightsEmpty = runHistory.length === 0;
