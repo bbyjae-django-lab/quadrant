@@ -1244,8 +1244,9 @@ export default function QuadrantApp({
     return true;
   };
 
-  const handleActivateProtocol = async (protocolId: string) => {
-    if (!protocolId) {
+  const handleActivateProtocol = async () => {
+    const pendingId = activateModalProtocolId;
+    if (!pendingId) {
       return;
     }
     if (isActivating) {
@@ -1261,7 +1262,7 @@ export default function QuadrantApp({
     }
     try {
       const activated = await activateProtocol(
-        protocolId,
+        pendingId,
         null,
         isPro ? observedBehaviourSelection : [],
       );
@@ -2404,11 +2405,9 @@ export default function QuadrantApp({
                 type="button"
                 className="btn btn-primary text-sm"
                 onClick={() => {
-                  if (activateModalProtocolId) {
-                    void handleActivateProtocol(activateModalProtocolId);
-                  }
+                  void handleActivateProtocol();
                 }}
-                disabled={isActivating}
+                disabled={isActivating || !activateModalProtocolId}
               >
                 Activate protocol
               </button>
