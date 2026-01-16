@@ -47,7 +47,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
-        <section className="space-y-4">
+        <section className="space-y-3">
           <p className="text-xs font-semibold tracking-[0.2em] text-zinc-400">
             Quadrant
           </p>
@@ -61,24 +61,26 @@ export default function LandingPage() {
           <p className="max-w-2xl text-sm text-zinc-600">
             You already know the rules. Quadrant makes you follow one.
           </p>
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              className="btn btn-primary text-sm"
-              onClick={handleStartRun}
-            >
-              Start a run
-            </button>
-            <a
-              href="/pricing"
-              className="btn-tertiary text-sm"
-            >
-              Pricing
-            </a>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-4">
+              <button
+                type="button"
+                className="btn btn-primary text-sm"
+                onClick={handleStartRun}
+              >
+                Start a run
+              </button>
+              <a
+                href="/pricing"
+                className="btn-tertiary text-sm"
+              >
+                Pricing
+              </a>
+            </div>
+            <p className="text-xs font-semibold text-zinc-500">
+              Free. No account required.
+            </p>
           </div>
-          <p className="text-xs font-semibold text-zinc-500">
-            Free. No account required.
-          </p>
         </section>
 
         <section className="space-y-4">
@@ -114,8 +116,8 @@ export default function LandingPage() {
         </section>
 
       </main>
-      <footer className="mx-auto mt-[var(--space-12)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-6)] text-xs text-zinc-500">
-        <div className="space-y-1">
+      <footer className="mx-auto mt-[var(--space-10)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-5)] text-xs text-zinc-600">
+        <div className="space-y-2">
           <p>No brokerage connection.</p>
           <p>No trade data required.</p>
           <p>Local-first. History saved only with Pro.</p>
