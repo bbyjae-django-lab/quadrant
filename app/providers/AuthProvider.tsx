@@ -11,12 +11,14 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 
 import { getSession, onAuthStateChange, signOut as authSignOut } from "../lib/auth";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
   isAuthed: boolean;
   authLoading: boolean;
+  isPro: boolean;
   signOut: () => Promise<void>;
 };
 
@@ -38,6 +40,7 @@ export default function AuthProvider({
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -62,6 +65,38 @@ export default function AuthProvider({
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadEntitlement = async () => {
+      if (!user) {
+        setIsPro(false);
+        return;
+      }
+      const supabase = getSupabaseClient();
+      if (!supabase) {
+        setIsPro(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("user_entitlements")
+        .select("is_pro")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) {
+        return;
+      }
+      if (error) {
+        setIsPro(false);
+        return;
+      }
+      setIsPro(Boolean(data?.is_pro));
+    };
+    void loadEntitlement();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   const handleSignOut = useCallback(async () => {
     await authSignOut();
   }, []);
@@ -72,9 +107,10 @@ export default function AuthProvider({
       session,
       isAuthed: Boolean(user),
       authLoading,
+      isPro,
       signOut: handleSignOut,
     }),
-    [user, session, authLoading, handleSignOut],
+    [user, session, authLoading, isPro, handleSignOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

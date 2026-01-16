@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
@@ -42,6 +42,7 @@ const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 const DASHBOARD_MODAL_KEY = "dashboard_modal";
 const ENDED_RUN_ID_KEY = "ended_run_id";
 const DASHBOARD_MODAL_CONTEXT_KEY = "dashboard_modal_context";
+const PRO_ACTIVE_SEEN_KEY = "pro_active_seen";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -474,8 +475,9 @@ export default function QuadrantApp({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isDashboardRoute = pathname === "/dashboard";
-  const { user, isAuthed, authLoading, signOut } = useAuth();
+  const { user, isAuthed, authLoading, isPro, signOut } = useAuth();
   const initialLocalSnapshot =
     typeof window !== "undefined" ? loadLocalActiveRun() : null;
   const initialLocalCheckIns = initialLocalSnapshot
@@ -554,6 +556,7 @@ export default function QuadrantApp({
   const [supabaseReady, setSupabaseReadyState] = useState(false);
   const activateModalRef = useRef<HTMLDivElement | null>(null);
   const runDetailModalRef = useRef<HTMLDivElement | null>(null);
+  const [showProActive, setShowProActive] = useState(false);
   const checkInsRef = useRef<CheckInEntry[]>(checkIns);
   const activeRunIdRef = useRef<string | null>(activeRunId);
   const hydrateRequestRef = useRef(0);
@@ -565,7 +568,6 @@ export default function QuadrantApp({
   useEffect(() => {
     activeRunIdRef.current = activeRunId;
   }, [activeRunId]);
-  const isPro = isAuthed;
   const storageAdapter = useMemo(
     () =>
       getAdapter({
@@ -612,6 +614,24 @@ export default function QuadrantApp({
     setIsPatternInsightsCollapsed(null);
     setIsProtocolLibraryCollapsed(null);
   }, [authLoading, isAuthed]);
+
+  useEffect(() => {
+    if (!searchParams) {
+      return;
+    }
+    const stripeStatus = searchParams.get("stripe");
+    if (stripeStatus === "success") {
+      if (typeof window !== "undefined") {
+        const seen = localStorage.getItem(PRO_ACTIVE_SEEN_KEY);
+        if (!seen) {
+          setShowProActive(true);
+          localStorage.setItem(PRO_ACTIVE_SEEN_KEY, "true");
+        }
+      } else {
+        setShowProActive(true);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined" || authLoading) {
@@ -1927,6 +1947,9 @@ export default function QuadrantApp({
             </a>
           </div>
         </div>
+        {showProActive ? (
+          <div className="mt-3 text-xs text-zinc-600">Pro active.</div>
+        ) : null}
 
         {view === "dashboard" && (
           <section className="mt-8 space-y-6">

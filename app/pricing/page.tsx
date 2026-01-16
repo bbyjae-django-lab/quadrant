@@ -2,21 +2,86 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../providers/AuthProvider";
+import { getSupabaseClient } from "../lib/supabaseClient";
 
 const PRO_PRICE = 29;
 
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
-  const hasProEntitlement = false;
+  const { isAuthed, isPro } = useAuth();
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
-      if (hasProEntitlement) {
-        window.location.href = "/dashboard";
+      if (!isAuthed) {
+        setUpgradeNotice("Sign in to continue.");
         return;
       }
-      setUpgradeNotice("Upgrade pending. Subscription not yet provisioned.");
+      const supabase = getSupabaseClient();
+      const tokenPromise = supabase
+        ? supabase.auth
+            .getSession()
+            .then((result) => result.data.session?.access_token)
+        : Promise.resolve(null);
+      tokenPromise.then((accessToken) => {
+        if (!accessToken) {
+          setUpgradeNotice("Sign in to continue.");
+          return;
+        }
+        fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.url) {
+              window.location.href = data.url;
+              return;
+            }
+            setUpgradeNotice("Unable to start checkout.");
+          })
+          .catch(() => {
+            setUpgradeNotice("Unable to start checkout.");
+          });
+      });
     }
+  };
+
+  const handleManageBilling = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const supabase = getSupabaseClient();
+    const tokenPromise = supabase
+      ? supabase.auth
+          .getSession()
+          .then((result) => result.data.session?.access_token)
+      : Promise.resolve(null);
+    tokenPromise.then((accessToken) => {
+      if (!accessToken) {
+        setUpgradeNotice("Sign in to continue.");
+        return;
+      }
+      fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+            return;
+          }
+          setUpgradeNotice("Unable to open billing.");
+        })
+        .catch(() => {
+          setUpgradeNotice("Unable to open billing.");
+        });
+    });
   };
 
   return (
@@ -80,6 +145,15 @@ export default function PricingPage() {
             >
               Upgrade to Pro
             </button>
+            {isPro ? (
+              <button
+                type="button"
+                className="btn-tertiary mt-3"
+                onClick={handleManageBilling}
+              >
+                Manage billing
+              </button>
+            ) : null}
             {upgradeNotice ? (
               <p className="mt-3 text-xs font-semibold text-zinc-300">
                 {upgradeNotice}
