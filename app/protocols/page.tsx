@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import QuadrantApp from "../components/QuadrantApp";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 export default function ProtocolsPage() {
   const router = useRouter();
