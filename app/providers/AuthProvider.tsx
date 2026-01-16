@@ -13,8 +13,6 @@ import type { Session, User } from "@supabase/supabase-js";
 import { getSession, onAuthStateChange, signOut as authSignOut } from "../lib/auth";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
-const POST_AUTH_INTENT_KEY = "post_auth_intent";
-
 type AuthContextValue = {
   user: User | null;
   session: Session | null;

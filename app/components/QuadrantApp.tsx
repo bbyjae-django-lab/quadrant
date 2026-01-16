@@ -489,7 +489,9 @@ export default function QuadrantApp({
         note: entry.note,
       }))
     : [];
-  const [confirmProtocolId, setConfirmProtocolId] = useState<string | null>(
+  const [activateModalProtocolId, setActivateModalProtocolId] = useState<
+    string | null
+  >(
     null,
   );
   const [activeProblemId, setActiveProblemId] = useState<number | null>(null);
@@ -1021,8 +1023,8 @@ export default function QuadrantApp({
     hasHydrated,
   ]);
 
-  const selectedProtocol = confirmProtocolId
-    ? protocolById[confirmProtocolId]
+  const selectedProtocol = activateModalProtocolId
+    ? protocolById[activateModalProtocolId]
     : null;
   const activeProtocol = activeProtocolId
     ? protocolById[activeProtocolId]
@@ -1242,8 +1244,8 @@ export default function QuadrantApp({
     return true;
   };
 
-  const handleActivateProtocol = async () => {
-    if (!selectedProtocol) {
+  const handleActivateProtocol = async (protocolId: string) => {
+    if (!protocolId) {
       return;
     }
     if (isActivating) {
@@ -1259,7 +1261,7 @@ export default function QuadrantApp({
     }
     try {
       const activated = await activateProtocol(
-        selectedProtocol.id,
+        protocolId,
         null,
         isPro ? observedBehaviourSelection : [],
       );
@@ -1770,12 +1772,12 @@ export default function QuadrantApp({
   const [modalIntentHandled, setModalIntentHandled] = useState(false);
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const openActivateProtocolModal = (protocolId: string) => {
-    setConfirmProtocolId(protocolId);
+    setActivateModalProtocolId(protocolId);
     setActivationError("");
     setIsActivating(false);
   };
   const closeActivateProtocolModal = () => {
-    setConfirmProtocolId(null);
+    setActivateModalProtocolId(null);
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
     setObservedBehaviourError("");
@@ -2066,10 +2068,7 @@ export default function QuadrantApp({
                         Run history
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
-                        Run history is empty.
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Pro preserves behavioural evidence across runs.
+                        Sign in to preserve history.
                       </p>
                       <button
                         type="button"
@@ -2404,7 +2403,11 @@ export default function QuadrantApp({
               <button
                 type="button"
                 className="btn btn-primary text-sm"
-                onClick={handleActivateProtocol}
+                onClick={() => {
+                  if (activateModalProtocolId) {
+                    void handleActivateProtocol(activateModalProtocolId);
+                  }
+                }}
                 disabled={isActivating}
               >
                 Activate protocol
