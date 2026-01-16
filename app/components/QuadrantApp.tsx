@@ -1239,6 +1239,7 @@ export default function QuadrantApp({
         console.warn("Active run snapshot missing after activation.");
       }
     }
+    console.log("protocol-activate:route", "/dashboard");
     router.replace("/dashboard");
     focusActiveRun();
     return true;
@@ -1268,6 +1269,8 @@ export default function QuadrantApp({
         isPro ? observedBehaviourSelection : [],
       );
       if (activated) {
+        console.log("protocol-activate:route", "/dashboard");
+        router.replace("/dashboard");
         closeActivateProtocolModal();
       } else {
         setActivationError("Unable to activate protocol.");
@@ -1438,17 +1441,6 @@ export default function QuadrantApp({
     }
     setShowCheckInModal(true);
   };
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const isPreRunRoute =
-      pathname === "/" || pathname === "/protocols" || pathname === "/library";
-    if (runActive && isPreRunRoute) {
-      router.replace("/dashboard");
-    }
-  }, [runActive, pathname, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
