@@ -127,7 +127,7 @@ const clearLocalActiveRun = () => {
 };
 
 type RunEndedModalContext = {
-  result: RunResult;
+  result: "Completed" | "Failed";
   protocolId: string;
   protocolName: string;
   cleanDays: number;
