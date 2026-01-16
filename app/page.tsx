@@ -58,6 +58,9 @@ export default function LandingPage() {
             Quadrant enforces one trading rule at a time — daily and
             non-negotiable.
           </p>
+          <p className="max-w-2xl text-sm text-zinc-600">
+            You already know the rules. Quadrant makes you follow one.
+          </p>
           <div className="flex flex-wrap items-center gap-4">
             <button
               type="button"
@@ -110,21 +113,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="space-y-3">
-          <button
-            type="button"
-            className="btn btn-primary text-sm"
-            onClick={handleStartRun}
-          >
-            Start a run
-          </button>
-        </section>
       </main>
       <footer className="mx-auto mt-[var(--space-12)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-6)] text-xs text-zinc-500">
         <div className="space-y-1">
           <p>No brokerage connection.</p>
           <p>No trade data required.</p>
-          <p>Local-first. Data persists only when you choose Pro.</p>
+          <p>Local-first. History saved only with Pro.</p>
         </div>
       </footer>
     </div>
