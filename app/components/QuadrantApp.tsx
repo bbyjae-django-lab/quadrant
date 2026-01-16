@@ -1524,10 +1524,14 @@ export default function QuadrantApp({
       : mostFrequentProtocolNames[0] ?? "Not enough data yet"
     : "Not enough data yet";
   const hasEnoughFailureDayData = failedRuns.length >= 3;
-  const failureDayValue =
-    hasEnoughFailureDayData && failureDayDisplay
-      ? failureDayDisplay
-      : "Not enough data yet";
+  const failureDayShare =
+    failedRuns.length > 0 ? topFailureDayCount / failedRuns.length : 0;
+  const hasFailureDayConsensus =
+    hasEnoughFailureDayData &&
+    (topFailureDayCount >= 3 || failureDayShare >= 0.5);
+  const failureDayValue = hasFailureDayConsensus && failureDayDisplay
+    ? `Most runs fail on ${failureDayDisplay}.`
+    : "Not enough data yet";
   const patternInsights = [
     {
       title: "Most frequent breaking behaviour",
@@ -1553,7 +1557,7 @@ export default function QuadrantApp({
       isUnlocked: true,
       requirement: "Requires repeated outcomes to surface.",
       value: failureDayValue,
-      subtitle: hasEnoughFailureDayData
+      subtitle: hasFailureDayConsensus
         ? "Most violations occur at the same point in the run."
         : null,
     },
