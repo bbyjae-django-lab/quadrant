@@ -26,6 +26,9 @@ export default function AuthCallbackPage() {
       const fromModal =
         typeof window !== "undefined" &&
         localStorage.getItem("auth_from_modal") === "true";
+      const checkoutIntent =
+        typeof window !== "undefined" &&
+        localStorage.getItem("post_auth_intent") === "checkout";
       if (typeof window !== "undefined") {
         localStorage.removeItem("auth_from_modal");
       }
@@ -40,7 +43,11 @@ export default function AuthCallbackPage() {
           return;
         }
       }
-      router.replace("/");
+      if (checkoutIntent) {
+        router.replace("/pricing");
+      } else {
+        router.replace("/");
+      }
     };
     finalize();
   }, [router]);

@@ -24,7 +24,6 @@ import {
   upsertSupabaseRun,
   type CheckinRecord,
 } from "../lib/storageAdapter";
-import { getSupabaseClient } from "../lib/supabaseClient";
 import {
   hasMigratedToSupabase,
   migrateLocalToSupabase,
@@ -1172,11 +1171,11 @@ export default function QuadrantApp({
     }
   };
 
-  const activateProtocol = (
+  const activateProtocol = async (
     protocolId: string,
     problemId: number | null,
     observedIds?: string[],
-  ) => {
+  ): Promise<boolean> => {
     const timestamp = new Date().toISOString();
     const today = getLocalDateString();
     setActivatedAt(timestamp);
@@ -1240,9 +1239,10 @@ export default function QuadrantApp({
     }
     router.replace("/dashboard");
     focusActiveRun();
+    return true;
   };
 
-  const handleActivateProtocol = () => {
+  const handleActivateProtocol = async () => {
     if (!selectedProtocol) {
       return;
     }
@@ -1258,12 +1258,16 @@ export default function QuadrantApp({
       return;
     }
     try {
-      activateProtocol(
+      const activated = await activateProtocol(
         selectedProtocol.id,
         null,
         isPro ? observedBehaviourSelection : [],
       );
-      closeActivateProtocolModal();
+      if (activated) {
+        closeActivateProtocolModal();
+      } else {
+        setActivationError("Unable to activate protocol.");
+      }
     } catch {
       setActivationError("Unable to activate protocol.");
     } finally {
@@ -1737,39 +1741,6 @@ export default function QuadrantApp({
     }
     setShowAuthModal(true);
   };
-  const startCheckout = () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (!isAuthed) {
-      openAuthModal("checkout");
-      return;
-    }
-    const supabase = getSupabaseClient();
-    const tokenPromise = supabase
-      ? supabase.auth
-          .getSession()
-          .then((result) => result.data.session?.access_token)
-      : Promise.resolve(null);
-    tokenPromise.then((accessToken) => {
-      if (!accessToken) {
-        return;
-      }
-      fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.url) {
-            window.location.href = data.url;
-          }
-        })
-        .catch(() => {});
-    });
-  };
   const focusProtocolLibrary = () => {
     setIsProtocolLibraryCollapsed(false);
     setIsRunHistoryCollapsed(true);
@@ -2133,7 +2104,9 @@ export default function QuadrantApp({
                 showEmptyState={patternInsightsEmpty}
                 emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
-                  startCheckout();
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/pricing";
+                  }
                 }}
                 onRequireAuth={() => {
                   openAuthModal("history");
@@ -2459,7 +2432,9 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
-            startCheckout();
+            if (typeof window !== "undefined") {
+              window.location.href = "/pricing";
+            }
           }}
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {

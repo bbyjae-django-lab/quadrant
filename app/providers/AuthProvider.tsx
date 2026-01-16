@@ -99,33 +99,6 @@ export default function AuthProvider({
     };
   }, [user]);
 
-  useEffect(() => {
-    if (!user || !session) {
-      return;
-    }
-    if (typeof window === "undefined") {
-      return;
-    }
-    const intent = localStorage.getItem(POST_AUTH_INTENT_KEY);
-    if (intent !== "checkout") {
-      return;
-    }
-    localStorage.removeItem(POST_AUTH_INTENT_KEY);
-    fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.url) {
-          window.location.href = data.url;
-        }
-      })
-      .catch(() => {});
-  }, [user, session]);
-
   const handleSignOut = useCallback(async () => {
     await authSignOut();
   }, []);
