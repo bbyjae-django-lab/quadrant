@@ -2144,6 +2144,7 @@ export default function QuadrantApp({
             ref={activateModalRef}
             role="dialog"
             aria-modal="true"
+            data-quadrant-modal
             className="flex w-full max-w-xl max-h-[85vh] flex-col ui-modal p-[var(--space-6)]"
           >
             <div className="flex items-start justify-between gap-4">
@@ -2340,6 +2341,7 @@ export default function QuadrantApp({
             ref={runDetailModalRef}
             role="dialog"
             aria-modal="true"
+            data-quadrant-modal
             className="w-full max-w-xl ui-modal p-[var(--space-6)]"
           >
             <div className="flex items-start justify-between gap-4">

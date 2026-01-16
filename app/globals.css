@@ -140,6 +140,12 @@ a:focus-visible {
   outline-offset: 2px;
 }
 
+[data-quadrant-modal] *:focus,
+[data-quadrant-modal] *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 button:disabled {
   cursor: not-allowed;
   background: #e4e4e7;

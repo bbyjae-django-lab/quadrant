@@ -82,6 +82,7 @@ export default function DailyCheckInModal({
         ref={modalRef}
         role="dialog"
         aria-modal="true"
+        data-quadrant-modal
         className="w-full max-w-lg ui-modal p-[var(--space-6)]"
       >
         <div className="flex items-start justify-between gap-4">
