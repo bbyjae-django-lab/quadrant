@@ -476,7 +476,7 @@ export default function QuadrantApp({
   const router = useRouter();
   const pathname = usePathname();
   const isDashboardRoute = pathname === "/dashboard";
-  const { user, isAuthed, authLoading } = useAuth();
+  const { user, isAuthed, authLoading, signOut } = useAuth();
   const initialLocalSnapshot =
     typeof window !== "undefined" ? loadLocalActiveRun() : null;
   const initialLocalCheckIns = initialLocalSnapshot
@@ -1874,6 +1874,20 @@ export default function QuadrantApp({
         <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
           <span>{view === "dashboard" ? "Dashboard" : ""}</span>
           <div className="flex items-center gap-3">
+            {isAuthed ? (
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <span>Signed in</span>
+                <button
+                  type="button"
+                  className="btn-tertiary"
+                  onClick={() => {
+                    void signOut();
+                  }}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : null}
             <a
               href="/about"
               className="btn-tertiary"
