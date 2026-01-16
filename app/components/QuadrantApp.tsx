@@ -1420,22 +1420,40 @@ export default function QuadrantApp({
   const uniqueProtocolsAttempted = new Set(
     runHistory.map((entry) => entry.protocolId),
   ).size;
-  const longestCleanRun = runHistory.reduce((max, entry) => {
-    const checkins = (runCheckinsByRunId[entry.id] ?? [])
-      .slice()
-      .sort((a, b) => a.dayIndex - b.dayIndex);
+  const getMaxCleanStreak = (
+    items: Array<{ dayIndex: number; result: string }>,
+  ) => {
+    const sorted = items.slice().sort((a, b) => a.dayIndex - b.dayIndex);
     let current = 0;
     let best = 0;
-    checkins.forEach((checkin) => {
-      if (checkin.result === "clean") {
+    sorted.forEach((item) => {
+      const normalized = item.result.toLowerCase();
+      if (normalized === "clean") {
         current += 1;
         best = Math.max(best, current);
+      } else if (normalized === "violated") {
+        current = 0;
       } else {
         current = 0;
       }
     });
-    return Math.max(max, best);
-  }, 0);
+    return best;
+  };
+  const allRunsForInsights = [
+    ...runHistory.map((entry) => runCheckinsByRunId[entry.id] ?? []),
+    ...(runActive
+      ? [
+          checkIns.map((entry) => ({
+            dayIndex: entry.dayIndex,
+            result: entry.followed ? "clean" : "violated",
+          })),
+        ]
+      : []),
+  ];
+  const longestCleanRun = allRunsForInsights.reduce(
+    (max, runCheckins) => Math.max(max, getMaxCleanStreak(runCheckins)),
+    0,
+  );
   const protocolFailureCounts = failedRuns.reduce<Record<string, number>>(
     (acc, entry) => {
       acc[entry.protocolId] = (acc[entry.protocolId] ?? 0) + 1;
