@@ -28,7 +28,7 @@ export const POST = async (req: Request) => {
   if (!entitlement?.stripe_customer_id) {
     return NextResponse.json({ error: "No customer" }, { status: 400 });
   }
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-04-10" });
   const session = await stripe.billingPortal.sessions.create({
     customer: entitlement.stripe_customer_id,
     return_url: `${appUrl}/pricing`,

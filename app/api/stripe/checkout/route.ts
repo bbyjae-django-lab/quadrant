@@ -17,7 +17,7 @@ export const POST = async (req: Request) => {
   if (!stripeSecret || !priceId || !appUrl) {
     return NextResponse.json({ error: "Missing config" }, { status: 500 });
   }
-  const stripe = new Stripe(stripeSecret, { apiVersion: "2023-10-16" });
+  const stripe = new Stripe(stripeSecret, { apiVersion: "2024-04-10" });
   const admin = getSupabaseAdmin();
   if (!admin) {
     return NextResponse.json({ error: "Missing Supabase admin" }, { status: 500 });

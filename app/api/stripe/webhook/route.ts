@@ -10,7 +10,7 @@ const getStripe = () => {
   if (!secret) {
     return null;
   }
-  return new Stripe(secret, { apiVersion: "2023-10-16" });
+  return new Stripe(secret, { apiVersion: "2024-04-10" });
 };
 
 export const POST = async (req: Request) => {
