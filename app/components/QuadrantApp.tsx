@@ -1183,7 +1183,7 @@ export default function QuadrantApp({
         JSON.stringify(clampObservedBehaviours(observedIds)),
       );
     }
-    router.push("/dashboard");
+    router.replace("/dashboard");
     focusActiveRun();
   };
 
@@ -1372,6 +1372,28 @@ export default function QuadrantApp({
       router.replace("/dashboard");
     }
   }, [runActive, pathname, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!runActive) {
+      return;
+    }
+    const lockState = { quadrantLock: true };
+    window.history.pushState(lockState, "", window.location.href);
+    const handlePopState = () => {
+      if (!runActive) {
+        return;
+      }
+      window.history.pushState(lockState, "", window.location.href);
+      router.replace("/dashboard");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [runActive, router]);
 
   const availableObservedBehaviours = observedBehaviours.filter((behaviour) =>
     observedBehaviourIds.includes(behaviour.id),
