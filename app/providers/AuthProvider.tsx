@@ -13,6 +13,8 @@ import type { Session, User } from "@supabase/supabase-js";
 import { getSession, onAuthStateChange, signOut as authSignOut } from "../lib/auth";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
+const POST_AUTH_INTENT_KEY = "post_auth_intent";
+
 type AuthContextValue = {
   user: User | null;
   session: Session | null;
@@ -96,6 +98,33 @@ export default function AuthProvider({
       active = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !session) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const intent = localStorage.getItem(POST_AUTH_INTENT_KEY);
+    if (intent !== "checkout") {
+      return;
+    }
+    localStorage.removeItem(POST_AUTH_INTENT_KEY);
+    fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.url) {
+          window.location.href = data.url;
+        }
+      })
+      .catch(() => {});
+  }, [user, session]);
 
   const handleSignOut = useCallback(async () => {
     await authSignOut();

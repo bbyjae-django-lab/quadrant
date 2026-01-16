@@ -13,28 +13,38 @@ type PatternInsight = {
 type PatternInsightsSectionProps = {
   collapsed: boolean;
   onToggle: () => void;
+  isAuthed: boolean;
   isPro: boolean;
   patternInsights: PatternInsight[];
   showEmptyState?: boolean;
   emptyStateMessage?: string;
   onViewPricing: () => void;
+  onRequireAuth: () => void;
 };
 
 export default function PatternInsightsSection({
   collapsed,
   onToggle,
+  isAuthed,
   isPro,
   patternInsights,
   showEmptyState = false,
   emptyStateMessage,
   onViewPricing,
+  onRequireAuth,
 }: PatternInsightsSectionProps) {
   return (
     <section className="ui-surface p-[var(--space-6)]">
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
-        onClick={onToggle}
+        onClick={() => {
+          if (!isAuthed) {
+            onRequireAuth();
+            return;
+          }
+          onToggle();
+        }}
       >
         <h2 className="text-lg font-semibold text-zinc-900">
           Pattern insights
@@ -57,13 +67,21 @@ export default function PatternInsightsSection({
               </p>
             </>
           )}
-          {!isPro ? (
+          {!isAuthed ? (
+            <button
+              type="button"
+              className="btn-tertiary mt-3"
+              onClick={onRequireAuth}
+            >
+              Sign in
+            </button>
+          ) : !isPro ? (
             <button
               type="button"
               className="btn-tertiary mt-3"
               onClick={onViewPricing}
             >
-              Sign in
+              See pricing
             </button>
           ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">

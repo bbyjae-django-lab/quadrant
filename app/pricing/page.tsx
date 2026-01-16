@@ -4,17 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import AuthModal from "../components/modals/AuthModal";
 
 const PRO_PRICE = 29;
+const POST_AUTH_INTENT_KEY = "post_auth_intent";
 
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
   const { isAuthed, isPro } = useAuth();
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
       if (!isAuthed) {
-        setUpgradeNotice("Sign in to continue.");
+        localStorage.setItem(POST_AUTH_INTENT_KEY, "checkout");
+        setShowAuthModal(true);
         return;
       }
       const supabase = getSupabaseClient();
@@ -25,7 +29,7 @@ export default function PricingPage() {
         : Promise.resolve(null);
       tokenPromise.then((accessToken) => {
         if (!accessToken) {
-          setUpgradeNotice("Sign in to continue.");
+          setUpgradeNotice("Unable to start checkout.");
           return;
         }
         fetch("/api/stripe/checkout", {
@@ -163,6 +167,16 @@ export default function PricingPage() {
         </section>
 
       </main>
+      {showAuthModal ? (
+        <AuthModal
+          onClose={() => {
+            setShowAuthModal(false);
+            if (typeof window !== "undefined") {
+              localStorage.removeItem(POST_AUTH_INTENT_KEY);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 }

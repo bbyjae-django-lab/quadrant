@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { RunHistoryRow } from "../../types";
 
 type RunHistorySectionProps = {
@@ -7,6 +8,7 @@ type RunHistorySectionProps = {
   loading?: boolean;
   onToggle: () => void;
   onRowClick: (rowId: string) => void;
+  footer?: ReactNode;
 };
 
 export default function RunHistorySection({
@@ -16,6 +18,7 @@ export default function RunHistorySection({
   loading = false,
   onToggle,
   onRowClick,
+  footer,
 }: RunHistorySectionProps) {
   return (
     <section className="ui-surface p-[var(--space-6)]">
@@ -72,6 +75,7 @@ export default function RunHistorySection({
           </div>
         </>
       ) : null}
+      {footer ? <div className="mt-3 text-xs text-zinc-500">{footer}</div> : null}
     </section>
   );
 }

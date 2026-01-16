@@ -1182,7 +1182,7 @@ export default function QuadrantApp({
     );
     setCheckInNote("");
     setLibraryProtocolId(null);
-    if (isAuthed && user?.id) {
+    if (isAuthed && isPro && user?.id) {
       void upsertSupabaseRun({
         userId: user.id,
         id: nextRunId,
@@ -1280,7 +1280,7 @@ export default function QuadrantApp({
     const cleanDays = updatedCheckIns.filter((entry) => entry.followed).length;
     const newStreak = computeCurrentRun(updatedCheckIns);
     setStreak(newStreak);
-    if (isAuthed && user?.id && activeRunId) {
+    if (isAuthed && isPro && user?.id && activeRunId) {
       const checkinRecord: CheckinRecord = {
         id: `${activeRunId}-${nextEntry.dayIndex}`,
         runId: activeRunId,
@@ -1445,7 +1445,7 @@ export default function QuadrantApp({
     observedBehaviourIds.includes(behaviour.id),
   );
 
-  const runHistoryRows = isPro
+  const runHistoryRows = isAuthed
     ? runHistory.map((entry) => ({
         id: entry.id,
         protocol: entry.protocolName,
@@ -1455,14 +1455,14 @@ export default function QuadrantApp({
       }))
     : [];
   const selectedRun =
-    isPro && selectedRunId && runHistory.length > 0
+    isAuthed && selectedRunId && runHistory.length > 0
       ? runHistory.find((entry) => entry.id === selectedRunId) ?? null
       : null;
   const selectedRunProtocol = selectedRun
     ? protocolById[selectedRun.protocolId]
     : null;
-  const visibleRunHistoryRows = isPro ? runHistoryRows : [];
-  const runHistoryCount = isPro ? runHistoryRows.length : 0;
+  const visibleRunHistoryRows = isAuthed ? runHistoryRows : [];
+  const runHistoryCount = isAuthed ? runHistoryRows.length : 0;
   const runEndHistoryStrip =
     runEndContext !== null
       ? buildHistoryStrip(runEndContext.cleanDays, runEndContext.result, RUN_LENGTH)
@@ -1702,13 +1702,6 @@ export default function QuadrantApp({
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
   const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
   const runEndPrimaryLabel = runEndCopy?.primaryLabel ?? "Start another run";
-  const requireAuth = () => {
-    if (isAuthed) {
-      return false;
-    }
-    setShowAuthModal(true);
-    return true;
-  };
   const focusProtocolLibrary = () => {
     setIsProtocolLibraryCollapsed(false);
     setIsRunHistoryCollapsed(true);
@@ -1976,14 +1969,15 @@ export default function QuadrantApp({
               }}
             />
             <div className="space-y-10">
-              {isPro ? (
+              {isAuthed ? (
                 <RunHistorySection
                   collapsed={isRunHistoryCollapsedResolved}
                   count={dashboardViewModel.runHistory.count}
                   rows={dashboardViewModel.runHistory.visibleRows}
                   loading={runsLoading}
                   onToggle={() => {
-                    if (requireAuth()) {
+                    if (!isAuthed) {
+                      setShowAuthModal(true);
                       return;
                     }
                     setIsRunHistoryCollapsed(
@@ -1995,12 +1989,31 @@ export default function QuadrantApp({
                     );
                   }}
                   onRowClick={(rowId) => {
-                    if (requireAuth()) {
+                    if (!isAuthed) {
+                      setShowAuthModal(true);
                       return;
                     }
                     setSelectedRunId(rowId);
                     setShowRunDetail(true);
                   }}
+                  footer={
+                    !isPro ? (
+                      <>
+                        <span>New runs won’t be saved without Pro.</span>{" "}
+                        <button
+                          type="button"
+                          className="btn-tertiary"
+                          onClick={() => {
+                            if (typeof window !== "undefined") {
+                              window.location.href = "/pricing";
+                            }
+                          }}
+                        >
+                          See pricing
+                        </button>
+                      </>
+                    ) : null
+                  }
                 />
               ) : (
                 <section className="ui-surface p-[var(--space-6)]">
@@ -2042,11 +2055,17 @@ export default function QuadrantApp({
                       ),
                   );
                 }}
+                isAuthed={isAuthed}
                 isPro={isPro}
                 patternInsights={patternInsights}
                 showEmptyState={patternInsightsEmpty}
                 emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
+                  if (typeof window !== "undefined") {
+                    window.location.href = "/pricing";
+                  }
+                }}
+                onRequireAuth={() => {
                   setShowAuthModal(true);
                 }}
               />
