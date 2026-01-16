@@ -40,7 +40,6 @@ const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
 const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 const DASHBOARD_MODAL_KEY = "dashboard_modal";
-const SELECTED_PROTOCOL_ID_KEY = "selected_protocol_id";
 const ENDED_RUN_ID_KEY = "ended_run_id";
 const DASHBOARD_MODAL_CONTEXT_KEY = "dashboard_modal_context";
 
@@ -645,6 +644,15 @@ export default function QuadrantApp({
         setHasHydrated(true);
         return;
       }
+      const storedProtocolId = localStorage.getItem("activeProtocolId");
+      const storedRunId = localStorage.getItem("activeRunId");
+      const storedRunStatus = localStorage.getItem("runStatus");
+      if (storedRunStatus === "active" && (storedProtocolId || storedRunId)) {
+        localStorage.removeItem("activeProtocolId");
+        localStorage.removeItem("activeRunId");
+        localStorage.removeItem("runStatus");
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      }
       setRunsLoading(false);
       setHasHydrated(true);
       return;
@@ -1154,10 +1162,6 @@ export default function QuadrantApp({
     );
     setCheckInNote("");
     setLibraryProtocolId(null);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(DASHBOARD_MODAL_KEY);
-      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
-    }
     if (isAuthed && user?.id) {
       void upsertSupabaseRun({
         userId: user.id,
@@ -1193,6 +1197,15 @@ export default function QuadrantApp({
         "observedBehaviourIds",
         JSON.stringify(clampObservedBehaviours(observedIds)),
       );
+    }
+    if (
+      process.env.NODE_ENV !== "production" &&
+      typeof window !== "undefined"
+    ) {
+      const snapshot = loadLocalActiveRun();
+      if (!snapshot || snapshot.runId !== nextRunId) {
+        console.warn("Active run snapshot missing after activation.");
+      }
     }
     router.replace("/dashboard");
     focusActiveRun();
@@ -1705,10 +1718,6 @@ export default function QuadrantApp({
   const [modalIntentHandled, setModalIntentHandled] = useState(false);
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const openActivateProtocolModal = (protocolId: string) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(DASHBOARD_MODAL_KEY, "activateProtocol");
-      localStorage.setItem(SELECTED_PROTOCOL_ID_KEY, protocolId);
-    }
     setConfirmProtocolId(protocolId);
   };
   const closeActivateProtocolModal = () => {
@@ -1716,10 +1725,6 @@ export default function QuadrantApp({
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
     setObservedBehaviourError("");
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(DASHBOARD_MODAL_KEY);
-      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
-    }
   };
 
   useEffect(() => {
@@ -1740,26 +1745,6 @@ export default function QuadrantApp({
       } else {
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
       }
-      setModalIntentHandled(true);
-      return;
-    }
-    if (storedModal === "activateProtocol") {
-      const storedProtocolId =
-        typeof window !== "undefined"
-          ? localStorage.getItem(SELECTED_PROTOCOL_ID_KEY)
-          : null;
-      const protocolId =
-        storedProtocolId && protocolById[storedProtocolId]
-          ? storedProtocolId
-          : null;
-      if (protocolId) {
-        setConfirmProtocolId(protocolId);
-        setLibraryProtocolId(protocolId);
-        setModalIntentHandled(true);
-        return;
-      }
-      localStorage.removeItem(DASHBOARD_MODAL_KEY);
-      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
       setModalIntentHandled(true);
       return;
     }
