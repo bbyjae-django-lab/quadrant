@@ -40,6 +40,7 @@ const RUN_LENGTH = 5;
 const MAX_OBSERVED_BEHAVIOURS = 2;
 const ACTIVE_RUN_STORAGE_KEY = "quadrant_active_run_v1";
 const DASHBOARD_MODAL_KEY = "dashboard_modal";
+const SELECTED_PROTOCOL_ID_KEY = "selected_protocol_id";
 const ENDED_RUN_ID_KEY = "ended_run_id";
 
 const RUN_END_INSIGHT_LINE =
@@ -1095,6 +1096,10 @@ export default function QuadrantApp({
     );
     setCheckInNote("");
     setLibraryProtocolId(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
+    }
     if (isAuthed && user?.id) {
       void upsertSupabaseRun({
         userId: user.id,
@@ -1147,10 +1152,7 @@ export default function QuadrantApp({
       null,
       isPro ? observedBehaviourSelection : [],
     );
-    setConfirmProtocolId(null);
-    setShowObservedBehaviourPicker(false);
-    setObservedBehaviourSelection([]);
-    setObservedBehaviourError("");
+    closeActivateProtocolModal();
   };
 
   const persistCheckIns = (nextCheckIns: CheckInEntry[]) => {
@@ -1549,11 +1551,22 @@ export default function QuadrantApp({
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
   const [modalIntentHandled, setModalIntentHandled] = useState(false);
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
+  const openActivateProtocolModal = (protocolId: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(DASHBOARD_MODAL_KEY, "activateProtocol");
+      localStorage.setItem(SELECTED_PROTOCOL_ID_KEY, protocolId);
+    }
+    setConfirmProtocolId(protocolId);
+  };
   const closeActivateProtocolModal = () => {
     setConfirmProtocolId(null);
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
     setObservedBehaviourError("");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
+    }
   };
 
   useEffect(() => {
@@ -1574,6 +1587,26 @@ export default function QuadrantApp({
       } else {
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
       }
+      setModalIntentHandled(true);
+      return;
+    }
+    if (storedModal === "activateProtocol") {
+      const storedProtocolId =
+        typeof window !== "undefined"
+          ? localStorage.getItem(SELECTED_PROTOCOL_ID_KEY)
+          : null;
+      const protocolId =
+        storedProtocolId && protocolById[storedProtocolId]
+          ? storedProtocolId
+          : null;
+      if (protocolId) {
+        setConfirmProtocolId(protocolId);
+        setLibraryProtocolId(protocolId);
+        setModalIntentHandled(true);
+        return;
+      }
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      localStorage.removeItem(SELECTED_PROTOCOL_ID_KEY);
       setModalIntentHandled(true);
       return;
     }
@@ -1844,7 +1877,7 @@ export default function QuadrantApp({
                 canActivate={dashboardViewModel.activeRunState === "inactive"}
                 onActivateProtocol={(protocolId) => {
                   if (isPro) {
-                    setConfirmProtocolId(protocolId);
+                    openActivateProtocolModal(protocolId);
                     return;
                   }
                   activateProtocol(protocolId, null);
@@ -1938,7 +1971,7 @@ export default function QuadrantApp({
                                 if (freeRunComplete) {
                                   return;
                                 }
-                                setConfirmProtocolId(protocol.id);
+                                openActivateProtocolModal(protocol.id);
                               }}
                             >
                               Activate protocol
