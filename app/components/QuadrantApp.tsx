@@ -1421,11 +1421,20 @@ export default function QuadrantApp({
     runHistory.map((entry) => entry.protocolId),
   ).size;
   const longestCleanRun = runHistory.reduce((max, entry) => {
-    const checkins = runCheckinsByRunId[entry.id] ?? [];
-    const cleanCount = checkins.filter(
-      (checkin) => checkin.result === "clean",
-    ).length;
-    return Math.max(max, cleanCount);
+    const checkins = (runCheckinsByRunId[entry.id] ?? [])
+      .slice()
+      .sort((a, b) => a.dayIndex - b.dayIndex);
+    let current = 0;
+    let best = 0;
+    checkins.forEach((checkin) => {
+      if (checkin.result === "clean") {
+        current += 1;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    });
+    return Math.max(max, best);
   }, 0);
   const protocolFailureCounts = failedRuns.reduce<Record<string, number>>(
     (acc, entry) => {
@@ -1556,7 +1565,9 @@ export default function QuadrantApp({
       title: "Longest clean run",
       isUnlocked: hasRuns,
       requirement: "Requires memory across runs.",
-      value: `${longestCleanRun} clean days`,
+      value: `${longestCleanRun} clean day${
+        longestCleanRun === 1 ? "" : "s"
+      }`,
       subtitle:
         "The maximum number of consecutive clean days you’ve completed without violation.",
     },
