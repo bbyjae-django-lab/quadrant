@@ -1249,6 +1249,7 @@ export default function QuadrantApp({
     if (!pendingId) {
       return;
     }
+    console.log("protocol-activate:confirm", pendingId);
     if (isActivating) {
       return;
     }
@@ -1773,6 +1774,7 @@ export default function QuadrantApp({
   const [modalIntentHandled, setModalIntentHandled] = useState(false);
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const openActivateProtocolModal = (protocolId: string) => {
+    console.log("protocol-activate:open", protocolId);
     setActivateModalProtocolId(protocolId);
     setActivationError("");
     setIsActivating(false);
@@ -1785,6 +1787,12 @@ export default function QuadrantApp({
     setActivationError("");
     setIsActivating(false);
   };
+
+  useEffect(() => {
+    if (activateModalProtocolId) {
+      console.log("protocol-activate:modal", activateModalProtocolId);
+    }
+  }, [activateModalProtocolId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !hasHydrated || modalIntentHandled) {
