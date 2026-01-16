@@ -38,13 +38,7 @@ export default function PatternInsightsSection({
       <button
         type="button"
         className="flex w-full items-center justify-between text-left"
-        onClick={() => {
-          if (!isAuthed) {
-            onRequireAuth();
-            return;
-          }
-          onToggle();
-        }}
+        onClick={onToggle}
       >
         <h2 className="text-lg font-semibold text-zinc-900">
           Pattern insights
@@ -73,7 +67,7 @@ export default function PatternInsightsSection({
               className="btn-tertiary mt-3"
               onClick={onRequireAuth}
             >
-              Sign in
+              Sign in to continue
             </button>
           ) : !isPro ? (
             <button
@@ -81,7 +75,7 @@ export default function PatternInsightsSection({
               className="btn-tertiary mt-3"
               onClick={onViewPricing}
             >
-              See pricing
+              Upgrade to Pro
             </button>
           ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">

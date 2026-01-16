@@ -24,6 +24,7 @@ import {
   upsertSupabaseRun,
   type CheckinRecord,
 } from "../lib/storageAdapter";
+import { getSupabaseClient } from "../lib/supabaseClient";
 import {
   hasMigratedToSupabase,
   migrateLocalToSupabase,
@@ -43,6 +44,7 @@ const DASHBOARD_MODAL_KEY = "dashboard_modal";
 const ENDED_RUN_ID_KEY = "ended_run_id";
 const DASHBOARD_MODAL_CONTEXT_KEY = "dashboard_modal_context";
 const PRO_ACTIVE_SEEN_KEY = "pro_active_seen";
+const POST_AUTH_INTENT_KEY = "post_auth_intent";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -527,6 +529,12 @@ export default function QuadrantApp({
   const [showRunDetail, setShowRunDetail] = useState(false);
   const [showRunEndedModal, setShowRunEndedModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalIntent, setAuthModalIntent] = useState<
+    "history" | "checkout"
+  >("history");
+  const [authModalTitle, setAuthModalTitle] = useState(
+    "Sign in to preserve history",
+  );
   const [runEndContext, setRunEndContext] = useState<RunEndContext | null>(
     null,
   );
@@ -545,6 +553,8 @@ export default function QuadrantApp({
     string[]
   >([]);
   const [observedBehaviourError, setObservedBehaviourError] = useState("");
+  const [activationError, setActivationError] = useState("");
+  const [isActivating, setIsActivating] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -620,7 +630,8 @@ export default function QuadrantApp({
       return;
     }
     const stripeStatus = searchParams.get("stripe");
-    if (stripeStatus === "success") {
+    const upgraded = searchParams.get("upgraded");
+    if (stripeStatus === "success" || upgraded === "1") {
       if (typeof window !== "undefined") {
         const seen = localStorage.getItem(PRO_ACTIVE_SEEN_KEY);
         if (!seen) {
@@ -1235,17 +1246,29 @@ export default function QuadrantApp({
     if (!selectedProtocol) {
       return;
     }
+    if (isActivating) {
+      return;
+    }
+    setActivationError("");
+    setIsActivating(true);
     if (!canStartNewRun) {
+      setIsActivating(false);
       closeActivateProtocolModal();
       router.replace("/dashboard");
       return;
     }
-    activateProtocol(
-      selectedProtocol.id,
-      null,
-      isPro ? observedBehaviourSelection : [],
-    );
-    closeActivateProtocolModal();
+    try {
+      activateProtocol(
+        selectedProtocol.id,
+        null,
+        isPro ? observedBehaviourSelection : [],
+      );
+      closeActivateProtocolModal();
+    } catch {
+      setActivationError("Unable to activate protocol.");
+    } finally {
+      setIsActivating(false);
+    }
   };
 
   const persistCheckIns = (nextCheckIns: CheckInEntry[]) => {
@@ -1702,6 +1725,51 @@ export default function QuadrantApp({
     showRunEndedModal && view === "dashboard" && runEndContext !== null;
   const runEndCopy = runEndContext ? getRunEndCopy(runEndContext) : null;
   const runEndPrimaryLabel = runEndCopy?.primaryLabel ?? "Start another run";
+  const openAuthModal = (intent: "history" | "checkout") => {
+    setAuthModalIntent(intent);
+    setAuthModalTitle(
+      intent === "checkout"
+        ? "Sign in to continue"
+        : "Sign in to preserve history",
+    );
+    if (intent === "checkout" && typeof window !== "undefined") {
+      localStorage.setItem(POST_AUTH_INTENT_KEY, "checkout");
+    }
+    setShowAuthModal(true);
+  };
+  const startCheckout = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!isAuthed) {
+      openAuthModal("checkout");
+      return;
+    }
+    const supabase = getSupabaseClient();
+    const tokenPromise = supabase
+      ? supabase.auth
+          .getSession()
+          .then((result) => result.data.session?.access_token)
+      : Promise.resolve(null);
+    tokenPromise.then((accessToken) => {
+      if (!accessToken) {
+        return;
+      }
+      fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.url) {
+            window.location.href = data.url;
+          }
+        })
+        .catch(() => {});
+    });
+  };
   const focusProtocolLibrary = () => {
     setIsProtocolLibraryCollapsed(false);
     setIsRunHistoryCollapsed(true);
@@ -1732,12 +1800,16 @@ export default function QuadrantApp({
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const openActivateProtocolModal = (protocolId: string) => {
     setConfirmProtocolId(protocolId);
+    setActivationError("");
+    setIsActivating(false);
   };
   const closeActivateProtocolModal = () => {
     setConfirmProtocolId(null);
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
     setObservedBehaviourError("");
+    setActivationError("");
+    setIsActivating(false);
   };
 
   useEffect(() => {
@@ -1977,7 +2049,7 @@ export default function QuadrantApp({
                   loading={runsLoading}
                   onToggle={() => {
                     if (!isAuthed) {
-                      setShowAuthModal(true);
+                      openAuthModal("history");
                       return;
                     }
                     setIsRunHistoryCollapsed(
@@ -1990,7 +2062,7 @@ export default function QuadrantApp({
                   }}
                   onRowClick={(rowId) => {
                     if (!isAuthed) {
-                      setShowAuthModal(true);
+                      openAuthModal("history");
                       return;
                     }
                     setSelectedRunId(rowId);
@@ -2032,10 +2104,10 @@ export default function QuadrantApp({
                         type="button"
                         className="btn-tertiary mt-3"
                         onClick={() => {
-                          setShowAuthModal(true);
+                          openAuthModal("history");
                         }}
                       >
-                        Sign in
+                        Sign in to preserve history
                       </button>
                     </div>
                     <span className="text-xs font-semibold text-zinc-400">
@@ -2061,12 +2133,10 @@ export default function QuadrantApp({
                 showEmptyState={patternInsightsEmpty}
                 emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
-                  if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
-                  }
+                  startCheckout();
                 }}
                 onRequireAuth={() => {
-                  setShowAuthModal(true);
+                  openAuthModal("history");
                 }}
               />
 
@@ -2345,6 +2415,11 @@ export default function QuadrantApp({
                 </div>
               ) : null}
             </div>
+            {activationError ? (
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                {activationError}
+              </p>
+            ) : null}
             <div className="mt-4 flex flex-wrap justify-end gap-3">
               <button
                 type="button"
@@ -2357,6 +2432,7 @@ export default function QuadrantApp({
                 type="button"
                 className="btn btn-primary text-sm"
                 onClick={handleActivateProtocol}
+                disabled={isActivating}
               >
                 Activate protocol
               </button>
@@ -2370,7 +2446,7 @@ export default function QuadrantApp({
           runEndContext={runEndContext}
           historyStrip={runEndHistoryStrip}
           primaryLabel={runEndPrimaryLabel}
-          showFreeNotice={!isAuthed}
+          showFreeNotice={!isPro}
           freeActionLabel={
             runEndContext?.result === "Completed"
               ? "Save this run → Pro"
@@ -2383,9 +2459,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
-            if (typeof window !== "undefined") {
-              window.location.href = "/pricing";
-            }
+            startCheckout();
           }}
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {
@@ -2406,7 +2480,18 @@ export default function QuadrantApp({
         />
       ) : null}
       {showAuthModal ? (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
+        <AuthModal
+          title={authModalTitle}
+          onClose={() => {
+            if (
+              typeof window !== "undefined" &&
+              authModalIntent === "checkout"
+            ) {
+              localStorage.removeItem(POST_AUTH_INTENT_KEY);
+            }
+            setShowAuthModal(false);
+          }}
+        />
       ) : null}
       {showRunDetail && selectedRun && selectedRunProtocol && isPro ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">

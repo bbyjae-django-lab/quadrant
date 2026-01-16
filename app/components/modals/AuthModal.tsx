@@ -6,9 +6,13 @@ import { signInWithOtp } from "../../lib/auth";
 
 type AuthModalProps = {
   onClose: () => void;
+  title?: string;
 };
 
-export default function AuthModal({ onClose }: AuthModalProps) {
+export default function AuthModal({
+  onClose,
+  title = "Sign in to preserve history",
+}: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -86,7 +90,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
-              Sign in to preserve history
+              {title}
             </h2>
           </div>
           <button

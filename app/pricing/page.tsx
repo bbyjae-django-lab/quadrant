@@ -95,9 +95,9 @@ export default function PricingPage() {
           <button
             type="button"
             className="btn-tertiary"
-            onClick={() => router.back()}
+            onClick={() => router.replace("/dashboard")}
           >
-            Back
+            Back to Today
           </button>
         </div>
         <section className="space-y-3">
@@ -169,6 +169,7 @@ export default function PricingPage() {
       </main>
       {showAuthModal ? (
         <AuthModal
+          title="Sign in to continue"
           onClose={() => {
             setShowAuthModal(false);
             if (typeof window !== "undefined") {
