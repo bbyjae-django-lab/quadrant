@@ -722,8 +722,19 @@ export default function QuadrantApp({
         setCheckIns([]);
       }
     }
+    const hasActiveSnapshot = loadLocalActiveRun();
     if (storedProtocolId && !storedRunId) {
       setActiveRunId(createRunId());
+    }
+    if (
+      !isAuthed &&
+      storedRunStatus === "active" &&
+      !storedProtocolId &&
+      !hasActiveSnapshot
+    ) {
+      localStorage.removeItem("activeRunId");
+      localStorage.removeItem("runStatus");
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
     }
     if (storedObservedBehaviours) {
       try {
@@ -1192,6 +1203,8 @@ export default function QuadrantApp({
       return;
     }
     if (!canStartNewRun) {
+      closeActivateProtocolModal();
+      router.replace("/dashboard");
       return;
     }
     activateProtocol(
