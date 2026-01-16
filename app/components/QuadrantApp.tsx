@@ -1414,7 +1414,9 @@ export default function QuadrantApp({
   const isProtocolLibraryCollapsedResolved =
     isProtocolLibraryCollapsed ??
     dashboardViewModel.defaults.protocolLibraryCollapsed;
-  const failedRuns = runHistory.filter((entry) => entry.result === "Failed");
+  const failedRuns = runHistory.filter(
+    (entry) => entry.result === "Failed" || entry.result === "Ended",
+  );
   const uniqueProtocolsAttempted = new Set(
     runHistory.map((entry) => entry.protocolId),
   ).size;
@@ -1439,7 +1441,7 @@ export default function QuadrantApp({
   const failureDayCounts = failedRuns.reduce<Record<number, number>>(
     (acc, entry) => {
       const checkins = runCheckinsByRunId[entry.id] ?? [];
-      const violationDay = checkins
+      const violationDayIndex = checkins
         .filter((checkin) => checkin.result === "violated")
         .reduce<number | null>((minDay, checkin) => {
           if (minDay === null || checkin.dayIndex < minDay) {
@@ -1447,8 +1449,14 @@ export default function QuadrantApp({
           }
           return minDay;
         }, null);
-      if (violationDay) {
-        acc[violationDay] = (acc[violationDay] ?? 0) + 1;
+      const failureDay =
+        violationDayIndex !== null
+          ? violationDayIndex + 1
+          : Number.isFinite(entry.cleanDays)
+            ? entry.cleanDays + 1
+            : null;
+      if (failureDay && Number.isFinite(failureDay)) {
+        acc[failureDay] = (acc[failureDay] ?? 0) + 1;
       }
       return acc;
     },
