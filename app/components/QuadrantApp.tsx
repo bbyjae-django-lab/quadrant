@@ -1104,7 +1104,7 @@ export default function QuadrantApp({
     setShowRunEndedModal(false);
     setRunEndContext(null);
     setShowCheckInModal(false);
-    setConfirmProtocolId(null);
+    setActivateModalProtocolId(null);
     setIsRunHistoryCollapsed(null);
     setIsPatternInsightsCollapsed(null);
     setIsProtocolLibraryCollapsed(null);
@@ -1411,7 +1411,7 @@ export default function QuadrantApp({
     if (typeof window !== "undefined") {
       storageKeys.forEach((key) => localStorage.removeItem(key));
     }
-    setConfirmProtocolId(null);
+    setActivateModalProtocolId(null);
     setActiveProblemId(null);
     setActiveProtocolId(null);
     setActivatedAt(null);
