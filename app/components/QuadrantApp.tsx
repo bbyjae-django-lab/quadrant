@@ -1362,6 +1362,17 @@ export default function QuadrantApp({
     setShowCheckInModal(true);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const isPreRunRoute =
+      pathname === "/" || pathname === "/protocols" || pathname === "/library";
+    if (runActive && isPreRunRoute) {
+      router.replace("/dashboard");
+    }
+  }, [runActive, pathname, router]);
+
   const availableObservedBehaviours = observedBehaviours.filter((behaviour) =>
     observedBehaviourIds.includes(behaviour.id),
   );
