@@ -2255,7 +2255,10 @@ export default function QuadrantApp({
         />
       ) : null}
       {selectedProtocol ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm">
+        <div
+          key={activateModalProtocolId ?? "none"}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/90 px-[var(--space-6)] backdrop-blur-sm"
+        >
           <div
             ref={activateModalRef}
             role="dialog"
