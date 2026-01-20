@@ -14,7 +14,6 @@ type Step =
   | "loading"
   | "enter_email"
   | "email_sent"
-  | "link_sent"
   | "checking"
   | "attached"
   | "error";
@@ -102,9 +101,9 @@ export default function SuccessClient() {
     const user = session?.user;
     if (!user || !session?.access_token) {
       setHasSession(false);
-      setStep("link_sent");
+      setStep("email_sent");
       setError(
-        "Not signed in yet. Click the link in your email, then try again.",
+        "You’re not signed in yet. Click the email link, then try again.",
       );
       isCheckingRef.current = false;
       return;
@@ -134,9 +133,16 @@ export default function SuccessClient() {
       body: JSON.stringify({ email: storedEmail, session_id: sessionId }),
     });
     if (!response.ok) {
-      console.warn("Billing attach failed.");
+      if (response.status === 401) {
+        setError("You’re not signed in yet. Click the email link, then try again.");
+      } else if (response.status === 404) {
+        setError(
+          "We couldn’t find a subscription for that email yet. Try again in 10 seconds.",
+        );
+      } else {
+        setError("Couldn’t confirm Pro yet. Try again.");
+      }
       setStep("error");
-      setError("Couldn’t confirm Pro yet. Try again.");
       isCheckingRef.current = false;
       return;
     }
@@ -186,7 +192,7 @@ export default function SuccessClient() {
         setEmail(resolvedEmail);
       }
       if (pending && resolvedEmail) {
-        setStep("link_sent");
+        setStep("email_sent");
       } else {
         setStep("enter_email");
       }
@@ -220,29 +226,12 @@ export default function SuccessClient() {
         return;
       }
       setHasSession(true);
-      const pending =
-        typeof window !== "undefined"
-          ? localStorage.getItem(STORAGE_PENDING_KEY) === "1"
-          : false;
-      if (pending) {
-        if (autoAttachRan.current) {
-          return;
-        }
-        autoAttachRan.current = true;
-        setStep("checking");
-        await checkSessionAndAttach();
-        return;
-      }
-      setStep("attached");
-      window.setTimeout(() => {
-        router.replace("/dashboard");
-      }, 800);
     };
     void run();
     return () => {
       active = false;
     };
-  }, [checkSessionAndAttach, router, searchParams]);
+  }, [ensureSession, searchParams]);
 
   useEffect(() => {
     const client = getSupabaseClient();
@@ -251,9 +240,14 @@ export default function SuccessClient() {
     }
     const { data: subscription } = client.auth.onAuthStateChange(
       (_event, session) => {
-        if (session && localStorage.getItem(STORAGE_PENDING_KEY) === "1") {
-          void checkSessionAndAttach();
+        if (!session || localStorage.getItem(STORAGE_PENDING_KEY) !== "1") {
+          return;
         }
+        if (autoAttachRan.current) {
+          return;
+        }
+        autoAttachRan.current = true;
+        void checkSessionAndAttach();
       },
     );
     return () => {
@@ -280,7 +274,7 @@ export default function SuccessClient() {
       options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
     });
     if (!error) {
-      setStep("link_sent");
+      setStep("email_sent");
       return;
     }
     setStep("enter_email");
@@ -305,12 +299,7 @@ export default function SuccessClient() {
         </div>
       );
     }
-    if (
-      step === "email_sent" ||
-      step === "link_sent" ||
-      step === "checking" ||
-      step === "error"
-    ) {
+    if (step === "email_sent" || step === "checking" || step === "error") {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
           <div>
@@ -328,6 +317,7 @@ export default function SuccessClient() {
               onClick={() => {
                 void checkSessionAndAttach();
               }}
+              disabled={step === "checking"}
             >
               I’ve clicked the link
             </button>
