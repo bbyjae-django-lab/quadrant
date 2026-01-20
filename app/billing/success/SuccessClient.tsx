@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
-const PRO_STATUSES = new Set(["active", "trialing"]);
+const STORAGE_EMAIL_KEY = "quadrant_success_email";
+const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
+const POLL_INTERVAL_MS = 1000;
+const POLL_TIMEOUT_MS = 30000;
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -16,45 +19,66 @@ export default function SuccessClient() {
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const pollingRef = useRef<number | null>(null);
   const redirectTo = useMemo(() => {
     if (typeof window === "undefined") {
       return undefined;
     }
-    const query = searchParams?.toString();
-    return `${window.location.origin}/billing/success${query ? `?${query}` : ""}`;
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set("attached", "1");
+    const query = params.toString();
+    return `${window.location.origin}/billing/success?${query}`;
   }, [searchParams]);
 
-  const checkBilling = async () => {
+  const clearPending = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.removeItem(STORAGE_EMAIL_KEY);
+    localStorage.removeItem(STORAGE_PENDING_KEY);
+  };
+
+  const attachIfReady = async () => {
     const client = getSupabaseClient();
     if (!client) {
-      return;
+      return false;
     }
     setChecking(true);
-    const session = await client.auth.getSession();
-    const user = session.data.session?.user;
-    if (!user?.email) {
+    const sessionResult = await client.auth.getSession();
+    const session = sessionResult.data.session;
+    const user = session?.user;
+    if (!user || !session?.access_token) {
       setChecking(false);
-      return;
+      return false;
     }
-    const { data, error } = await client
-      .from("billing_customers")
-      .select("status, price_id")
-      .eq("email", user.email)
-      .maybeSingle();
-    if (error) {
+    const storedEmail =
+      email.trim() ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem(STORAGE_EMAIL_KEY) ?? ""
+        : "");
+    if (!storedEmail) {
       setChecking(false);
-      return;
+      return false;
     }
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ?? "";
-    const matchesPrice = priceId ? data?.price_id === priceId : true;
-    const isPro = Boolean(matchesPrice && PRO_STATUSES.has(data?.status ?? ""));
-    if (isPro) {
-      setStatusMessage("Pro attached. Redirecting…");
-      window.setTimeout(() => {
-        router.replace("/dashboard");
-      }, 800);
+    const response = await fetch("/api/billing/attach", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ email: storedEmail }),
+    });
+    if (!response.ok) {
+      setChecking(false);
+      return false;
     }
+    setStatusMessage("Attached. Redirecting…");
+    clearPending();
+    window.setTimeout(() => {
+      router.replace("/dashboard");
+    }, 800);
     setChecking(false);
+    return true;
   };
 
   useEffect(() => {
@@ -62,19 +86,42 @@ export default function SuccessClient() {
     if (!client) {
       return;
     }
-    client.auth.getSession().then((result) => {
-      const user = result.data.session?.user;
-      if (user?.email) {
-        void checkBilling();
+    if (typeof window !== "undefined") {
+      const storedEmail = localStorage.getItem(STORAGE_EMAIL_KEY);
+      if (!email && storedEmail) {
+        setEmail(storedEmail);
       }
-    });
+      const pending = localStorage.getItem(STORAGE_PENDING_KEY);
+      if (pending) {
+        setSent(true);
+      }
+    }
+    void attachIfReady();
     const { data: subscription } = client.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        void checkBilling();
+        void attachIfReady();
       }
     });
+    const start = Date.now();
+    pollingRef.current = window.setInterval(() => {
+      const pending =
+        typeof window !== "undefined" &&
+        localStorage.getItem(STORAGE_PENDING_KEY) === "1";
+      if (!pending) {
+        return;
+      }
+      void attachIfReady();
+      if (Date.now() - start > POLL_TIMEOUT_MS && pollingRef.current) {
+        window.clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    }, POLL_INTERVAL_MS);
     return () => {
       subscription?.subscription.unsubscribe();
+      if (pollingRef.current) {
+        window.clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
     };
   }, [router]);
 
@@ -88,6 +135,10 @@ export default function SuccessClient() {
     }
     setError(null);
     setSubmitting(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_EMAIL_KEY, email.trim());
+      localStorage.setItem(STORAGE_PENDING_KEY, "1");
+    }
     const { error } = await client.auth.signInWithOtp({
       email: email.trim(),
       options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
@@ -143,9 +194,9 @@ export default function SuccessClient() {
           type="button"
           className="btn-tertiary text-sm"
           onClick={() => {
-            void checkBilling();
+            console.log("refresh-status clicked");
+            void attachIfReady();
           }}
-          disabled={checking}
         >
           I’ve signed in — refresh status
         </button>
