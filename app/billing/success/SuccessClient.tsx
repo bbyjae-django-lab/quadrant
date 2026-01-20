@@ -39,9 +39,17 @@ export default function SuccessClient() {
     if (typeof window === "undefined") {
       return undefined;
     }
-    const params = new URLSearchParams(searchParams?.toString());
-    params.set("attached", "1");
-    return `${window.location.origin}/billing/success?${params.toString()}`;
+    const params = new URLSearchParams();
+    const sessionId = searchParams?.get("session_id");
+    if (sessionId) {
+      params.set("session_id", sessionId);
+    }
+    const nextPath = params.toString()
+      ? `/billing/success?${params.toString()}`
+      : "/billing/success";
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+      nextPath,
+    )}`;
   }, [searchParams]);
 
   const clearPending = useCallback(() => {
@@ -62,6 +70,44 @@ export default function SuccessClient() {
     localStorage.removeItem(STORAGE_EMAIL_KEY);
   }, []);
 
+  const readCookieValue = (key: string) => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+    const match = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${key}=`));
+    if (!match) {
+      return null;
+    }
+    return decodeURIComponent(match.slice(key.length + 1));
+  };
+
+  const ensureSession = useCallback(async () => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return null;
+    }
+    const sessionResult = await client.auth.getSession();
+    if (sessionResult.data.session) {
+      return sessionResult.data.session;
+    }
+    const accessToken = readCookieValue("sb-access-token");
+    const refreshToken = readCookieValue("sb-refresh-token");
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+    const { data, error } = await client.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) {
+      return null;
+    }
+    return data.session ?? null;
+  }, []);
+
   const checkSessionAndAttach = useCallback(async () => {
     const now = Date.now();
     if (isCheckingRef.current) {
@@ -78,8 +124,7 @@ export default function SuccessClient() {
       return;
     }
     setStep("checking");
-    const sessionResult = await client.auth.getSession();
-    const session = sessionResult.data.session;
+    const session = await ensureSession();
     const user = session?.user;
     if (!user || !session?.access_token) {
       setHasSession(false);
@@ -126,7 +171,7 @@ export default function SuccessClient() {
       router.replace("/dashboard");
     }, 800);
     isCheckingRef.current = false;
-  }, [markAttached, router]);
+  }, [ensureSession, markAttached, router]);
 
   useEffect(() => {
     let active = true;
@@ -190,11 +235,10 @@ export default function SuccessClient() {
           localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
         }
       }
-      const sessionResult = await client.auth.getSession();
+      const session = await ensureSession();
       if (!active) {
         return;
       }
-      const session = sessionResult.data.session;
       const user = session?.user;
       if (!user || !session?.access_token) {
         setHasSession(false);
