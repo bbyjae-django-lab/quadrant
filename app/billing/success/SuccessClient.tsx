@@ -25,9 +25,11 @@ export default function SuccessClient() {
   const [step, setStep] = useState<Step>("loading");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [hasSession, setHasSession] = useState(false);
   const isCheckingRef = useRef(false);
   const lastAttemptAtRef = useRef(0);
   const emailRef = useRef("");
+  const autoAttachRan = useRef(false);
 
   useEffect(() => {
     emailRef.current = email;
@@ -51,6 +53,15 @@ export default function SuccessClient() {
     localStorage.removeItem(STORAGE_PENDING_KEY);
   }, []);
 
+  const markAttached = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    localStorage.setItem(STORAGE_PENDING_KEY, "0");
+    localStorage.removeItem(STORAGE_SESSION_KEY);
+    localStorage.removeItem(STORAGE_EMAIL_KEY);
+  }, []);
+
   const checkSessionAndAttach = useCallback(async () => {
     const now = Date.now();
     if (isCheckingRef.current) {
@@ -71,6 +82,7 @@ export default function SuccessClient() {
     const session = sessionResult.data.session;
     const user = session?.user;
     if (!user || !session?.access_token) {
+      setHasSession(false);
       setStep("email_sent");
       setError(
         "Not signed in yet. Click the link in your email, then try again.",
@@ -78,6 +90,7 @@ export default function SuccessClient() {
       isCheckingRef.current = false;
       return;
     }
+    setHasSession(true);
     const storedEmail =
       emailRef.current.trim() ||
       (typeof window !== "undefined"
@@ -109,12 +122,12 @@ export default function SuccessClient() {
       return;
     }
     setStep("success");
-    clearPending();
+    markAttached();
     window.setTimeout(() => {
       router.replace("/dashboard");
     }, 800);
     isCheckingRef.current = false;
-  }, [clearPending, router]);
+  }, [markAttached, router]);
 
   useEffect(() => {
     let active = true;
@@ -164,6 +177,54 @@ export default function SuccessClient() {
       active = false;
     };
   }, [searchParams]);
+
+  useEffect(() => {
+    let active = true;
+    const run = async () => {
+      const client = getSupabaseClient();
+      if (!client) {
+        return;
+      }
+      if (typeof window !== "undefined") {
+        const sessionId = searchParams?.get("session_id");
+        if (sessionId) {
+          localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
+        }
+      }
+      const sessionResult = await client.auth.getSession();
+      if (!active) {
+        return;
+      }
+      const session = sessionResult.data.session;
+      const user = session?.user;
+      if (!user || !session?.access_token) {
+        setHasSession(false);
+        return;
+      }
+      setHasSession(true);
+      const pending =
+        typeof window !== "undefined"
+          ? localStorage.getItem(STORAGE_PENDING_KEY) === "1"
+          : false;
+      if (pending) {
+        if (autoAttachRan.current) {
+          return;
+        }
+        autoAttachRan.current = true;
+        setStep("checking");
+        await checkSessionAndAttach();
+        return;
+      }
+      setStep("success");
+      window.setTimeout(() => {
+        router.replace("/dashboard");
+      }, 800);
+    };
+    void run();
+    return () => {
+      active = false;
+    };
+  }, [checkSessionAndAttach, router, searchParams]);
 
   useEffect(() => {
     const client = getSupabaseClient();
@@ -230,6 +291,14 @@ export default function SuccessClient() {
         <div className="space-y-2 text-sm text-zinc-600">
           <p>Pro is active.</p>
           <p>Your subscription is now linked to your account.</p>
+          <p>Redirecting to your dashboard…</p>
+        </div>
+      );
+    }
+    if (hasSession) {
+      return (
+        <div className="space-y-2 text-sm text-zinc-600">
+          <p>Signing you in…</p>
           <p>Redirecting to your dashboard…</p>
         </div>
       );
