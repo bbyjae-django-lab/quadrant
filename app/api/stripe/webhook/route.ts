@@ -38,42 +38,70 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ error: "Missing Supabase admin" }, { status: 500 });
   }
 
-  const updateSubscriptionEntitlement = async (
-    subscription: Stripe.Subscription,
-  ) => {
-    const status = subscription.status;
-    const isPro = status === "active" || status === "trialing";
+  const getCustomerEmail = async (customerId: string | null) => {
+    if (!customerId) {
+      return null;
+    }
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      if (
+        typeof customer === "object" &&
+        "email" in customer &&
+        customer.email
+      ) {
+        return customer.email;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
+  const upsertBillingCustomer = async ({
+    email,
+    customerId,
+    subscription,
+    status,
+  }: {
+    email: string;
+    customerId: string | null;
+    subscription: Stripe.Subscription | null;
+    status: string;
+  }) => {
     await admin
-      .from("user_entitlements")
-      .update({
-        is_pro: isPro,
+      .from("billing_customers")
+      .upsert({
+        email,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription?.id ?? null,
         status,
-        stripe_subscription_id: subscription.id,
-        stripe_price_id: subscription.items.data[0]?.price?.id ?? null,
-        current_period_end: new Date(
-          subscription.current_period_end * 1000,
-        ).toISOString(),
+        price_id: subscription?.items.data[0]?.price?.id ?? null,
         updated_at: new Date().toISOString(),
       })
-      .eq("stripe_customer_id", subscription.customer as string);
+      .select();
   };
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.user_id;
-    if (userId) {
-      await admin
-        .from("user_entitlements")
-        .upsert({
-          user_id: userId,
-          is_pro: true,
-          status: "active",
-          stripe_customer_id: session.customer as string,
-          stripe_subscription_id: session.subscription as string,
-          stripe_price_id: process.env.STRIPE_PRICE_ID ?? null,
-          updated_at: new Date().toISOString(),
-        })
-        .select();
+    const email =
+      session.customer_details?.email ?? session.customer_email ?? null;
+    const customerId = session.customer as string | null;
+    const subscriptionId = session.subscription as string | null;
+    let subscription: Stripe.Subscription | null = null;
+    if (subscriptionId) {
+      try {
+        subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      } catch {
+        subscription = null;
+      }
+    }
+    if (email) {
+      await upsertBillingCustomer({
+        email,
+        customerId,
+        subscription,
+        status: subscription?.status ?? "active",
+      });
     }
   }
 
@@ -82,21 +110,30 @@ export const POST = async (req: Request) => {
     event.type === "customer.subscription.updated"
   ) {
     const subscription = event.data.object as Stripe.Subscription;
-    await updateSubscriptionEntitlement(subscription);
+    const customerId = subscription.customer as string;
+    const email = await getCustomerEmail(customerId);
+    if (email) {
+      await upsertBillingCustomer({
+        email,
+        customerId,
+        subscription,
+        status: subscription.status,
+      });
+    }
   }
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
-    await admin
-      .from("user_entitlements")
-      .update({
-        is_pro: false,
+    const customerId = subscription.customer as string;
+    const email = await getCustomerEmail(customerId);
+    if (email) {
+      await upsertBillingCustomer({
+        email,
+        customerId,
+        subscription,
         status: subscription.status ?? "canceled",
-        stripe_subscription_id: null,
-        current_period_end: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("stripe_customer_id", subscription.customer as string);
+      });
+    }
   }
 
   return NextResponse.json({ received: true });

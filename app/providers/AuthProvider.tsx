@@ -72,15 +72,19 @@ export default function AuthProvider({
         setIsPro(false);
         return;
       }
+      if (!user.email) {
+        setIsPro(false);
+        return;
+      }
       const supabase = getSupabaseClient();
       if (!supabase) {
         setIsPro(false);
         return;
       }
       const { data, error } = await supabase
-        .from("user_entitlements")
-        .select("is_pro")
-        .eq("user_id", user.id)
+        .from("billing_customers")
+        .select("status, price_id")
+        .eq("email", user.email)
         .maybeSingle();
       if (!active) {
         return;
@@ -89,7 +93,12 @@ export default function AuthProvider({
         setIsPro(false);
         return;
       }
-      setIsPro(Boolean(data?.is_pro));
+      const status = data?.status ?? "";
+      const priceId =
+        process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ?? "";
+      const matchesPrice = priceId ? data?.price_id === priceId : true;
+      const hasProStatus = status === "active" || status === "trialing";
+      setIsPro(Boolean(matchesPrice && hasProStatus));
     };
     void loadEntitlement();
     return () => {

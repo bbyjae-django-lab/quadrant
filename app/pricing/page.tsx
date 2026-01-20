@@ -1,57 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
-import AuthModal from "../components/modals/AuthModal";
 
 const PRO_PRICE = 29;
-const POST_AUTH_INTENT_KEY = "post_auth_intent";
 
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const router = useRouter();
-  const { isAuthed, isPro } = useAuth();
+  const { isPro } = useAuth();
   const startCheckout = () => {
-    const supabase = getSupabaseClient();
-    const tokenPromise = supabase
-      ? supabase.auth
-          .getSession()
-          .then((result) => result.data.session?.access_token)
-      : Promise.resolve(null);
-    tokenPromise.then((accessToken) => {
-      if (!accessToken) {
+    fetch("/api/stripe/checkout", { method: "POST" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
         setUpgradeNotice("Unable to start checkout.");
-        return;
-      }
-      fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
       })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-          setUpgradeNotice("Unable to start checkout.");
-        })
-        .catch(() => {
-          setUpgradeNotice("Unable to start checkout.");
-        });
-    });
+      .catch(() => {
+        setUpgradeNotice("Unable to start checkout.");
+      });
   };
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
-      if (!isAuthed) {
-        localStorage.setItem(POST_AUTH_INTENT_KEY, "checkout");
-        setShowAuthModal(true);
-        return;
-      }
       startCheckout();
     }
   };
@@ -90,18 +65,6 @@ export default function PricingPage() {
         });
     });
   };
-
-  useEffect(() => {
-    if (!isAuthed || typeof window === "undefined") {
-      return;
-    }
-    const intent = localStorage.getItem(POST_AUTH_INTENT_KEY);
-    if (intent !== "checkout") {
-      return;
-    }
-    localStorage.removeItem(POST_AUTH_INTENT_KEY);
-    startCheckout();
-  }, [isAuthed]);
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
@@ -194,17 +157,6 @@ export default function PricingPage() {
         </section>
 
       </main>
-      {showAuthModal ? (
-        <AuthModal
-          title="Sign in to continue"
-          onClose={() => {
-            setShowAuthModal(false);
-            if (typeof window !== "undefined") {
-              localStorage.removeItem(POST_AUTH_INTENT_KEY);
-            }
-          }}
-        />
-      ) : null}
     </div>
   );
 }
