@@ -10,7 +10,14 @@ const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
 const CHECK_DEBOUNCE_MS = 750;
 
-type Step = "loading" | "enter_email" | "link_sent" | "checking" | "attached" | "error";
+type Step =
+  | "loading"
+  | "enter_email"
+  | "email_sent"
+  | "link_sent"
+  | "checking"
+  | "attached"
+  | "error";
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -298,7 +305,12 @@ export default function SuccessClient() {
         </div>
       );
     }
-    if (step === "link_sent" || step === "checking" || step === "error") {
+    if (
+      step === "email_sent" ||
+      step === "link_sent" ||
+      step === "checking" ||
+      step === "error"
+    ) {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
           <div>
