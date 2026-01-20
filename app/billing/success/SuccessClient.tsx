@@ -10,14 +10,7 @@ const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
 const CHECK_DEBOUNCE_MS = 750;
 
-type Step =
-  | "loading"
-  | "need_email"
-  | "email_sent"
-  | "checking"
-  | "attaching"
-  | "success"
-  | "error";
+type Step = "loading" | "enter_email" | "link_sent" | "checking" | "attached" | "error";
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -70,20 +63,6 @@ export default function SuccessClient() {
     localStorage.removeItem(STORAGE_EMAIL_KEY);
   }, []);
 
-  const readCookieValue = (key: string) => {
-    if (typeof document === "undefined") {
-      return null;
-    }
-    const match = document.cookie
-      .split(";")
-      .map((part) => part.trim())
-      .find((part) => part.startsWith(`${key}=`));
-    if (!match) {
-      return null;
-    }
-    return decodeURIComponent(match.slice(key.length + 1));
-  };
-
   const ensureSession = useCallback(async () => {
     const client = getSupabaseClient();
     if (!client) {
@@ -93,19 +72,7 @@ export default function SuccessClient() {
     if (sessionResult.data.session) {
       return sessionResult.data.session;
     }
-    const accessToken = readCookieValue("sb-access-token");
-    const refreshToken = readCookieValue("sb-refresh-token");
-    if (!accessToken || !refreshToken) {
-      return null;
-    }
-    const { data, error } = await client.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-    if (error) {
-      return null;
-    }
-    return data.session ?? null;
+    return null;
   }, []);
 
   const checkSessionAndAttach = useCallback(async () => {
@@ -128,7 +95,7 @@ export default function SuccessClient() {
     const user = session?.user;
     if (!user || !session?.access_token) {
       setHasSession(false);
-      setStep("email_sent");
+      setStep("link_sent");
       setError(
         "Not signed in yet. Click the link in your email, then try again.",
       );
@@ -146,7 +113,7 @@ export default function SuccessClient() {
       isCheckingRef.current = false;
       return;
     }
-    setStep("attaching");
+    setStep("checking");
     const sessionId =
       typeof window !== "undefined"
         ? localStorage.getItem(STORAGE_SESSION_KEY)
@@ -155,6 +122,7 @@ export default function SuccessClient() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ email: storedEmail, session_id: sessionId }),
     });
@@ -165,7 +133,7 @@ export default function SuccessClient() {
       isCheckingRef.current = false;
       return;
     }
-    setStep("success");
+    setStep("attached");
     markAttached();
     window.setTimeout(() => {
       router.replace("/dashboard");
@@ -211,9 +179,9 @@ export default function SuccessClient() {
         setEmail(resolvedEmail);
       }
       if (pending && resolvedEmail) {
-        setStep("email_sent");
+        setStep("link_sent");
       } else {
-        setStep("need_email");
+        setStep("enter_email");
       }
     };
     void init();
@@ -258,7 +226,7 @@ export default function SuccessClient() {
         await checkSessionAndAttach();
         return;
       }
-      setStep("success");
+      setStep("attached");
       window.setTimeout(() => {
         router.replace("/dashboard");
       }, 800);
@@ -281,24 +249,8 @@ export default function SuccessClient() {
         }
       },
     );
-    const handleStorage = (event: StorageEvent) => {
-      if (!event.key) {
-        return;
-      }
-      if (
-        event.key.includes("sb-") ||
-        event.key.includes("auth-token") ||
-        event.key.includes("supabase")
-      ) {
-        if (localStorage.getItem(STORAGE_PENDING_KEY) === "1") {
-          void checkSessionAndAttach();
-        }
-      }
-    };
-    window.addEventListener("storage", handleStorage);
     return () => {
       subscription?.subscription.unsubscribe();
-      window.removeEventListener("storage", handleStorage);
     };
   }, [checkSessionAndAttach]);
 
@@ -321,15 +273,15 @@ export default function SuccessClient() {
       options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
     });
     if (!error) {
-      setStep("email_sent");
+      setStep("link_sent");
       return;
     }
-    setStep("error");
+    setStep("enter_email");
     setError("Unable to send link.");
   };
 
   const renderBody = () => {
-    if (step === "success") {
+    if (step === "attached") {
       return (
         <div className="space-y-2 text-sm text-zinc-600">
           <p>Pro is active.</p>
@@ -346,7 +298,7 @@ export default function SuccessClient() {
         </div>
       );
     }
-    if (step === "email_sent" || step === "checking" || step === "attaching") {
+    if (step === "link_sent" || step === "checking" || step === "error") {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
           <div>
@@ -371,7 +323,7 @@ export default function SuccessClient() {
               type="button"
               className="btn-tertiary text-sm"
               onClick={() => {
-                setStep("need_email");
+                setStep("enter_email");
                 setError(null);
                 setEmail(emailRef.current);
                 clearPending();
@@ -380,7 +332,7 @@ export default function SuccessClient() {
               Change email
             </button>
           </div>
-          {step === "checking" || step === "attaching" ? (
+          {step === "checking" ? (
             <p className="text-xs text-zinc-500">Checking sign-in…</p>
           ) : null}
         </div>
