@@ -2671,23 +2671,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
-            fetch("/api/stripe/checkout", { method: "POST" })
-              .then(async (response) => {
-                if (!response.ok) {
-                  throw new Error("checkout failed");
-                }
-                return response.json() as Promise<{ url?: string }>;
-              })
-              .then((data) => {
-                if (data.url) {
-                  window.location.href = data.url;
-                  return;
-                }
-                window.location.href = "/pricing?intent=save_run";
-              })
-              .catch(() => {
-                window.location.href = "/pricing?intent=save_run";
-              });
+            router.push("/pricing");
           }}
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {
