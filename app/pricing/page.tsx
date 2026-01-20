@@ -110,7 +110,20 @@ export default function PricingPage() {
           <button
             type="button"
             className="btn-tertiary"
-            onClick={() => router.replace("/dashboard")}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                const context = sessionStorage.getItem(
+                  "pricing_return_context",
+                );
+                if (context === "runEnded") {
+                  localStorage.setItem("dashboard_modal", "runEnded");
+                  sessionStorage.removeItem("pricing_return_context");
+                  router.replace("/dashboard");
+                  return;
+                }
+              }
+              router.replace("/dashboard");
+            }}
           >
             Back to Today
           </button>

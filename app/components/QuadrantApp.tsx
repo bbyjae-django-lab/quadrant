@@ -2490,6 +2490,7 @@ export default function QuadrantApp({
           showCloseButton={isPro}
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
+              sessionStorage.setItem("pricing_return_context", "runEnded");
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
