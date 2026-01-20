@@ -18,7 +18,7 @@ export default function SuccessClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [attached, setAttached] = useState(false);
   const pollingRef = useRef<number | null>(null);
   const redirectTo = useMemo(() => {
     if (typeof window === "undefined") {
@@ -72,7 +72,7 @@ export default function SuccessClient() {
       setChecking(false);
       return false;
     }
-    setStatusMessage("Attached. Redirecting…");
+    setAttached(true);
     clearPending();
     window.setTimeout(() => {
       router.replace("/dashboard");
@@ -162,44 +162,73 @@ export default function SuccessClient() {
             Sign in to attach it to your history.
           </p>
         </div>
-        {statusMessage ? (
-          <p className="text-sm text-zinc-600">{statusMessage}</p>
-        ) : null}
-        <label className="text-sm font-semibold text-zinc-700">
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-            placeholder="you@example.com"
-          />
-        </label>
-        {submitting ? (
-          <p className="text-sm text-zinc-600">Sending…</p>
-        ) : sent ? (
-          <p className="text-sm text-zinc-600">
-            Check your email for the link.
-          </p>
+        {attached ? (
+          <div className="space-y-2 text-sm text-zinc-600">
+            <p>Pro is active.</p>
+            <p>Your subscription is now linked to your account.</p>
+            <p>Redirecting to your dashboard…</p>
+          </div>
         ) : (
-          <button
-            type="button"
-            className="btn btn-primary text-sm"
-            onClick={handleSendLink}
-          >
-            Send link
-          </button>
+          <>
+            {sent ? (
+              <div className="space-y-3 text-sm text-zinc-600">
+                <div>
+                  <p className="font-semibold text-zinc-700">
+                    We’ve sent a sign-in link to:
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-900">{email}</p>
+                </div>
+                <p>Check your email and click the link.</p>
+                <p>Keep this tab open.</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    className="btn btn-primary text-sm"
+                    onClick={() => {
+                      console.log("refresh-status clicked");
+                      void attachIfReady();
+                    }}
+                  >
+                    {checking ? "Checking sign-in…" : "I’ve clicked the link"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-tertiary text-sm"
+                    onClick={() => {
+                      setSent(false);
+                      if (typeof window !== "undefined") {
+                        localStorage.removeItem(STORAGE_PENDING_KEY);
+                      }
+                    }}
+                  >
+                    Change email
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <label className="text-sm font-semibold text-zinc-700">
+                  Email
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+                    placeholder="you@example.com"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-primary text-sm"
+                  onClick={handleSendLink}
+                  disabled={submitting}
+                >
+                  {submitting ? "Sending…" : "Send link"}
+                </button>
+              </>
+            )}
+          </>
         )}
-        <button
-          type="button"
-          className="btn-tertiary text-sm"
-          onClick={() => {
-            console.log("refresh-status clicked");
-            void attachIfReady();
-          }}
-        >
-          I’ve signed in — refresh status
-        </button>
         {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>
     </div>
