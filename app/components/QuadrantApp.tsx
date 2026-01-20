@@ -46,6 +46,7 @@ const PRO_ACTIVE_SEEN_KEY = "pro_active_seen";
 const POST_AUTH_INTENT_KEY = "post_auth_intent";
 const PENDING_PROTOCOL_ID_KEY = "pending_protocol_id";
 const PENDING_PROTOCOL_NAME_KEY = "pending_protocol_name";
+const RUN_ENDED_SNAPSHOT_KEY = "runEnded_snapshot";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -1371,9 +1372,22 @@ export default function QuadrantApp({
       setRunStartDate(null);
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
+        sessionStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
           localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
         }
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          RUN_ENDED_SNAPSHOT_KEY,
+          JSON.stringify({
+            protocolId: activeProtocolId ?? "",
+            protocolName: activeProtocol?.name ?? "",
+            cleanDays,
+            endedAt: new Date().toISOString(),
+            result: "Failed",
+          }),
+        );
       }
       saveRunEndedModalContext({
         result: "Failed",
@@ -1406,9 +1420,22 @@ export default function QuadrantApp({
       setRunStartDate(null);
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
+        sessionStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
           localStorage.setItem(ENDED_RUN_ID_KEY, activeRunId);
         }
+      }
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          RUN_ENDED_SNAPSHOT_KEY,
+          JSON.stringify({
+            protocolId: activeProtocolId ?? "",
+            protocolName: activeProtocol?.name ?? "",
+            cleanDays,
+            endedAt: new Date().toISOString(),
+            result: "Completed",
+          }),
+        );
       }
       saveRunEndedModalContext({
         result: "Completed",
@@ -1872,23 +1899,40 @@ export default function QuadrantApp({
               result: context.result,
               cleanDays: context.cleanDays,
             });
-          } else if (
-            runStatus === "failed" ||
-            runStatus === "completed" ||
-            runStatus === "ended"
-          ) {
-            setRunEndContext({
-              result:
-                runStatus === "completed"
-                  ? "Completed"
-                  : runStatus === "ended"
-                    ? "Ended"
-                    : "Failed",
-              cleanDays: checkIns.filter((entry) => entry.followed).length,
-            });
           } else {
-            setModalIntentHandled(true);
-            return;
+            const snapshot = sessionStorage.getItem(RUN_ENDED_SNAPSHOT_KEY);
+            if (snapshot) {
+              try {
+                const parsed = JSON.parse(snapshot) as {
+                  cleanDays: number;
+                  result: "Completed" | "Failed";
+                  endedAt?: string;
+                };
+                setRunEndContext({
+                  result: parsed.result,
+                  cleanDays: parsed.cleanDays,
+                });
+              } catch {
+                // fall through
+              }
+            } else if (
+              runStatus === "failed" ||
+              runStatus === "completed" ||
+              runStatus === "ended"
+            ) {
+              setRunEndContext({
+                result:
+                  runStatus === "completed"
+                    ? "Completed"
+                    : runStatus === "ended"
+                      ? "Ended"
+                      : "Failed",
+                cleanDays: checkIns.filter((entry) => entry.followed).length,
+              });
+            } else {
+              setModalIntentHandled(true);
+              return;
+            }
           }
         }
       }
@@ -2515,6 +2559,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
               sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
+              sessionStorage.removeItem(RUN_ENDED_SNAPSHOT_KEY);
             }
             clearActiveProtocol();
           }}
@@ -2524,6 +2569,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
               sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
+              sessionStorage.removeItem(RUN_ENDED_SNAPSHOT_KEY);
             }
             clearActiveProtocol();
           }}
