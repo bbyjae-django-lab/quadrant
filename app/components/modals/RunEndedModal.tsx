@@ -10,6 +10,8 @@ type RunEndedModalProps = {
   primaryLabel: string;
   showFreeNotice?: boolean;
   freeActionLabel?: string;
+  freePrimarySubtext?: string;
+  freeSecondarySubtext?: string;
   showCloseButton?: boolean;
   onUpgradeClick?: () => void;
   onPrimaryAction: () => void;
@@ -23,6 +25,8 @@ export default function RunEndedModal({
   primaryLabel,
   showFreeNotice = false,
   freeActionLabel = "See pricing",
+  freePrimarySubtext = "",
+  freeSecondarySubtext = "",
   showCloseButton = true,
   onUpgradeClick,
   onPrimaryAction,
@@ -141,7 +145,7 @@ export default function RunEndedModal({
           </div>
         </div>
         <div className="mt-4 flex flex-col gap-3">
-          <div>
+          <div className="space-y-2">
             <button
               type="button"
               className="btn btn-primary text-sm"
@@ -149,17 +153,22 @@ export default function RunEndedModal({
             >
               {primaryLabel}
             </button>
+            {showFreeNotice && freePrimarySubtext ? (
+              <p className="text-xs text-zinc-500">{freePrimarySubtext}</p>
+            ) : null}
           </div>
           {showFreeNotice ? (
-            <div className="text-xs text-zinc-500">
-              <p>This run won’t be saved.</p>
+            <div className="space-y-2 text-xs text-zinc-500">
               <button
                 type="button"
-                className="btn-tertiary mt-2"
+                className="btn-tertiary"
                 onClick={onUpgradeClick}
               >
                 {freeActionLabel}
               </button>
+              {freeSecondarySubtext ? (
+                <p>{freeSecondarySubtext}</p>
+              ) : null}
             </div>
           ) : null}
         </div>

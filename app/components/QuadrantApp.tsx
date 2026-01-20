@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { problemIndex } from "../data/problemIndex";
 import { observedBehaviours } from "../data/observedBehaviours";
@@ -24,6 +24,7 @@ import {
   upsertSupabaseRun,
   type CheckinRecord,
 } from "../lib/storageAdapter";
+import { getSupabaseClient } from "../lib/supabaseClient";
 import {
   hasMigratedToSupabase,
   migrateLocalToSupabase,
@@ -47,6 +48,8 @@ const POST_AUTH_INTENT_KEY = "post_auth_intent";
 const PENDING_PROTOCOL_ID_KEY = "pending_protocol_id";
 const PENDING_PROTOCOL_NAME_KEY = "pending_protocol_name";
 const RUN_ENDED_SNAPSHOT_KEY = "runEnded_snapshot";
+const PENDING_RUN_KEY = "quadrant_pending_run_v1";
+const PENDING_SAVE_INTENT_KEY = "quadrant_pending_save_intent";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -140,6 +143,19 @@ type RunEndedModalContext = {
   isFree: boolean;
 };
 
+type PendingRunPayload = {
+  client_run_id: string;
+  protocol_id: string;
+  protocol_slug: string;
+  protocol_name: string;
+  started_at: string;
+  ended_at: string;
+  end_reason: "violation" | "completed" | "abandoned";
+  clean_days: number;
+  total_days: number;
+  violation_day: number | null;
+};
+
 const saveRunEndedModalContext = (context: RunEndedModalContext) => {
   if (typeof window === "undefined") {
     return;
@@ -174,6 +190,44 @@ const loadRunEndedModalContext = (): RunEndedModalContext | null => {
     return null;
   }
   return null;
+};
+
+const buildPendingRunPayload = (
+  context: RunEndContext | null,
+): PendingRunPayload | null => {
+  if (!context) {
+    return null;
+  }
+  const modalContext = loadRunEndedModalContext();
+  if (!modalContext) {
+    return null;
+  }
+  const endedAt = modalContext.endedAt;
+  const endDate = new Date(endedAt);
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - Math.max(context.cleanDays, 0));
+  const endReason =
+    context.result === "Failed"
+      ? "violation"
+      : context.result === "Completed"
+        ? "completed"
+        : "abandoned";
+  const violationDay =
+    context.result === "Failed"
+      ? Math.min(context.cleanDays + 1, RUN_LENGTH)
+      : null;
+  return {
+    client_run_id: createRunId(),
+    protocol_id: modalContext.protocolId,
+    protocol_slug: modalContext.protocolId,
+    protocol_name: modalContext.protocolName,
+    started_at: startDate.toISOString(),
+    ended_at: endedAt,
+    end_reason: endReason,
+    clean_days: context.cleanDays,
+    total_days: RUN_LENGTH,
+    violation_day: violationDay,
+  };
 };
 
 const buildCheckinsFromSnapshot = (
@@ -574,6 +628,7 @@ export default function QuadrantApp({
   const checkInsRef = useRef<CheckInEntry[]>(checkIns);
   const activeRunIdRef = useRef<string | null>(activeRunId);
   const hydrateRequestRef = useRef(0);
+  const pendingPersistAttemptedRef = useRef(false);
 
   useEffect(() => {
     checkInsRef.current = checkIns;
@@ -582,6 +637,60 @@ export default function QuadrantApp({
   useEffect(() => {
     activeRunIdRef.current = activeRunId;
   }, [activeRunId]);
+
+  const persistPendingRun = useCallback(async () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!isAuthed || !isPro || !user?.id) {
+      return;
+    }
+    if (pendingPersistAttemptedRef.current) {
+      return;
+    }
+    const stored = localStorage.getItem(PENDING_RUN_KEY);
+    if (!stored) {
+      return;
+    }
+    let payload: PendingRunPayload | null = null;
+    try {
+      payload = JSON.parse(stored) as PendingRunPayload;
+    } catch {
+      payload = null;
+    }
+    if (!payload) {
+      return;
+    }
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return;
+    }
+    const sessionResult = await supabase.auth.getSession();
+    const token = sessionResult.data.session?.access_token;
+    if (!token) {
+      return;
+    }
+    pendingPersistAttemptedRef.current = true;
+    const response = await fetch("/api/runs/persist-pending", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      pendingPersistAttemptedRef.current = false;
+      return;
+    }
+    localStorage.removeItem(PENDING_RUN_KEY);
+    localStorage.removeItem(PENDING_SAVE_INTENT_KEY);
+    const refreshed = await loadSupabaseRunsWithCheckins(user.id);
+    if (refreshed.ok) {
+      setRunHistory(refreshed.runs);
+      setRunCheckinsByRunId(refreshed.checkinsByRunId);
+    }
+  }, [isAuthed, isPro, user?.id]);
   const storageAdapter = useMemo(
     () =>
       getAdapter({
@@ -614,6 +723,13 @@ export default function QuadrantApp({
     }
     setSupabaseReadyState(isSupabaseReady());
   }, [isAuthed, authLoading]);
+
+  useEffect(() => {
+    if (authLoading || !hasHydrated) {
+      return;
+    }
+    void persistPendingRun();
+  }, [authLoading, hasHydrated, persistPendingRun]);
 
   useEffect(() => {
     if (authLoading) {
@@ -2535,23 +2651,43 @@ export default function QuadrantApp({
           historyStrip={runEndHistoryStrip}
           primaryLabel={runEndPrimaryLabel}
           showFreeNotice={!isPro}
-          freeActionLabel={
-            runEndContext?.result === "Completed"
-              ? "Save this run → Pro"
-              : "See pricing"
-          }
+          freeActionLabel="Upgrade to save this run"
+          freePrimarySubtext="This run won’t be saved on Free."
+          freeSecondarySubtext="Keep this run + unlock history and pattern insights."
           showCloseButton={isPro}
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
+              const pendingPayload = buildPendingRunPayload(runEndContext);
+              if (pendingPayload) {
+                localStorage.setItem(
+                  PENDING_RUN_KEY,
+                  JSON.stringify(pendingPayload),
+                );
+                localStorage.setItem(PENDING_SAVE_INTENT_KEY, "1");
+              }
               sessionStorage.setItem("pricing_return_context", "runEnded");
               sessionStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
-            if (typeof window !== "undefined") {
-              window.location.href = "/pricing";
-            }
+            fetch("/api/stripe/checkout", { method: "POST" })
+              .then(async (response) => {
+                if (!response.ok) {
+                  throw new Error("checkout failed");
+                }
+                return response.json() as Promise<{ url?: string }>;
+              })
+              .then((data) => {
+                if (data.url) {
+                  window.location.href = data.url;
+                  return;
+                }
+                window.location.href = "/pricing?intent=save_run";
+              })
+              .catch(() => {
+                window.location.href = "/pricing?intent=save_run";
+              });
           }}
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {

@@ -8,6 +8,8 @@ import { getSupabaseClient } from "../../lib/supabaseClient";
 const STORAGE_SESSION_KEY = "quadrant_success_session_id";
 const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
+const PENDING_RUN_KEY = "quadrant_pending_run_v1";
+const PENDING_SAVE_INTENT_KEY = "quadrant_pending_save_intent";
 const CHECK_DEBOUNCE_MS = 750;
 
 type Step =
@@ -28,7 +30,6 @@ export default function SuccessClient() {
   const isCheckingRef = useRef(false);
   const lastAttemptAtRef = useRef(0);
   const emailRef = useRef("");
-  const autoAttachRan = useRef(false);
 
   useEffect(() => {
     emailRef.current = email;
@@ -134,7 +135,9 @@ export default function SuccessClient() {
     });
     if (!response.ok) {
       if (response.status === 401) {
-        setError("You’re not signed in yet. Click the email link, then try again.");
+        setError(
+          "You’re not signed in yet. Click the email link, then try again.",
+        );
       } else if (response.status === 404) {
         setError(
           "We couldn’t find a subscription for that email yet. Try again in 10 seconds.",
@@ -145,6 +148,25 @@ export default function SuccessClient() {
       setStep("error");
       isCheckingRef.current = false;
       return;
+    }
+    const pendingRun = localStorage.getItem(PENDING_RUN_KEY);
+    if (pendingRun) {
+      const pendingResponse = await fetch("/api/runs/persist-pending", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: pendingRun,
+      });
+      if (!pendingResponse.ok) {
+        setError(
+          "We couldn’t save your last run yet. It will retry when you return to your dashboard.",
+        );
+      } else {
+        localStorage.removeItem(PENDING_RUN_KEY);
+        localStorage.removeItem(PENDING_SAVE_INTENT_KEY);
+      }
     }
     setStep("attached");
     markAttached();
@@ -233,27 +255,7 @@ export default function SuccessClient() {
     };
   }, [ensureSession, searchParams]);
 
-  useEffect(() => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-    const { data: subscription } = client.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session || localStorage.getItem(STORAGE_PENDING_KEY) !== "1") {
-          return;
-        }
-        if (autoAttachRan.current) {
-          return;
-        }
-        autoAttachRan.current = true;
-        void checkSessionAndAttach();
-      },
-    );
-    return () => {
-      subscription?.subscription.unsubscribe();
-    };
-  }, [checkSessionAndAttach]);
+  
 
   const handleSendLink = async () => {
     if (!email.trim()) {
@@ -375,9 +377,7 @@ export default function SuccessClient() {
           </p>
         </div>
         {renderBody()}
-        {step === "error" && error ? (
-          <p className="text-xs text-zinc-500">{error}</p>
-        ) : null}
+        {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>
     </div>
   );
