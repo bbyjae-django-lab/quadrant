@@ -2128,9 +2128,6 @@ export default function QuadrantApp({
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Run history
                       </h2>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Sign in to preserve history.
-                      </p>
                       <button
                         type="button"
                         className="btn-tertiary mt-3"
