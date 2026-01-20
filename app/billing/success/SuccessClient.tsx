@@ -110,7 +110,6 @@ export default function SuccessClient() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ email: storedEmail, session_id: sessionId }),
     });
