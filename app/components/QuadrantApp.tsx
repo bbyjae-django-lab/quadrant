@@ -1981,6 +1981,14 @@ export default function QuadrantApp({
             <a
               href="/about"
               className="btn-tertiary"
+              onClick={() => {
+                if (typeof window === "undefined") {
+                  return;
+                }
+                const query = searchParams?.toString();
+                const target = query ? `${pathname}?${query}` : pathname;
+                sessionStorage.setItem("about_return_to", target);
+              }}
             >
               About Quadrant
             </a>

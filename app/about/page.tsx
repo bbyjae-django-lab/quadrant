@@ -1,6 +1,38 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 export default function AboutPage() {
+  const router = useRouter();
+  const handleReturn = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    if (typeof window === "undefined") {
+      return;
+    }
+    const stored = sessionStorage.getItem("about_return_to");
+    if (stored) {
+      sessionStorage.removeItem("about_return_to");
+      router.replace(stored);
+      return;
+    }
+    const activeSnapshot = localStorage.getItem("quadrant_active_run_v1");
+    if (activeSnapshot) {
+      try {
+        const parsed = JSON.parse(activeSnapshot) as {
+          status?: string;
+          runId?: string;
+          protocolId?: string;
+        };
+        if (parsed.status === "active" && parsed.runId && parsed.protocolId) {
+          router.replace("/dashboard");
+          return;
+        }
+      } catch {
+        // fall through
+      }
+    }
+    router.replace("/");
+  };
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-12)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-[var(--space-8)]">
@@ -48,6 +80,7 @@ export default function AboutPage() {
           <a
             href="/dashboard"
             className="btn-tertiary text-sm"
+            onClick={handleReturn}
           >
             Return to active run
           </a>
