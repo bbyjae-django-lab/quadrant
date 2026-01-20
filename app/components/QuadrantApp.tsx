@@ -44,6 +44,8 @@ const ENDED_RUN_ID_KEY = "ended_run_id";
 const DASHBOARD_MODAL_CONTEXT_KEY = "dashboard_modal_context";
 const PRO_ACTIVE_SEEN_KEY = "pro_active_seen";
 const POST_AUTH_INTENT_KEY = "post_auth_intent";
+const PENDING_PROTOCOL_ID_KEY = "pending_protocol_id";
+const PENDING_PROTOCOL_NAME_KEY = "pending_protocol_name";
 
 const RUN_END_INSIGHT_LINE =
   "Most traders need 5–10 runs before patterns become obvious.";
@@ -1767,11 +1769,27 @@ export default function QuadrantApp({
   const activeRunLoading = authLoading || runsLoading || !hasHydrated;
   const openActivateProtocolModal = (protocolId: string) => {
     console.log("protocol-activate:open", protocolId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(DASHBOARD_MODAL_KEY, "activateProtocol");
+      sessionStorage.setItem(PENDING_PROTOCOL_ID_KEY, protocolId);
+      sessionStorage.setItem(
+        PENDING_PROTOCOL_NAME_KEY,
+        protocolById[protocolId]?.name ?? "",
+      );
+    }
     setActivateModalProtocolId(protocolId);
     setActivationError("");
     setIsActivating(false);
   };
   const closeActivateProtocolModal = () => {
+    if (typeof window !== "undefined") {
+      const storedModal = localStorage.getItem(DASHBOARD_MODAL_KEY);
+      if (storedModal === "activateProtocol") {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      }
+      sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
+      sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
+    }
     setActivateModalProtocolId(null);
     setShowObservedBehaviourPicker(false);
     setObservedBehaviourSelection([]);
@@ -1854,6 +1872,24 @@ export default function QuadrantApp({
         }
       }
       setShowRunEndedModal(true);
+      setModalIntentHandled(true);
+    }
+    if (storedModal === "activateProtocol") {
+      if (runActive) {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+        sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
+        sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
+        setModalIntentHandled(true);
+        return;
+      }
+      const pendingId = sessionStorage.getItem(PENDING_PROTOCOL_ID_KEY);
+      if (pendingId && protocolById[pendingId]) {
+        setActivateModalProtocolId(pendingId);
+      } else {
+        localStorage.removeItem(DASHBOARD_MODAL_KEY);
+        sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
+        sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
+      }
       setModalIntentHandled(true);
     }
   }, [
