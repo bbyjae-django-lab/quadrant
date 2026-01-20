@@ -116,8 +116,7 @@ export default function PricingPage() {
                   "pricing_return_context",
                 );
                 if (context === "runEnded") {
-                  localStorage.setItem("dashboard_modal", "runEnded");
-                  sessionStorage.removeItem("pricing_return_context");
+                  sessionStorage.setItem("dashboard_modal", "runEnded");
                   router.replace("/dashboard");
                   return;
                 }

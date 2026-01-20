@@ -1787,6 +1787,7 @@ export default function QuadrantApp({
     console.log("protocol-activate:open", protocolId);
     if (typeof window !== "undefined") {
       localStorage.setItem(DASHBOARD_MODAL_KEY, "activateProtocol");
+      sessionStorage.setItem(DASHBOARD_MODAL_KEY, "activateProtocol");
       sessionStorage.setItem(PENDING_PROTOCOL_ID_KEY, protocolId);
       sessionStorage.setItem(
         PENDING_PROTOCOL_NAME_KEY,
@@ -1803,6 +1804,7 @@ export default function QuadrantApp({
       if (storedModal === "activateProtocol") {
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
       }
+      sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
       sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
       sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
     }
@@ -1824,7 +1826,9 @@ export default function QuadrantApp({
     if (typeof window === "undefined" || !hasHydrated || modalIntentHandled) {
       return;
     }
-    const storedModal = localStorage.getItem(DASHBOARD_MODAL_KEY);
+    const storedModal =
+      sessionStorage.getItem(DASHBOARD_MODAL_KEY) ??
+      localStorage.getItem(DASHBOARD_MODAL_KEY);
     if (!storedModal) {
       setModalIntentHandled(true);
       return;
@@ -1836,6 +1840,7 @@ export default function QuadrantApp({
       if (runActive && !hasCheckInToday) {
         setShowCheckInModal(true);
       } else {
+        sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
       }
       setModalIntentHandled(true);
@@ -1888,10 +1893,13 @@ export default function QuadrantApp({
         }
       }
       setShowRunEndedModal(true);
+      sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
+      sessionStorage.removeItem("pricing_return_context");
       setModalIntentHandled(true);
     }
     if (storedModal === "activateProtocol") {
       if (runActive) {
+        sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
         sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
         sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
@@ -1902,6 +1910,7 @@ export default function QuadrantApp({
       if (pendingId && protocolById[pendingId]) {
         setActivateModalProtocolId(pendingId);
       } else {
+        sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
         localStorage.removeItem(DASHBOARD_MODAL_KEY);
         sessionStorage.removeItem(PENDING_PROTOCOL_ID_KEY);
         sessionStorage.removeItem(PENDING_PROTOCOL_NAME_KEY);
@@ -2491,6 +2500,7 @@ export default function QuadrantApp({
           onUpgradeClick={() => {
             if (typeof window !== "undefined") {
               sessionStorage.setItem("pricing_return_context", "runEnded");
+              sessionStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
@@ -2504,6 +2514,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
+              sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
             }
             clearActiveProtocol();
           }}
@@ -2512,6 +2523,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
+              sessionStorage.removeItem(DASHBOARD_MODAL_KEY);
             }
             clearActiveProtocol();
           }}
