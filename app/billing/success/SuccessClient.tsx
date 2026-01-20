@@ -9,17 +9,26 @@ const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
 const POLL_INTERVAL_MS = 1000;
 const POLL_TIMEOUT_MS = 30000;
+const CHECK_DEBOUNCE_MS = 750;
+
+type Status =
+  | "idle"
+  | "emailSent"
+  | "checking"
+  | "attaching"
+  | "success"
+  | "error";
 
 export default function SuccessClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
-  const [attached, setAttached] = useState(false);
+  const isCheckingRef = useRef(false);
+  const lastAttemptAtRef = useRef(0);
   const pollingRef = useRef<number | null>(null);
+
   const redirectTo = useMemo(() => {
     if (typeof window === "undefined") {
       return undefined;
@@ -38,18 +47,30 @@ export default function SuccessClient() {
     localStorage.removeItem(STORAGE_PENDING_KEY);
   };
 
-  const attachIfReady = async () => {
+  const checkSessionAndAttach = async () => {
+    const now = Date.now();
+    if (isCheckingRef.current) {
+      return;
+    }
+    if (now - lastAttemptAtRef.current < CHECK_DEBOUNCE_MS) {
+      return;
+    }
+    lastAttemptAtRef.current = now;
+    isCheckingRef.current = true;
     const client = getSupabaseClient();
     if (!client) {
-      return false;
+      isCheckingRef.current = false;
+      return;
     }
-    setChecking(true);
+    setStatus("checking");
     const sessionResult = await client.auth.getSession();
     const session = sessionResult.data.session;
     const user = session?.user;
     if (!user || !session?.access_token) {
-      setChecking(false);
-      return false;
+      setStatus("emailSent");
+      setError("Not signed in yet. Click the link in your email, then try again.");
+      isCheckingRef.current = false;
+      return;
     }
     const storedEmail =
       email.trim() ||
@@ -57,9 +78,11 @@ export default function SuccessClient() {
         ? localStorage.getItem(STORAGE_EMAIL_KEY) ?? ""
         : "");
     if (!storedEmail) {
-      setChecking(false);
-      return false;
+      setStatus("emailSent");
+      isCheckingRef.current = false;
+      return;
     }
+    setStatus("attaching");
     const response = await fetch("/api/billing/attach", {
       method: "POST",
       headers: {
@@ -69,16 +92,18 @@ export default function SuccessClient() {
       body: JSON.stringify({ email: storedEmail }),
     });
     if (!response.ok) {
-      setChecking(false);
-      return false;
+      console.warn("Billing attach failed.");
+      setStatus("error");
+      setError("Couldn’t confirm Pro yet. Try again.");
+      isCheckingRef.current = false;
+      return;
     }
-    setAttached(true);
+    setStatus("success");
     clearPending();
     window.setTimeout(() => {
       router.replace("/dashboard");
     }, 800);
-    setChecking(false);
-    return true;
+    isCheckingRef.current = false;
   };
 
   useEffect(() => {
@@ -88,20 +113,35 @@ export default function SuccessClient() {
     }
     if (typeof window !== "undefined") {
       const storedEmail = localStorage.getItem(STORAGE_EMAIL_KEY);
-      if (!email && storedEmail) {
-        setEmail(storedEmail);
-      }
       const pending = localStorage.getItem(STORAGE_PENDING_KEY);
-      if (pending) {
-        setSent(true);
+      if (storedEmail && pending === "1") {
+        setEmail(storedEmail);
+        setStatus("emailSent");
       }
     }
-    void attachIfReady();
-    const { data: subscription } = client.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        void attachIfReady();
+    void checkSessionAndAttach();
+    const { data: subscription } = client.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session && localStorage.getItem(STORAGE_PENDING_KEY) === "1") {
+          void checkSessionAndAttach();
+        }
+      },
+    );
+    const handleStorage = (event: StorageEvent) => {
+      if (!event.key) {
+        return;
       }
-    });
+      if (
+        event.key.includes("sb-") ||
+        event.key.includes("auth-token") ||
+        event.key.includes("supabase")
+      ) {
+        if (localStorage.getItem(STORAGE_PENDING_KEY) === "1") {
+          void checkSessionAndAttach();
+        }
+      }
+    };
+    window.addEventListener("storage", handleStorage);
     const start = Date.now();
     pollingRef.current = window.setInterval(() => {
       const pending =
@@ -110,7 +150,7 @@ export default function SuccessClient() {
       if (!pending) {
         return;
       }
-      void attachIfReady();
+      void checkSessionAndAttach();
       if (Date.now() - start > POLL_TIMEOUT_MS && pollingRef.current) {
         window.clearInterval(pollingRef.current);
         pollingRef.current = null;
@@ -118,6 +158,7 @@ export default function SuccessClient() {
     }, POLL_INTERVAL_MS);
     return () => {
       subscription?.subscription.unsubscribe();
+      window.removeEventListener("storage", handleStorage);
       if (pollingRef.current) {
         window.clearInterval(pollingRef.current);
         pollingRef.current = null;
@@ -134,7 +175,7 @@ export default function SuccessClient() {
       return;
     }
     setError(null);
-    setSubmitting(true);
+    setStatus("checking");
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_EMAIL_KEY, email.trim());
       localStorage.setItem(STORAGE_PENDING_KEY, "1");
@@ -143,12 +184,85 @@ export default function SuccessClient() {
       email: email.trim(),
       options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
     });
-    setSubmitting(false);
     if (!error) {
-      setSent(true);
+      setStatus("emailSent");
       return;
     }
+    setStatus("error");
     setError("Unable to send link.");
+  };
+
+  const renderBody = () => {
+    if (status === "success") {
+      return (
+        <div className="space-y-2 text-sm text-zinc-600">
+          <p>Pro is active.</p>
+          <p>Your subscription is now linked to your account.</p>
+          <p>Redirecting to your dashboard…</p>
+        </div>
+      );
+    }
+    if (status === "emailSent" || status === "checking" || status === "attaching") {
+      return (
+        <div className="space-y-3 text-sm text-zinc-600">
+          <div>
+            <p className="font-semibold text-zinc-700">
+              We’ve sent a sign-in link to:
+            </p>
+            <p className="mt-1 text-sm text-zinc-900">{email}</p>
+          </div>
+          <p>Check your email and click the link.</p>
+          <p>Keep this tab open.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              className="btn btn-primary text-sm"
+              onClick={() => {
+                void checkSessionAndAttach();
+              }}
+            >
+              I’ve clicked the link
+            </button>
+            <button
+              type="button"
+              className="btn-tertiary text-sm"
+              onClick={() => {
+                setStatus("idle");
+                setError(null);
+                setEmail("");
+                clearPending();
+              }}
+            >
+              Change email
+            </button>
+          </div>
+          {(status === "checking" || status === "attaching") ? (
+            <p className="text-xs text-zinc-500">Checking sign-in…</p>
+          ) : null}
+        </div>
+      );
+    }
+    return (
+      <>
+        <label className="text-sm font-semibold text-zinc-700">
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+            placeholder="you@example.com"
+          />
+        </label>
+        <button
+          type="button"
+          className="btn btn-primary text-sm"
+          onClick={handleSendLink}
+        >
+          Send link
+        </button>
+      </>
+    );
   };
 
   return (
@@ -162,74 +276,10 @@ export default function SuccessClient() {
             Sign in to attach it to your history.
           </p>
         </div>
-        {attached ? (
-          <div className="space-y-2 text-sm text-zinc-600">
-            <p>Pro is active.</p>
-            <p>Your subscription is now linked to your account.</p>
-            <p>Redirecting to your dashboard…</p>
-          </div>
-        ) : (
-          <>
-            {sent ? (
-              <div className="space-y-3 text-sm text-zinc-600">
-                <div>
-                  <p className="font-semibold text-zinc-700">
-                    We’ve sent a sign-in link to:
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-900">{email}</p>
-                </div>
-                <p>Check your email and click the link.</p>
-                <p>Keep this tab open.</p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    className="btn btn-primary text-sm"
-                    onClick={() => {
-                      console.log("refresh-status clicked");
-                      void attachIfReady();
-                    }}
-                  >
-                    {checking ? "Checking sign-in…" : "I’ve clicked the link"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-tertiary text-sm"
-                    onClick={() => {
-                      setSent(false);
-                      if (typeof window !== "undefined") {
-                        localStorage.removeItem(STORAGE_PENDING_KEY);
-                      }
-                    }}
-                  >
-                    Change email
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <label className="text-sm font-semibold text-zinc-700">
-                  Email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-                    placeholder="you@example.com"
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn btn-primary text-sm"
-                  onClick={handleSendLink}
-                  disabled={submitting}
-                >
-                  {submitting ? "Sending…" : "Send link"}
-                </button>
-              </>
-            )}
-          </>
-        )}
-        {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
+        {renderBody()}
+        {status === "error" && error ? (
+          <p className="text-xs text-zinc-500">{error}</p>
+        ) : null}
       </main>
     </div>
   );
