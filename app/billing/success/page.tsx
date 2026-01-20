@@ -1,17 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-import { signInWithOtp } from "../../lib/auth";
 import { getSupabaseClient } from "../../lib/supabaseClient";
+
+const PRO_STATUSES = new Set(["active", "trialing"]);
 
 export default function BillingSuccessPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const redirectTo = useMemo(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+    const query = searchParams?.toString();
+    return `${window.location.origin}/billing/success${query ? `?${query}` : ""}`;
+  }, [searchParams]);
+
+  const checkBilling = async () => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return;
+    }
+    setChecking(true);
+    const session = await client.auth.getSession();
+    const user = session.data.session?.user;
+    if (!user?.email) {
+      setChecking(false);
+      return;
+    }
+    const { data, error } = await client
+      .from("billing_customers")
+      .select("status, price_id")
+      .eq("email", user.email)
+      .maybeSingle();
+    if (error) {
+      setChecking(false);
+      return;
+    }
+    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ?? "";
+    const matchesPrice = priceId ? data?.price_id === priceId : true;
+    const isPro = Boolean(matchesPrice && PRO_STATUSES.has(data?.status ?? ""));
+    if (isPro) {
+      setStatusMessage("Pro attached. Redirecting…");
+      window.setTimeout(() => {
+        router.replace("/dashboard");
+      }, 800);
+    }
+    setChecking(false);
+  };
 
   useEffect(() => {
     const client = getSupabaseClient();
@@ -19,19 +63,35 @@ export default function BillingSuccessPage() {
       return;
     }
     client.auth.getSession().then((result) => {
-      if (result.data.session?.user) {
-        router.replace("/dashboard");
+      const user = result.data.session?.user;
+      if (user?.email) {
+        void checkBilling();
       }
     });
+    const { data: subscription } = client.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") {
+        void checkBilling();
+      }
+    });
+    return () => {
+      subscription?.subscription.unsubscribe();
+    };
   }, [router]);
 
   const handleSendLink = async () => {
     if (!email.trim()) {
       return;
     }
+    const client = getSupabaseClient();
+    if (!client) {
+      return;
+    }
     setError(null);
     setSubmitting(true);
-    const { error } = await signInWithOtp(email.trim());
+    const { error } = await client.auth.signInWithOtp({
+      email: email.trim(),
+      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+    });
     setSubmitting(false);
     if (!error) {
       setSent(true);
@@ -51,6 +111,9 @@ export default function BillingSuccessPage() {
             Sign in to attach it to your history.
           </p>
         </div>
+        {statusMessage ? (
+          <p className="text-sm text-zinc-600">{statusMessage}</p>
+        ) : null}
         <label className="text-sm font-semibold text-zinc-700">
           Email
           <input
@@ -76,6 +139,16 @@ export default function BillingSuccessPage() {
             Send link
           </button>
         )}
+        <button
+          type="button"
+          className="btn-tertiary text-sm"
+          onClick={() => {
+            void checkBilling();
+          }}
+          disabled={checking}
+        >
+          I’ve signed in — refresh status
+        </button>
         {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>
     </div>
