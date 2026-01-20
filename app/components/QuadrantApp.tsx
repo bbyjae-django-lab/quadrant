@@ -1352,8 +1352,23 @@ export default function QuadrantApp({
       });
     }
     if (!followed) {
-      setRunStatus("failed");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("runStatus", "failed");
+        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
+        localStorage.removeItem("activeProtocolId");
+        localStorage.removeItem("activeRunId");
+        localStorage.removeItem("activatedAt");
+        localStorage.removeItem("runStartDate");
+      }
       clearLocalActiveRun();
+      setRunStatus("failed");
+      setActiveProtocolId(null);
+      setActiveRunId(null);
+      setActivatedAt(null);
+      setRunStartDate(null);
+      if (isPro) {
+        appendRunHistory("Failed", updatedCheckIns);
+      }
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
@@ -1369,20 +1384,26 @@ export default function QuadrantApp({
         endedAt: new Date().toISOString(),
         isFree: !isPro,
       });
-      if (typeof window !== "undefined") {
-        localStorage.setItem("runStatus", "failed");
-        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
-      }
       setRunEndContext({ result: "Failed", cleanDays });
-      if (isPro) {
-        appendRunHistory("Failed", updatedCheckIns);
-      }
       setShowRunEndedModal(true);
       setShowCheckInModal(false);
       return;
     } else if (newStreak >= RUN_LENGTH) {
-      setRunStatus("completed");
+      if (typeof window !== "undefined") {
+        localStorage.setItem("runStatus", "completed");
+        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
+        localStorage.removeItem("activeProtocolId");
+        localStorage.removeItem("activeRunId");
+        localStorage.removeItem("activatedAt");
+        localStorage.removeItem("runStartDate");
+      }
       clearLocalActiveRun();
+      setRunStatus("completed");
+      setActiveProtocolId(null);
+      setActiveRunId(null);
+      setActivatedAt(null);
+      setRunStartDate(null);
+      appendRunHistory("Completed", updatedCheckIns);
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
@@ -1398,12 +1419,7 @@ export default function QuadrantApp({
         endedAt: new Date().toISOString(),
         isFree: !isPro,
       });
-      if (typeof window !== "undefined") {
-        localStorage.setItem("runStatus", "completed");
-        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
-      }
       setRunEndContext({ result: "Completed", cleanDays });
-      appendRunHistory("Completed", updatedCheckIns);
       setShowRunEndedModal(true);
       return;
     }
