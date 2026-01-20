@@ -1360,15 +1360,15 @@ export default function QuadrantApp({
         localStorage.removeItem("activatedAt");
         localStorage.removeItem("runStartDate");
       }
+      if (isPro) {
+        appendRunHistory("Failed", updatedCheckIns);
+      }
       clearLocalActiveRun();
       setRunStatus("failed");
       setActiveProtocolId(null);
       setActiveRunId(null);
       setActivatedAt(null);
       setRunStartDate(null);
-      if (isPro) {
-        appendRunHistory("Failed", updatedCheckIns);
-      }
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
@@ -1397,13 +1397,13 @@ export default function QuadrantApp({
         localStorage.removeItem("activatedAt");
         localStorage.removeItem("runStartDate");
       }
+      appendRunHistory("Completed", updatedCheckIns);
       clearLocalActiveRun();
       setRunStatus("completed");
       setActiveProtocolId(null);
       setActiveRunId(null);
       setActivatedAt(null);
       setRunStartDate(null);
-      appendRunHistory("Completed", updatedCheckIns);
       if (typeof window !== "undefined") {
         localStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
         if (activeRunId) {
