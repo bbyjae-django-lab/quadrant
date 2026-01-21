@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 export const GET = async (request: Request) => {
   const requestUrl = new URL(request.url);
-  const next = requestUrl.searchParams.get("next") ?? "/dashboard";
+  const next = "/billing/success?postAuth=1";
   const code = requestUrl.searchParams.get("code");
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;

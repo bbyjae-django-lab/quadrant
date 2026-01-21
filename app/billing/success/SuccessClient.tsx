@@ -10,15 +10,9 @@ const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
 const PENDING_RUN_KEY = "quadrant_pending_run_v1";
 const PENDING_SAVE_INTENT_KEY = "quadrant_pending_save_intent";
-const CHECK_DEBOUNCE_MS = 750;
+const RETURN_TO_KEY = "quadrant_postauth_return_to";
 
-type Step =
-  | "loading"
-  | "enter_email"
-  | "email_sent"
-  | "checking"
-  | "attached"
-  | "error";
+type Step = "loading" | "enter_email" | "email_sent" | "attached" | "error";
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -27,8 +21,8 @@ export default function SuccessClient() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState(false);
-  const isCheckingRef = useRef(false);
-  const lastAttemptAtRef = useRef(0);
+  const isAttachingRef = useRef(false);
+  const attachRequestedRef = useRef(false);
   const emailRef = useRef("");
 
   useEffect(() => {
@@ -82,22 +76,14 @@ export default function SuccessClient() {
     return null;
   }, []);
 
-  const checkSessionAndAttach = useCallback(async () => {
-    const now = Date.now();
-    if (isCheckingRef.current) {
+  const attemptAttachIfAuthed = useCallback(async () => {
+    if (isAttachingRef.current || attachRequestedRef.current) {
       return;
     }
-    if (now - lastAttemptAtRef.current < CHECK_DEBOUNCE_MS) {
-      return;
-    }
-    lastAttemptAtRef.current = now;
-    isCheckingRef.current = true;
     const client = getSupabaseClient();
     if (!client) {
-      isCheckingRef.current = false;
       return;
     }
-    setStep("checking");
     const session = await ensureSession();
     const user = session?.user;
     if (!user || !session?.access_token) {
@@ -106,10 +92,16 @@ export default function SuccessClient() {
       setError(
         "You’re not signed in yet. Click the email link, then try again.",
       );
-      isCheckingRef.current = false;
       return;
     }
     setHasSession(true);
+    if (typeof window !== "undefined") {
+      const pending = localStorage.getItem(STORAGE_PENDING_KEY) === "1";
+      if (!pending) {
+        return;
+      }
+    }
+    isAttachingRef.current = true;
     const storedEmail =
       emailRef.current.trim() ||
       (typeof window !== "undefined"
@@ -117,10 +109,9 @@ export default function SuccessClient() {
         : "");
     if (!storedEmail) {
       setStep("email_sent");
-      isCheckingRef.current = false;
+      isAttachingRef.current = false;
       return;
     }
-    setStep("checking");
     const sessionId =
       typeof window !== "undefined"
         ? localStorage.getItem(STORAGE_SESSION_KEY)
@@ -146,9 +137,10 @@ export default function SuccessClient() {
         setError("Couldn’t confirm Pro yet. Try again.");
       }
       setStep("error");
-      isCheckingRef.current = false;
+      isAttachingRef.current = false;
       return;
     }
+    attachRequestedRef.current = true;
     const pendingRun = localStorage.getItem(PENDING_RUN_KEY);
     if (pendingRun) {
       const pendingResponse = await fetch("/api/runs/persist-pending", {
@@ -170,18 +162,27 @@ export default function SuccessClient() {
     }
     setStep("attached");
     markAttached();
+    const returnTo =
+      typeof window !== "undefined"
+        ? localStorage.getItem(RETURN_TO_KEY) ?? "/dashboard"
+        : "/dashboard";
     window.setTimeout(() => {
-      router.replace("/dashboard");
+      router.replace(returnTo);
     }, 800);
-    isCheckingRef.current = false;
+    isAttachingRef.current = false;
   }, [ensureSession, markAttached, router]);
 
   useEffect(() => {
     let active = true;
     const init = async () => {
       const sessionId = searchParams?.get("session_id");
+      const returnToParam = searchParams?.get("returnTo") ?? "/dashboard";
       if (typeof window !== "undefined" && sessionId) {
         localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
+      }
+      if (typeof window !== "undefined") {
+        localStorage.setItem(RETURN_TO_KEY, returnToParam);
+        localStorage.setItem(STORAGE_PENDING_KEY, "1");
       }
       const storedEmail =
         typeof window !== "undefined"
@@ -255,7 +256,33 @@ export default function SuccessClient() {
     };
   }, [ensureSession, searchParams]);
 
-  
+  useEffect(() => {
+    const client = getSupabaseClient();
+    if (!client) {
+      return;
+    }
+    const channel = new BroadcastChannel("quadrant_auth");
+    const { data: subscription } = client.auth.onAuthStateChange(
+      (_event, session) => {
+        if (!session) {
+          return;
+        }
+        if (localStorage.getItem(STORAGE_PENDING_KEY) !== "1") {
+          return;
+        }
+        void attemptAttachIfAuthed();
+      },
+    );
+    channel.addEventListener("message", (event) => {
+      if (event.data?.type === "SIGNED_IN") {
+        void attemptAttachIfAuthed();
+      }
+    });
+    return () => {
+      subscription?.subscription.unsubscribe();
+      channel.close();
+    };
+  }, [attemptAttachIfAuthed]);
 
   const handleSendLink = async () => {
     if (!email.trim()) {
@@ -266,7 +293,6 @@ export default function SuccessClient() {
       return;
     }
     setError(null);
-    setStep("checking");
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_EMAIL_KEY, email.trim());
       localStorage.setItem(STORAGE_PENDING_KEY, "1");
@@ -293,15 +319,7 @@ export default function SuccessClient() {
         </div>
       );
     }
-    if (hasSession) {
-      return (
-        <div className="space-y-2 text-sm text-zinc-600">
-          <p>Signing you in…</p>
-          <p>Redirecting to your dashboard…</p>
-        </div>
-      );
-    }
-    if (step === "email_sent" || step === "checking" || step === "error") {
+    if (step === "email_sent" || step === "error") {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
           <div>
@@ -317,9 +335,8 @@ export default function SuccessClient() {
               type="button"
               className="btn btn-primary text-sm"
               onClick={() => {
-                void checkSessionAndAttach();
+                void attemptAttachIfAuthed();
               }}
-              disabled={step === "checking"}
             >
               I’ve clicked the link
             </button>
@@ -336,9 +353,6 @@ export default function SuccessClient() {
               Change email
             </button>
           </div>
-          {step === "checking" ? (
-            <p className="text-xs text-zinc-500">Checking sign-in…</p>
-          ) : null}
         </div>
       );
     }
