@@ -5,12 +5,14 @@ export const runtime = "nodejs";
 
 export const GET = async (request: Request) => {
   const requestUrl = new URL(request.url);
-  const next = requestUrl.searchParams.get("returnTo") ?? "/dashboard";
+  const rawNext = requestUrl.searchParams.get("next") ?? "/dashboard";
   const code = requestUrl.searchParams.get("code");
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const redirectUrl = new URL(next, requestUrl.origin);
+  const safeNext =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
+  const redirectUrl = new URL(safeNext, requestUrl.origin);
   if (!supabaseUrl || !anonKey || !code) {
     return NextResponse.redirect(redirectUrl);
   }

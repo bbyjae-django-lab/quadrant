@@ -8,7 +8,7 @@ import { getSupabaseClient } from "../../lib/supabaseClient";
 const STORAGE_SESSION_KEY = "quadrant_success_session_id";
 const STORAGE_EMAIL_KEY = "quadrant_success_email";
 const STORAGE_PENDING_KEY = "quadrant_pending_attach";
-const RETURN_TO_KEY = "quadrant_return_to";
+const RETURN_TO_KEY = "quadrant_resume_url";
 const PENDING_EMAIL_KEY = "quadrant_pending_email";
 
 type Step = "loading" | "enter_email" | "email_sent" | "error";
@@ -161,7 +161,7 @@ export default function SuccessClient() {
       if (resolvedEmail) {
         setEmail(resolvedEmail);
       }
-      if (pending && resolvedEmail) {
+      if (pending && storedEmail) {
         setStep("email_sent");
       } else {
         setStep("enter_email");
@@ -247,7 +247,7 @@ export default function SuccessClient() {
       options:
         typeof window !== "undefined"
           ? {
-              emailRedirectTo: `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
                 localStorage.getItem(RETURN_TO_KEY) ?? "/dashboard",
               )}`,
             }

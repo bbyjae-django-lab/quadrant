@@ -202,6 +202,10 @@ const buildPendingRunPayload = (
   if (!modalContext) {
     return null;
   }
+  const storedRunId =
+    typeof window !== "undefined"
+      ? localStorage.getItem(ENDED_RUN_ID_KEY)
+      : null;
   const endedAt = modalContext.endedAt;
   const endDate = new Date(endedAt);
   const startDate = new Date(endDate);
@@ -217,7 +221,7 @@ const buildPendingRunPayload = (
       ? Math.min(context.cleanDays + 1, RUN_LENGTH)
       : null;
   return {
-    client_run_id: createRunId(),
+    client_run_id: storedRunId || createRunId(),
     protocol_id: modalContext.protocolId,
     protocol_slug: modalContext.protocolId,
     protocol_name: modalContext.protocolName,
@@ -1148,7 +1152,7 @@ export default function QuadrantApp({
       setShowRunEndedModal(true);
     }
     if (typeof window !== "undefined") {
-      localStorage.removeItem("quadrant_return_to");
+      localStorage.removeItem("quadrant_resume_url");
       localStorage.removeItem("quadrant_pending_attach");
       localStorage.removeItem("quadrant_pending_email");
     }
@@ -2762,6 +2766,13 @@ export default function QuadrantApp({
                 );
                 localStorage.setItem(PENDING_SAVE_INTENT_KEY, "1");
               }
+              const endedRunId = localStorage.getItem(ENDED_RUN_ID_KEY);
+              const resumeUrl = endedRunId
+                ? `/dashboard?modal=run-ended&run_id=${encodeURIComponent(
+                    endedRunId,
+                  )}`
+                : "/dashboard";
+              localStorage.setItem("quadrant_resume_url", resumeUrl);
               sessionStorage.setItem("pricing_return_context", "runEnded");
               sessionStorage.setItem(DASHBOARD_MODAL_KEY, "runEnded");
               localStorage.removeItem(DASHBOARD_MODAL_KEY);
