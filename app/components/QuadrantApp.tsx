@@ -1952,8 +1952,14 @@ export default function QuadrantApp({
       title: "Constraint switching",
       isUnlocked: runHistory.length > 1,
       requirement: "Requires multiple completed runs.",
-      value: `${switchCount} switches`,
-      subtitle: "Tracks how often you abandon one constraint for another.",
+      value:
+        runHistory.length > 1
+          ? `${switchCount} switches`
+          : "Not enough data yet",
+      subtitle:
+        runHistory.length > 1
+          ? "Tracks how often you abandon one constraint for another."
+          : "Requires multiple completed runs.",
     },
     {
       title: "Most common observed behaviour",

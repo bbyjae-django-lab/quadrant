@@ -80,7 +80,12 @@ export default function PatternInsightsSection({
           ) : null}
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {patternInsights.map((insight) => {
-              const isLocked = !isPro || !insight.isUnlocked;
+              const isConstraintSwitching =
+                insight.title === "Constraint switching";
+              const isLocked =
+                !isPro || (!insight.isUnlocked && !isConstraintSwitching);
+              const showProBadge =
+                isLocked && (!isPro || !isConstraintSwitching);
               return (
                 <InsightCard
                   key={insight.title}
@@ -89,7 +94,7 @@ export default function PatternInsightsSection({
                   subtitle={isLocked ? null : insight.subtitle ?? null}
                   isLocked={isLocked}
                   lockReason={insight.requirement}
-                  proBadge={isLocked}
+                  proBadge={showProBadge}
                   emphasis={insight.emphasis}
                   className={insight.className}
                 />
