@@ -634,6 +634,7 @@ export default function QuadrantApp({
   const [runsLoading, setRunsLoading] = useState(true);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [supabaseReady, setSupabaseReadyState] = useState(false);
+  const activationIntentRef = useRef<string | null>(null);
   const activateModalRef = useRef<HTMLDivElement | null>(null);
   const runDetailModalRef = useRef<HTMLDivElement | null>(null);
   const [showProActive, setShowProActive] = useState(false);
@@ -1300,6 +1301,74 @@ export default function QuadrantApp({
     setActivationInProgress(true);
   }, [activeProtocol, hasHydrated, runStatus, view]);
 
+  useEffect(() => {
+    if (view !== "dashboard" || !searchParams) {
+      return;
+    }
+    const activateId = searchParams.get("activate");
+    if (!activateId) {
+      activationIntentRef.current = null;
+      return;
+    }
+    setActivationInProgress(true);
+  }, [searchParams, view]);
+
+  useEffect(() => {
+    if (view !== "dashboard" || !searchParams) {
+      return;
+    }
+    const activateId = searchParams.get("activate");
+    if (!activateId) {
+      return;
+    }
+    if (authLoading || !hasHydrated) {
+      return;
+    }
+    if (activationIntentRef.current === activateId) {
+      return;
+    }
+    activationIntentRef.current = activateId;
+    setIsRunHistoryCollapsed(true);
+    setIsPatternInsightsCollapsed(true);
+    setIsProtocolLibraryCollapsed(true);
+    const obsParam = searchParams.get("obs");
+    const observedIds = obsParam
+      ? obsParam
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
+    setActivationError("");
+    setActivationInProgress(true);
+    activateProtocol(activateId, null, isPro ? observedIds : [])
+      .then((activated) => {
+        if (activated) {
+          focusActiveRun();
+          if (typeof window !== "undefined") {
+            localStorage.removeItem(NAV_CONTEXT_KEY);
+          }
+          router.replace("/dashboard");
+          setActivationInProgress(false);
+          return;
+        }
+        setActivationError("Unable to activate protocol.");
+        setActivateModalProtocolId(activateId);
+        setActivationInProgress(false);
+      })
+      .catch(() => {
+        setActivationError("Unable to activate protocol.");
+        setActivateModalProtocolId(activateId);
+        setActivationInProgress(false);
+      });
+  }, [
+    authLoading,
+    hasHydrated,
+    isPro,
+    router,
+    searchParams,
+    view,
+  ]);
+
   const protocolOrder = [
     "post-entry-information-restriction",
     "risk-and-size-immutability",
@@ -1491,6 +1560,23 @@ export default function QuadrantApp({
     setActivationError("");
     setIsActivating(true);
     setActivationInProgress(true);
+    if (view === "protocols") {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(NAV_CONTEXT_KEY, "activated");
+      }
+      const observedParam =
+        isPro && observedBehaviourSelection.length > 0
+          ? `&obs=${encodeURIComponent(
+              observedBehaviourSelection.join(","),
+            )}`
+          : "";
+      router.replace(
+        `/dashboard?activate=${encodeURIComponent(pendingId)}${observedParam}`,
+      );
+      closeActivateProtocolModal();
+      setIsActivating(false);
+      return;
+    }
     if (!canStartNewRun) {
       setIsActivating(false);
       setActivationInProgress(false);
