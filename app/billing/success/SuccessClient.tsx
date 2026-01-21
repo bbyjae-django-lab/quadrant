@@ -151,7 +151,7 @@ export default function SuccessClient() {
             <p className="mt-1 text-sm text-zinc-900">{email}</p>
           </div>
           <p>Check your email and click the link.</p>
-          <p>Keep this tab open.</p>
+          <p>You can close this tab after clicking the link.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
