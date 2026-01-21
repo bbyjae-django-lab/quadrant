@@ -1310,6 +1310,9 @@ export default function QuadrantApp({
       activationIntentRef.current = null;
       return;
     }
+    if (typeof window !== "undefined") {
+      localStorage.setItem(NAV_CONTEXT_KEY, "activated");
+    }
     setActivationInProgress(true);
   }, [searchParams, view]);
 
@@ -1561,9 +1564,6 @@ export default function QuadrantApp({
     setIsActivating(true);
     setActivationInProgress(true);
     if (view === "protocols") {
-      if (typeof window !== "undefined") {
-        localStorage.setItem(NAV_CONTEXT_KEY, "activated");
-      }
       const observedParam =
         isPro && observedBehaviourSelection.length > 0
           ? `&obs=${encodeURIComponent(
