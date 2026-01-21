@@ -629,6 +629,8 @@ export default function QuadrantApp({
   const activeRunIdRef = useRef<string | null>(activeRunId);
   const hydrateRequestRef = useRef(0);
   const pendingPersistAttemptedRef = useRef(false);
+  const attachRequestedRef = useRef(false);
+  const authBroadcastedRef = useRef(false);
 
   useEffect(() => {
     checkInsRef.current = checkIns;
@@ -718,6 +720,23 @@ export default function QuadrantApp({
   }, [isAuthed, showAuthModal]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (!isAuthed) {
+      authBroadcastedRef.current = false;
+      return;
+    }
+    if (authBroadcastedRef.current) {
+      return;
+    }
+    const channel = new BroadcastChannel("quadrant_auth");
+    channel.postMessage({ type: "SIGNED_IN" });
+    channel.close();
+    authBroadcastedRef.current = true;
+  }, [isAuthed]);
+
+  useEffect(() => {
     if (typeof window === "undefined" || !hasHydrated) {
       return;
     }
@@ -730,6 +749,57 @@ export default function QuadrantApp({
     }
     void persistPendingRun();
   }, [authLoading, hasHydrated, persistPendingRun]);
+
+  useEffect(() => {
+    if (authLoading || !hasHydrated) {
+      return;
+    }
+    if (!isAuthed || !user?.id) {
+      return;
+    }
+    if (attachRequestedRef.current) {
+      return;
+    }
+    if (typeof window === "undefined") {
+      return;
+    }
+    const pendingAttach = localStorage.getItem("quadrant_pending_attach") === "1";
+    const pendingEmail = localStorage.getItem("quadrant_pending_email") ?? "";
+    if (!pendingAttach || !pendingEmail) {
+      return;
+    }
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      return;
+    }
+    attachRequestedRef.current = true;
+    supabase.auth.getSession().then((sessionResult) => {
+      const token = sessionResult.data.session?.access_token;
+      if (!token) {
+        attachRequestedRef.current = false;
+        return;
+      }
+      fetch("/api/billing/attach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: pendingEmail }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            attachRequestedRef.current = false;
+            return;
+          }
+          localStorage.removeItem("quadrant_pending_attach");
+          localStorage.removeItem("quadrant_pending_email");
+        })
+        .catch(() => {
+          attachRequestedRef.current = false;
+        });
+    });
+  }, [authLoading, hasHydrated, isAuthed, user?.id]);
 
   useEffect(() => {
     if (authLoading) {
@@ -1056,6 +1126,33 @@ export default function QuadrantApp({
       setHasHydrated(true);
     }
   }, [isPro, isAuthed, user?.id, authLoading]);
+
+  useEffect(() => {
+    if (!searchParams || !hasHydrated) {
+      return;
+    }
+    if (runStatus === "active") {
+      return;
+    }
+    const modal = searchParams.get("modal");
+    const runId = searchParams.get("run_id");
+    if (modal !== "run-ended" || !runId) {
+      return;
+    }
+    const matched = runHistory.find((entry) => entry.id === runId);
+    if (matched) {
+      setRunEndContext({
+        result: matched.result,
+        cleanDays: matched.cleanDays,
+      });
+      setShowRunEndedModal(true);
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("quadrant_return_to");
+      localStorage.removeItem("quadrant_pending_attach");
+      localStorage.removeItem("quadrant_pending_email");
+    }
+  }, [hasHydrated, runHistory, runStatus, searchParams]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !showCheckInModal) {

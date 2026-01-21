@@ -1,18 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
 const STORAGE_SESSION_KEY = "quadrant_success_session_id";
 const STORAGE_EMAIL_KEY = "quadrant_success_email";
-const STORAGE_PENDING_KEY = "quadrant_success_pending_attach";
-const PENDING_RUN_KEY = "quadrant_pending_run_v1";
-const PENDING_SAVE_INTENT_KEY = "quadrant_pending_save_intent";
-const RETURN_TO_KEY = "quadrant_postauth_return_to";
+const STORAGE_PENDING_KEY = "quadrant_pending_attach";
+const RETURN_TO_KEY = "quadrant_return_to";
+const PENDING_EMAIL_KEY = "quadrant_pending_email";
 
-type Step = "loading" | "enter_email" | "email_sent" | "attached" | "error";
+type Step = "loading" | "enter_email" | "email_sent" | "error";
 
 export default function SuccessClient() {
   const router = useRouter();
@@ -21,30 +20,12 @@ export default function SuccessClient() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState(false);
-  const isAttachingRef = useRef(false);
   const attachRequestedRef = useRef(false);
   const emailRef = useRef("");
 
   useEffect(() => {
     emailRef.current = email;
   }, [email]);
-
-  const redirectTo = useMemo(() => {
-    if (typeof window === "undefined") {
-      return undefined;
-    }
-    const params = new URLSearchParams();
-    const sessionId = searchParams?.get("session_id");
-    if (sessionId) {
-      params.set("session_id", sessionId);
-    }
-    const nextPath = params.toString()
-      ? `/billing/success?${params.toString()}`
-      : "/billing/success";
-    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-      nextPath,
-    )}`;
-  }, [searchParams]);
 
   const clearPending = useCallback(() => {
     if (typeof window === "undefined") {
@@ -53,6 +34,8 @@ export default function SuccessClient() {
     localStorage.removeItem(STORAGE_SESSION_KEY);
     localStorage.removeItem(STORAGE_EMAIL_KEY);
     localStorage.removeItem(STORAGE_PENDING_KEY);
+    localStorage.removeItem(RETURN_TO_KEY);
+    localStorage.removeItem(PENDING_EMAIL_KEY);
   }, []);
 
   const markAttached = useCallback(() => {
@@ -77,7 +60,7 @@ export default function SuccessClient() {
   }, []);
 
   const attemptAttachIfAuthed = useCallback(async () => {
-    if (isAttachingRef.current || attachRequestedRef.current) {
+    if (attachRequestedRef.current) {
       return;
     }
     const client = getSupabaseClient();
@@ -88,105 +71,68 @@ export default function SuccessClient() {
     const user = session?.user;
     if (!user || !session?.access_token) {
       setHasSession(false);
-      setStep("email_sent");
-      setError(
-        "You’re not signed in yet. Click the email link, then try again.",
-      );
       return;
     }
-    setHasSession(true);
     if (typeof window !== "undefined") {
       const pending = localStorage.getItem(STORAGE_PENDING_KEY) === "1";
       if (!pending) {
         return;
       }
     }
-    isAttachingRef.current = true;
+    attachRequestedRef.current = true;
     const storedEmail =
       emailRef.current.trim() ||
       (typeof window !== "undefined"
-        ? localStorage.getItem(STORAGE_EMAIL_KEY) ?? ""
+        ? localStorage.getItem(PENDING_EMAIL_KEY) ?? ""
         : "");
     if (!storedEmail) {
-      setStep("email_sent");
-      isAttachingRef.current = false;
+      attachRequestedRef.current = false;
       return;
     }
-    const sessionId =
-      typeof window !== "undefined"
-        ? localStorage.getItem(STORAGE_SESSION_KEY)
-        : null;
     const response = await fetch("/api/billing/attach", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ email: storedEmail, session_id: sessionId }),
+      body: JSON.stringify({ email: storedEmail }),
     });
     if (!response.ok) {
-      if (response.status === 401) {
-        setError(
-          "You’re not signed in yet. Click the email link, then try again.",
-        );
-      } else if (response.status === 404) {
-        setError(
-          "We couldn’t find a subscription for that email yet. Try again in 10 seconds.",
-        );
-      } else {
-        setError("Couldn’t confirm Pro yet. Try again.");
-      }
-      setStep("error");
-      isAttachingRef.current = false;
+      attachRequestedRef.current = false;
       return;
     }
-    attachRequestedRef.current = true;
-    const pendingRun = localStorage.getItem(PENDING_RUN_KEY);
-    if (pendingRun) {
-      const pendingResponse = await fetch("/api/runs/persist-pending", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: pendingRun,
-      });
-      if (!pendingResponse.ok) {
-        setError(
-          "We couldn’t save your last run yet. It will retry when you return to your dashboard.",
-        );
-      } else {
-        localStorage.removeItem(PENDING_RUN_KEY);
-        localStorage.removeItem(PENDING_SAVE_INTENT_KEY);
-      }
-    }
-    setStep("attached");
     markAttached();
     const returnTo =
       typeof window !== "undefined"
         ? localStorage.getItem(RETURN_TO_KEY) ?? "/dashboard"
         : "/dashboard";
-    window.setTimeout(() => {
-      router.replace(returnTo);
-    }, 800);
-    isAttachingRef.current = false;
+    router.replace(returnTo);
   }, [ensureSession, markAttached, router]);
 
   useEffect(() => {
     let active = true;
     const init = async () => {
       const sessionId = searchParams?.get("session_id");
-      const returnToParam = searchParams?.get("returnTo") ?? "/dashboard";
+      const returnToParam = searchParams?.get("returnTo") ?? "";
       if (typeof window !== "undefined" && sessionId) {
         localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
       }
       if (typeof window !== "undefined") {
-        localStorage.setItem(RETURN_TO_KEY, returnToParam);
+        let resolvedReturnTo = returnToParam || "/dashboard";
+        if (!returnToParam) {
+          const endedRunId = localStorage.getItem("ended_run_id");
+          if (endedRunId) {
+            resolvedReturnTo = `/dashboard?modal=run-ended&run_id=${encodeURIComponent(
+              endedRunId,
+            )}`;
+          }
+        }
+        localStorage.setItem(RETURN_TO_KEY, resolvedReturnTo);
         localStorage.setItem(STORAGE_PENDING_KEY, "1");
       }
       const storedEmail =
         typeof window !== "undefined"
-          ? localStorage.getItem(STORAGE_EMAIL_KEY) ?? ""
+          ? localStorage.getItem(PENDING_EMAIL_KEY) ?? ""
           : "";
       const pending =
         typeof window !== "undefined"
@@ -294,12 +240,19 @@ export default function SuccessClient() {
     }
     setError(null);
     if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_EMAIL_KEY, email.trim());
+      localStorage.setItem(PENDING_EMAIL_KEY, email.trim());
       localStorage.setItem(STORAGE_PENDING_KEY, "1");
     }
     const { error } = await client.auth.signInWithOtp({
       email: email.trim(),
-      options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
+      options:
+        typeof window !== "undefined"
+          ? {
+              emailRedirectTo: `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(
+                localStorage.getItem(RETURN_TO_KEY) ?? "/dashboard",
+              )}`,
+            }
+          : undefined,
     });
     if (!error) {
       setStep("email_sent");
@@ -310,15 +263,6 @@ export default function SuccessClient() {
   };
 
   const renderBody = () => {
-    if (step === "attached") {
-      return (
-        <div className="space-y-2 text-sm text-zinc-600">
-          <p>Pro is active.</p>
-          <p>Your subscription is now linked to your account.</p>
-          <p>Redirecting to your dashboard…</p>
-        </div>
-      );
-    }
     if (step === "email_sent" || step === "error") {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
@@ -331,15 +275,6 @@ export default function SuccessClient() {
           <p>Check your email and click the link.</p>
           <p>Keep this tab open.</p>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              className="btn btn-primary text-sm"
-              onClick={() => {
-                void attemptAttachIfAuthed();
-              }}
-            >
-              I’ve clicked the link
-            </button>
             <button
               type="button"
               className="btn-tertiary text-sm"
