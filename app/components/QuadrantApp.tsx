@@ -1598,8 +1598,11 @@ export default function QuadrantApp({
           setActivationInProgress(false);
           return;
         }
-        if (typeof window !== "undefined" && view === "protocols") {
-          localStorage.setItem(NAV_CONTEXT_KEY, "activated");
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          if (params.has("activate")) {
+            localStorage.setItem(NAV_CONTEXT_KEY, "activated");
+          }
         }
         console.log("protocol-activate:route", "/dashboard");
         focusActiveRun();
