@@ -618,6 +618,7 @@ export default function QuadrantApp({
   const [observedBehaviourError, setObservedBehaviourError] = useState("");
   const [activationError, setActivationError] = useState("");
   const [isActivating, setIsActivating] = useState(false);
+  const [activationInProgress, setActivationInProgress] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -1445,9 +1446,6 @@ export default function QuadrantApp({
         console.warn("Active run snapshot missing after activation.");
       }
     }
-    console.log("protocol-activate:route", "/dashboard");
-    router.replace("/dashboard");
-    focusActiveRun();
     return true;
   };
 
@@ -1462,8 +1460,10 @@ export default function QuadrantApp({
     }
     setActivationError("");
     setIsActivating(true);
+    setActivationInProgress(true);
     if (!canStartNewRun) {
       setIsActivating(false);
+      setActivationInProgress(false);
       closeActivateProtocolModal();
       router.replace("/dashboard");
       return;
@@ -1474,8 +1474,18 @@ export default function QuadrantApp({
         null,
         isPro ? observedBehaviourSelection : [],
       );
+      const storedRunId =
+        typeof window !== "undefined"
+          ? localStorage.getItem("activeRunId")
+          : null;
       if (activated) {
+        if (!storedRunId) {
+          setActivationError("Unable to activate protocol.");
+          setActivationInProgress(false);
+          return;
+        }
         console.log("protocol-activate:route", "/dashboard");
+        focusActiveRun();
         router.replace("/dashboard");
         closeActivateProtocolModal();
       } else {
@@ -1485,6 +1495,7 @@ export default function QuadrantApp({
       setActivationError("Unable to activate protocol.");
     } finally {
       setIsActivating(false);
+      setActivationInProgress(false);
     }
   };
 
@@ -2046,7 +2057,12 @@ export default function QuadrantApp({
   };
   const activeRuleText = activeProtocol ? activeProtocol.rule : "";
   const [modalIntentHandled, setModalIntentHandled] = useState(false);
-  const activeRunLoading = authLoading || runsLoading || !hasHydrated;
+  const activeRunLoading =
+    authLoading ||
+    runsLoading ||
+    !hasHydrated ||
+    activationInProgress ||
+    (runStatus === "active" && !activeProtocol);
   const openActivateProtocolModal = (protocolId: string) => {
     console.log("protocol-activate:open", protocolId);
     if (typeof window !== "undefined") {
