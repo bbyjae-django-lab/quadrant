@@ -48,6 +48,7 @@ const POST_AUTH_INTENT_KEY = "post_auth_intent";
 const PENDING_PROTOCOL_ID_KEY = "pending_protocol_id";
 const PENDING_PROTOCOL_NAME_KEY = "pending_protocol_name";
 const RUN_ENDED_SNAPSHOT_KEY = "runEnded_snapshot";
+const NAV_CONTEXT_KEY = "quadrant_nav_context";
 const PENDING_RUN_KEY = "quadrant_pending_run_v1";
 const PENDING_SAVE_INTENT_KEY = "quadrant_pending_save_intent";
 
@@ -618,7 +619,12 @@ export default function QuadrantApp({
   const [observedBehaviourError, setObservedBehaviourError] = useState("");
   const [activationError, setActivationError] = useState("");
   const [isActivating, setIsActivating] = useState(false);
-  const [activationInProgress, setActivationInProgress] = useState(false);
+  const [activationInProgress, setActivationInProgress] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return localStorage.getItem(NAV_CONTEXT_KEY) === "activated";
+  });
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
@@ -1270,6 +1276,30 @@ export default function QuadrantApp({
     setIsProtocolLibraryCollapsed(true);
   }, [runActive]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || view !== "dashboard") {
+      return;
+    }
+    const context = localStorage.getItem(NAV_CONTEXT_KEY);
+    if (context !== "activated") {
+      return;
+    }
+    if (runStatus === "active" && activeProtocol) {
+      setIsRunHistoryCollapsed(true);
+      setIsPatternInsightsCollapsed(true);
+      setIsProtocolLibraryCollapsed(true);
+      localStorage.removeItem(NAV_CONTEXT_KEY);
+      setActivationInProgress(false);
+      return;
+    }
+    if (hasHydrated && runStatus !== "active") {
+      localStorage.removeItem(NAV_CONTEXT_KEY);
+      setActivationInProgress(false);
+      return;
+    }
+    setActivationInProgress(true);
+  }, [activeProtocol, hasHydrated, runStatus, view]);
+
   const protocolOrder = [
     "post-entry-information-restriction",
     "risk-and-size-immutability",
@@ -1474,15 +1504,16 @@ export default function QuadrantApp({
         null,
         isPro ? observedBehaviourSelection : [],
       );
-      const storedRunId =
-        typeof window !== "undefined"
-          ? localStorage.getItem("activeRunId")
-          : null;
+      const snapshot =
+        typeof window !== "undefined" ? loadLocalActiveRun() : null;
       if (activated) {
-        if (!storedRunId) {
+        if (!snapshot?.runId) {
           setActivationError("Unable to activate protocol.");
           setActivationInProgress(false);
           return;
+        }
+        if (typeof window !== "undefined" && view === "protocols") {
+          localStorage.setItem(NAV_CONTEXT_KEY, "activated");
         }
         console.log("protocol-activate:route", "/dashboard");
         focusActiveRun();
