@@ -20,6 +20,7 @@ export default function SuccessClient() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const attachRequestedRef = useRef(false);
   const emailRef = useRef("");
 
@@ -239,10 +240,8 @@ export default function SuccessClient() {
       return;
     }
     setError(null);
-    if (typeof window !== "undefined") {
-      localStorage.setItem(PENDING_EMAIL_KEY, email.trim());
-      localStorage.setItem(STORAGE_PENDING_KEY, "1");
-    }
+    setIsSending(true);
+    console.log("OTP send attempted", { email: email.trim() });
     const { error } = await client.auth.signInWithOtp({
       email: email.trim(),
       options:
@@ -254,16 +253,23 @@ export default function SuccessClient() {
             }
           : undefined,
     });
+    console.log("OTP send result", { error: error?.message ?? null });
     if (!error) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(PENDING_EMAIL_KEY, email.trim());
+        localStorage.setItem(STORAGE_PENDING_KEY, "1");
+      }
       setStep("email_sent");
+      setIsSending(false);
       return;
     }
     setStep("enter_email");
     setError("Unable to send link.");
+    setIsSending(false);
   };
 
   const renderBody = () => {
-    if (step === "email_sent" || step === "error") {
+    if (step === "email_sent") {
       return (
         <div className="space-y-3 text-sm text-zinc-600">
           <div>
@@ -307,9 +313,11 @@ export default function SuccessClient() {
           type="button"
           className="btn btn-primary text-sm"
           onClick={handleSendLink}
+          disabled={isSending}
         >
           Send link
         </button>
+        {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </>
     );
   };
@@ -326,7 +334,6 @@ export default function SuccessClient() {
           </p>
         </div>
         {renderBody()}
-        {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>
     </div>
   );
