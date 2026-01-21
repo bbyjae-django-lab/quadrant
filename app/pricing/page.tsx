@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
@@ -10,6 +10,7 @@ const PRO_PRICE = 29;
 export default function PricingPage() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isPro } = useAuth();
   const startCheckout = () => {
     fetch("/api/stripe/checkout", { method: "POST" })
@@ -84,7 +85,12 @@ export default function PricingPage() {
                   return;
                 }
               }
-              router.replace("/dashboard");
+              const origin = searchParams?.get("from");
+              if (origin === "dashboard") {
+                router.replace("/dashboard");
+                return;
+              }
+              router.replace("/");
             }}
           >
             Back to Today

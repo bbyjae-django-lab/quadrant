@@ -71,7 +71,7 @@ export default function LandingPage() {
                 Start a run
               </button>
               <a
-                href="/pricing"
+                href="/pricing?from=landing"
                 className="btn-tertiary text-sm"
               >
                 Pricing

@@ -2360,7 +2360,7 @@ export default function QuadrantApp({
               onStartRun={focusProtocolLibrary}
               onViewPricing={() => {
                 if (typeof window !== "undefined") {
-                  window.location.href = "/pricing";
+                  window.location.href = "/pricing?from=dashboard";
                 }
               }}
             />
@@ -2401,7 +2401,7 @@ export default function QuadrantApp({
                           className="btn-tertiary"
                           onClick={() => {
                             if (typeof window !== "undefined") {
-                              window.location.href = "/pricing";
+                              window.location.href = "/pricing?from=dashboard";
                             }
                           }}
                         >
@@ -2446,7 +2446,7 @@ export default function QuadrantApp({
                 emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
                   if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
+                    window.location.href = "/pricing?from=dashboard";
                   }
                 }}
                 onRequireAuth={() => {
@@ -2793,7 +2793,7 @@ export default function QuadrantApp({
               localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
               localStorage.removeItem(ENDED_RUN_ID_KEY);
             }
-            router.push("/pricing");
+            router.push("/pricing?from=dashboard");
           }}
           onPrimaryAction={() => {
             if (typeof window !== "undefined") {
@@ -2959,7 +2959,7 @@ export default function QuadrantApp({
                 className="btn btn-primary text-sm"
                 onClick={() => {
                   if (typeof window !== "undefined") {
-                    window.location.href = "/pricing";
+                    window.location.href = "/pricing?from=dashboard";
                   }
                 }}
               >
