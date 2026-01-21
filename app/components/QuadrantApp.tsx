@@ -539,7 +539,8 @@ export default function QuadrantApp({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDashboardRoute = pathname === "/dashboard";
-  const { user, isAuthed, authLoading, isPro, signOut } = useAuth();
+  const { user, isAuthed, authLoading, isPro, signOut, refreshEntitlements } =
+    useAuth();
   const initialLocalSnapshot =
     typeof window !== "undefined" ? loadLocalActiveRun() : null;
   const initialLocalCheckIns = initialLocalSnapshot
@@ -634,7 +635,6 @@ export default function QuadrantApp({
   const hydrateRequestRef = useRef(0);
   const pendingPersistAttemptedRef = useRef(false);
   const attachRequestedRef = useRef(false);
-  const authBroadcastedRef = useRef(false);
 
   useEffect(() => {
     checkInsRef.current = checkIns;
@@ -723,22 +723,6 @@ export default function QuadrantApp({
     }
   }, [isAuthed, showAuthModal]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (!isAuthed) {
-      authBroadcastedRef.current = false;
-      return;
-    }
-    if (authBroadcastedRef.current) {
-      return;
-    }
-    const channel = new BroadcastChannel("quadrant_auth");
-    channel.postMessage({ type: "SIGNED_IN" });
-    channel.close();
-    authBroadcastedRef.current = true;
-  }, [isAuthed]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !hasHydrated) {
@@ -798,12 +782,14 @@ export default function QuadrantApp({
           }
           localStorage.removeItem("quadrant_pending_attach");
           localStorage.removeItem("quadrant_pending_email");
+          refreshEntitlements();
+          router.refresh();
         })
         .catch(() => {
           attachRequestedRef.current = false;
         });
     });
-  }, [authLoading, hasHydrated, isAuthed, user?.id]);
+  }, [authLoading, hasHydrated, isAuthed, user?.id, refreshEntitlements, router]);
 
   useEffect(() => {
     if (authLoading) {

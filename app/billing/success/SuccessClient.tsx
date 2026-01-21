@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
@@ -14,14 +14,11 @@ const PENDING_EMAIL_KEY = "quadrant_pending_email";
 type Step = "loading" | "enter_email" | "email_sent" | "error";
 
 export default function SuccessClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>("loading");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [hasSession, setHasSession] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const attachRequestedRef = useRef(false);
   const emailRef = useRef("");
 
   useEffect(() => {
@@ -39,77 +36,6 @@ export default function SuccessClient() {
     localStorage.removeItem(PENDING_EMAIL_KEY);
   }, []);
 
-  const markAttached = useCallback(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    localStorage.setItem(STORAGE_PENDING_KEY, "0");
-    localStorage.removeItem(STORAGE_SESSION_KEY);
-    localStorage.removeItem(STORAGE_EMAIL_KEY);
-  }, []);
-
-  const ensureSession = useCallback(async () => {
-    const client = getSupabaseClient();
-    if (!client) {
-      return null;
-    }
-    const sessionResult = await client.auth.getSession();
-    if (sessionResult.data.session) {
-      return sessionResult.data.session;
-    }
-    return null;
-  }, []);
-
-  const attemptAttachIfAuthed = useCallback(async () => {
-    if (attachRequestedRef.current) {
-      return;
-    }
-    const client = getSupabaseClient();
-    if (!client) {
-      return;
-    }
-    const session = await ensureSession();
-    const user = session?.user;
-    if (!user || !session?.access_token) {
-      setHasSession(false);
-      return;
-    }
-    if (typeof window !== "undefined") {
-      const pending = localStorage.getItem(STORAGE_PENDING_KEY) === "1";
-      if (!pending) {
-        return;
-      }
-    }
-    attachRequestedRef.current = true;
-    const storedEmail =
-      emailRef.current.trim() ||
-      (typeof window !== "undefined"
-        ? localStorage.getItem(PENDING_EMAIL_KEY) ?? ""
-        : "");
-    if (!storedEmail) {
-      attachRequestedRef.current = false;
-      return;
-    }
-    const response = await fetch("/api/billing/attach", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ email: storedEmail }),
-    });
-    if (!response.ok) {
-      attachRequestedRef.current = false;
-      return;
-    }
-    markAttached();
-    const returnTo =
-      typeof window !== "undefined"
-        ? localStorage.getItem(RETURN_TO_KEY) ?? "/dashboard"
-        : "/dashboard";
-    router.replace(returnTo);
-  }, [ensureSession, markAttached, router]);
-
   useEffect(() => {
     let active = true;
     const init = async () => {
@@ -119,17 +45,11 @@ export default function SuccessClient() {
         localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
       }
       if (typeof window !== "undefined") {
-        let resolvedReturnTo = returnToParam || "/dashboard";
-        if (!returnToParam) {
-          const endedRunId = localStorage.getItem("ended_run_id");
-          if (endedRunId) {
-            resolvedReturnTo = `/dashboard?modal=run-ended&run_id=${encodeURIComponent(
-              endedRunId,
-            )}`;
-          }
-        }
+        let resolvedReturnTo =
+          returnToParam ||
+          localStorage.getItem(RETURN_TO_KEY) ||
+          "/dashboard";
         localStorage.setItem(RETURN_TO_KEY, resolvedReturnTo);
-        localStorage.setItem(STORAGE_PENDING_KEY, "1");
       }
       const storedEmail =
         typeof window !== "undefined"
@@ -174,62 +94,14 @@ export default function SuccessClient() {
   }, [searchParams]);
 
   useEffect(() => {
-    let active = true;
-    const run = async () => {
-      const client = getSupabaseClient();
-      if (!client) {
-        return;
-      }
-      if (typeof window !== "undefined") {
-        const sessionId = searchParams?.get("session_id");
-        if (sessionId) {
-          localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
-        }
-      }
-      const session = await ensureSession();
-      if (!active) {
-        return;
-      }
-      const user = session?.user;
-      if (!user || !session?.access_token) {
-        setHasSession(false);
-        return;
-      }
-      setHasSession(true);
-    };
-    void run();
-    return () => {
-      active = false;
-    };
-  }, [ensureSession, searchParams]);
-
-  useEffect(() => {
-    const client = getSupabaseClient();
-    if (!client) {
+    if (typeof window === "undefined") {
       return;
     }
-    const channel = new BroadcastChannel("quadrant_auth");
-    const { data: subscription } = client.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session) {
-          return;
-        }
-        if (localStorage.getItem(STORAGE_PENDING_KEY) !== "1") {
-          return;
-        }
-        void attemptAttachIfAuthed();
-      },
-    );
-    channel.addEventListener("message", (event) => {
-      if (event.data?.type === "SIGNED_IN") {
-        void attemptAttachIfAuthed();
-      }
-    });
-    return () => {
-      subscription?.subscription.unsubscribe();
-      channel.close();
-    };
-  }, [attemptAttachIfAuthed]);
+    const sessionId = searchParams?.get("session_id");
+    if (sessionId) {
+      localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
+    }
+  }, [searchParams]);
 
   const handleSendLink = async () => {
     if (!email.trim()) {

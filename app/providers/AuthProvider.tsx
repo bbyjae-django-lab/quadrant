@@ -20,6 +20,7 @@ type AuthContextValue = {
   authLoading: boolean;
   isPro: boolean;
   signOut: () => Promise<void>;
+  refreshEntitlements: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,6 +42,7 @@ export default function AuthProvider({
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [isPro, setIsPro] = useState(false);
+  const [entitlementTick, setEntitlementTick] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -82,9 +84,9 @@ export default function AuthProvider({
         return;
       }
       const { data, error } = await supabase
-        .from("billing_customers")
-        .select("status, price_id")
-        .eq("email", user.email)
+        .from("user_entitlements")
+        .select("is_pro")
+        .eq("user_id", user.id)
         .maybeSingle();
       if (!active) {
         return;
@@ -93,18 +95,17 @@ export default function AuthProvider({
         setIsPro(false);
         return;
       }
-      const status = data?.status ?? "";
-      const priceId =
-        process.env.NEXT_PUBLIC_STRIPE_PRICE_ID ?? "";
-      const matchesPrice = priceId ? data?.price_id === priceId : true;
-      const hasProStatus = status === "active" || status === "trialing";
-      setIsPro(Boolean(matchesPrice && hasProStatus));
+      setIsPro(Boolean(data?.is_pro));
     };
     void loadEntitlement();
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [user, entitlementTick]);
+
+  const refreshEntitlements = useCallback(() => {
+    setEntitlementTick((prev) => prev + 1);
+  }, []);
 
   const handleSignOut = useCallback(async () => {
     await authSignOut();
@@ -118,8 +119,9 @@ export default function AuthProvider({
       authLoading,
       isPro,
       signOut: handleSignOut,
+      refreshEntitlements,
     }),
-    [user, session, authLoading, isPro, handleSignOut],
+    [user, session, authLoading, isPro, handleSignOut, refreshEntitlements],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

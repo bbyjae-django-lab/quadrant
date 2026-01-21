@@ -4,13 +4,6 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export const POST = async (req: Request) => {
-  const authHeader = req.headers.get("authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-  if (!token) {
-    return NextResponse.json({ error: "missing_token" }, { status: 401 });
-  }
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
@@ -22,11 +15,27 @@ export const POST = async (req: Request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
+  const authHeader = req.headers.get("authorization") ?? "";
+  const headerToken = authHeader.startsWith("Bearer ")
+    ? authHeader.slice("Bearer ".length)
+    : null;
+  const cookieHeader = req.headers.get("cookie") ?? "";
+  const cookieTokenMatch = cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("sb-access-token="));
+  const cookieToken = cookieTokenMatch
+    ? decodeURIComponent(cookieTokenMatch.split("=")[1] ?? "")
+    : null;
+  const token = cookieToken || headerToken;
+  if (!token) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
   const { data: userData, error: userError } = await admin.auth.getUser(token);
   const user = userData?.user ?? null;
   if (!user) {
     return NextResponse.json(
-      { error: "invalid_token", detail: userError?.message },
+      { error: "Not signed in", detail: userError?.message },
       { status: 401 },
     );
   }
@@ -46,7 +55,7 @@ export const POST = async (req: Request) => {
   }
   const { data: billingRows, error: selectError } = await admin
     .from("billing_customers")
-    .select("email,user_id,status,price_id")
+    .select("email,user_id,status,price_id,stripe_customer_id")
     .ilike("email", email);
   if (selectError) {
     return NextResponse.json(
@@ -74,15 +83,17 @@ export const POST = async (req: Request) => {
   if (updateError) {
     return NextResponse.json({ error: "Attach failed" }, { status: 500 });
   }
-  const { data: updatedRows, error: updatedError } = await admin
-    .from("billing_customers")
-    .select("email,user_id,status,price_id")
-    .ilike("email", email)
-    .limit(1);
-  if (updatedError || !updatedRows || updatedRows.length === 0) {
-    return NextResponse.json({ ok: true, user_id: user.id, email });
-  }
-  const updatedRow = updatedRows[0];
+  const updatedRow = {
+    ...billingRow,
+    user_id: user.id,
+  };
+  const isPro = updatedRow.status === "active" || updatedRow.status === "trialing";
+  await admin.from("user_entitlements").upsert({
+    user_id: user.id,
+    is_pro: isPro,
+    stripe_customer_id: updatedRow.stripe_customer_id ?? null,
+    updated_at: new Date().toISOString(),
+  });
   return NextResponse.json({
     ok: true,
     user_id: updatedRow.user_id,
