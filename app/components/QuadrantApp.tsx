@@ -845,20 +845,24 @@ export default function QuadrantApp({
         setRunStatus("active");
         setActivatedAt(snapshot.startedAt);
         setRunStartDate(snapshot.startedAt.slice(0, 10));
-        setCheckIns(
-          snapshot.checkins.map((entry) => ({
-            dayIndex: entry.dayIndex,
-            date: entry.createdAt.slice(0, 10),
-            followed: entry.result === "clean",
-            note: entry.note,
-          })),
-        );
+        const rehydratedCheckins = snapshot.checkins.map((entry) => ({
+          dayIndex: entry.dayIndex,
+          date: entry.createdAt.slice(0, 10),
+          followed: entry.result === "clean",
+          note: entry.note,
+        }));
+        setCheckIns(rehydratedCheckins);
         setStreak(
           snapshot.checkins.filter((entry) => entry.result === "clean").length,
         );
         setObservedBehaviourIds(
           clampObservedBehaviours(snapshot.optionalTrackedBehaviours),
         );
+        if (process.env.NODE_ENV !== "production") {
+          console.log("checkins:rehydrated", {
+            count: rehydratedCheckins.length,
+          });
+        }
         setRunsLoading(false);
         setHasHydrated(true);
         return;
@@ -1668,7 +1672,7 @@ export default function QuadrantApp({
         },
       );
     }
-    if (activeRunId && activeProtocolId && activeProtocol && activatedAt) {
+    if (activeRunId && activeProtocolId && activatedAt) {
       const snapshotCheckins: LocalActiveRunSnapshot["checkins"] =
         updatedCheckIns.map((entry) => ({
           dayIndex: entry.dayIndex,
@@ -1676,15 +1680,25 @@ export default function QuadrantApp({
           note: entry.note,
           createdAt: new Date(entry.date).toISOString(),
         }));
+      const protocolName =
+        protocolById[activeProtocolId]?.name ?? "Protocol";
       saveLocalActiveRun({
         runId: activeRunId,
         protocolId: activeProtocolId,
-        protocolName: activeProtocol.name,
+        protocolName,
         status: "active",
         startedAt: activatedAt,
         checkins: snapshotCheckins,
         optionalTrackedBehaviours: clampObservedBehaviours(observedBehaviourIds),
       });
+      if (typeof window !== "undefined" && !isAuthed) {
+        localStorage.setItem("checkIns", JSON.stringify(updatedCheckIns));
+      }
+      if (process.env.NODE_ENV !== "production") {
+        console.log("checkins:persisted", {
+          count: snapshotCheckins.length,
+        });
+      }
     }
     if (!followed) {
       if (typeof window !== "undefined") {
