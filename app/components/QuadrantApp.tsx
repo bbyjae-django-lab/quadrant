@@ -1663,6 +1663,16 @@ export default function QuadrantApp({
   const handleReset = () => {
     if (typeof window !== "undefined") {
       storageKeys.forEach((key) => localStorage.removeItem(key));
+      localStorage.removeItem(ACTIVE_RUN_STORAGE_KEY);
+      localStorage.removeItem(DASHBOARD_MODAL_KEY);
+      localStorage.removeItem(DASHBOARD_MODAL_CONTEXT_KEY);
+      localStorage.removeItem(ENDED_RUN_ID_KEY);
+      localStorage.removeItem(RUN_ENDED_SNAPSHOT_KEY);
+      localStorage.removeItem(PENDING_RUN_KEY);
+      localStorage.removeItem(PENDING_SAVE_INTENT_KEY);
+      localStorage.removeItem("quadrant_pending_attach");
+      localStorage.removeItem("quadrant_pending_email");
+      localStorage.removeItem("quadrant_resume_url");
     }
     setActivateModalProtocolId(null);
     setActiveProblemId(null);
@@ -1678,6 +1688,13 @@ export default function QuadrantApp({
     setShowRunEndedModal(false);
     setRunEndContext(null);
     setShowCheckInModal(false);
+    setRunHistory([]);
+    setRunCheckinsByRunId({});
+    setSelectedRunId(null);
+    setShowRunDetail(false);
+    setHasCompletedRun(false);
+    setSupabaseReady(false);
+    setSupabaseReadyState(false);
   };
 
   const handleCheckInClick = () => {
@@ -1689,6 +1706,17 @@ export default function QuadrantApp({
     }
     setShowCheckInModal(true);
   };
+
+  useEffect(() => {
+    if (authLoading || isAuthed) {
+      return;
+    }
+    handleReset();
+    setLibraryProtocolId(null);
+    setIsRunHistoryCollapsed(true);
+    setIsPatternInsightsCollapsed(true);
+    setIsProtocolLibraryCollapsed(false);
+  }, [authLoading, isAuthed]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -2390,25 +2418,19 @@ export default function QuadrantApp({
                       <h2 className="text-lg font-semibold text-zinc-900">
                         Run history
                       </h2>
-                      <button
-                        type="button"
-                        className="btn-tertiary mt-3"
-                        onClick={() => {
-                          openAuthModal("history");
-                        }}
-                      >
+                      <p className="mt-3 text-sm text-zinc-500">
                         Sign in to preserve history
-                      </button>
+                      </p>
                     </div>
-                    <span className="text-xs font-semibold text-zinc-400">
-                      Pro
-                    </span>
                   </div>
                 </section>
               )}
               <PatternInsightsSection
-                collapsed={isPatternInsightsCollapsedResolved}
+                collapsed={!isAuthed ? true : isPatternInsightsCollapsedResolved}
                 onToggle={() => {
+                  if (!isAuthed) {
+                    return;
+                  }
                   setIsPatternInsightsCollapsed(
                     (collapsed) =>
                       !(
@@ -2419,8 +2441,8 @@ export default function QuadrantApp({
                 }}
                 isAuthed={isAuthed}
                 isPro={isPro}
-                patternInsights={patternInsights}
-                showEmptyState={patternInsightsEmpty}
+                patternInsights={isAuthed ? patternInsights : []}
+                showEmptyState={isAuthed ? patternInsightsEmpty : false}
                 emptyStateMessage={patternInsightsEmptyMessage}
                 onViewPricing={() => {
                   if (typeof window !== "undefined") {
