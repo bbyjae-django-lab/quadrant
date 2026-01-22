@@ -3,7 +3,7 @@ import type { CheckinResult, Protocol, Run } from "../types";
 export interface RunStore {
   hydrate(): Promise<void>;
   getActiveRun(): Run | null;
-  getRunHistory(): Run[];
+  getRuns(): Run[];
   startRun(protocol: Protocol): Promise<Run>;
   addCheckin(
     runId: string,

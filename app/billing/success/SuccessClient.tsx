@@ -145,7 +145,7 @@ export default function SuccessClient() {
             Pro is active.
           </h1>
           <p className="text-sm text-zinc-600">
-            Sign in to attach it to your history.
+            Sign in to continue.
           </p>
         </div>
         {renderBody()}

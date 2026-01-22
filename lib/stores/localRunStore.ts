@@ -1,8 +1,4 @@
-import {
-  QUADRANT_LOCAL_ACTIVE_RUN,
-  QUADRANT_LOCAL_RUN_HISTORY,
-  QUADRANT_RESUME_CONTEXT,
-} from "../keys";
+import { QUADRANT_LOCAL_ACTIVE_RUN, QUADRANT_LOCAL_RUN_HISTORY } from "../keys";
 import type { Checkin, CheckinResult, Protocol, Run } from "../types";
 import type { RunStore } from "./runStore";
 
@@ -71,11 +67,14 @@ export class LocalRunStore implements RunStore {
     return this.activeRun;
   }
 
-  getRunHistory() {
+  getRuns() {
     return this.runHistory.slice();
   }
 
   async startRun(protocol: Protocol) {
+    if (this.activeRun) {
+      return this.activeRun;
+    }
     const run: Run = {
       id: createRunId(),
       protocolId: protocol.id,
@@ -95,10 +94,7 @@ export class LocalRunStore implements RunStore {
     if (!this.activeRun || this.activeRun.id !== runId) {
       throw new Error("Active run not found.");
     }
-    const cleanCount = this.activeRun.checkins.filter(
-      (checkin) => checkin.result === "clean",
-    ).length;
-    const nextIndex = cleanCount + 1;
+    const nextIndex = this.activeRun.checkins.length + 1;
     const checkin: Checkin = {
       index: nextIndex,
       result,
@@ -135,7 +131,6 @@ export class LocalRunStore implements RunStore {
     }
     localStorage.removeItem(QUADRANT_LOCAL_ACTIVE_RUN);
     localStorage.removeItem(QUADRANT_LOCAL_RUN_HISTORY);
-    localStorage.removeItem(QUADRANT_RESUME_CONTEXT);
   }
 
   private endRunInternal(run: Run) {
@@ -152,22 +147,6 @@ export class LocalRunStore implements RunStore {
       localStorage.setItem(
         QUADRANT_LOCAL_RUN_HISTORY,
         JSON.stringify(this.runHistory),
-      );
-      let failedSession = Math.max(endedRun.checkins.length, 1);
-      for (let i = endedRun.checkins.length - 1; i >= 0; i -= 1) {
-        if (endedRun.checkins[i]?.result === "violated") {
-          failedSession = endedRun.checkins[i]?.index ?? failedSession;
-          break;
-        }
-      }
-      localStorage.setItem(
-        QUADRANT_RESUME_CONTEXT,
-        JSON.stringify({
-          endedRunId: endedRun.id,
-          protocolName: endedRun.protocolName,
-          failedSession,
-          endedAt: endedRun.endedAt,
-        }),
       );
     }
     return endedRun;

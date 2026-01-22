@@ -69,11 +69,14 @@ export class SupabaseRunStore implements RunStore {
     return this.activeRun;
   }
 
-  getRunHistory() {
+  getRuns() {
     return this.runHistory.slice();
   }
 
   async startRun(protocol: Protocol) {
+    if (this.activeRun) {
+      return this.activeRun;
+    }
     const client = getSupabaseClient();
     if (!client) {
       throw new Error("Supabase unavailable.");
@@ -109,11 +112,8 @@ export class SupabaseRunStore implements RunStore {
     if (!this.activeRun || this.activeRun.id !== runId) {
       throw new Error("Active run not found.");
     }
-    const cleanCount = this.activeRun.checkins.filter(
-      (checkin) => checkin.result === "clean",
-    ).length;
     const checkin: Checkin = {
-      index: cleanCount + 1,
+      index: this.activeRun.checkins.length + 1,
       result,
       note: note?.trim() ? note.trim() : undefined,
       createdAt: nowIso(),

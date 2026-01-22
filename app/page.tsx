@@ -3,22 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-import {
-  QUADRANT_LOCAL_ACTIVE_RUN,
-  QUADRANT_LOCAL_RUN_HISTORY,
-} from "@/lib/keys";
-
-const hasRunHistory = (rawHistory: string | null) => {
-  if (!rawHistory) {
-    return false;
-  }
-  try {
-    const parsed = JSON.parse(rawHistory) as Array<unknown>;
-    return Array.isArray(parsed) && parsed.length > 0;
-  } catch {
-    return false;
-  }
-};
+import { QUADRANT_LOCAL_ACTIVE_RUN } from "@/lib/keys";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -27,20 +12,36 @@ export default function LandingPage() {
     if (typeof window === "undefined") {
       return;
     }
-    const activeRun = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
-    router.push(activeRun ? "/dashboard" : "/protocols");
+    const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as { status?: string };
+        if (parsed.status === "active") {
+          router.push("/dashboard");
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    router.push("/protocols");
   };
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    const activeRun = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
-    const runHistory = localStorage.getItem(QUADRANT_LOCAL_RUN_HISTORY);
-    const hasAnyRun = Boolean(activeRun) || hasRunHistory(runHistory);
-
-    if (hasAnyRun) {
-      router.replace("/dashboard");
+    const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
+    if (!stored) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(stored) as { status?: string };
+      if (parsed.status === "active") {
+        router.replace("/dashboard");
+      }
+    } catch {
+      // ignore
     }
   }, [router]);
 

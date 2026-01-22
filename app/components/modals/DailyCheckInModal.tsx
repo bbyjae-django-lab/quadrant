@@ -84,7 +84,7 @@ export default function DailyCheckInModal({
             aria-label="Close"
             onClick={onClose}
           >
-            ƒo
+            ✕
           </button>
         </div>
         <div className="mt-4 space-y-4">
