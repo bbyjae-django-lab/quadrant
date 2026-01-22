@@ -66,9 +66,6 @@ export default function AuthModal({
     }
     setError(null);
     setSubmitting(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth_from_modal", "true");
-    }
     const { error } = await signInWithOtp(email.trim());
     setSubmitting(false);
     if (!error) {

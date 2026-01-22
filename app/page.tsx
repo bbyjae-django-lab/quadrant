@@ -3,6 +3,11 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import {
+  QUADRANT_LOCAL_ACTIVE_RUN,
+  QUADRANT_LOCAL_RUN_HISTORY,
+} from "@/lib/keys";
+
 const hasRunHistory = (rawHistory: string | null) => {
   if (!rawHistory) {
     return false;
@@ -22,24 +27,19 @@ export default function LandingPage() {
     if (typeof window === "undefined") {
       return;
     }
-    const activeProtocolId = localStorage.getItem("activeProtocolId");
-    const runStatus = localStorage.getItem("runStatus");
-    const hasActiveRun = Boolean(activeProtocolId) || runStatus === "active";
-    router.push(hasActiveRun ? "/dashboard" : "/protocols");
+    const activeRun = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
+    router.push(activeRun ? "/dashboard" : "/protocols");
   };
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    const activeProtocolId = localStorage.getItem("activeProtocolId");
-    const runStatus = localStorage.getItem("runStatus");
-    const hasCompletedRun = localStorage.getItem("hasCompletedRun") === "true";
-    const runHistory = localStorage.getItem("runHistory");
-    const hasAnyRun =
-      Boolean(activeProtocolId) || hasCompletedRun || hasRunHistory(runHistory);
+    const activeRun = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
+    const runHistory = localStorage.getItem(QUADRANT_LOCAL_RUN_HISTORY);
+    const hasAnyRun = Boolean(activeRun) || hasRunHistory(runHistory);
 
-    if (runStatus === "active" || hasAnyRun) {
+    if (hasAnyRun) {
       router.replace("/dashboard");
     }
   }, [router]);
@@ -55,8 +55,7 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            Quadrant enforces one trading rule at a time — daily and
-            non-negotiable.
+            Quadrant enforces one trading rule at a time, session by session.
           </p>
           <p className="max-w-2xl text-sm text-zinc-600">
             You already know the rules. Quadrant makes you follow one.
@@ -93,15 +92,15 @@ export default function LandingPage() {
                 Choose a constraint
               </div>
               <p className="mt-2 text-sm text-zinc-600">
-                Pick one rule you don’t negotiate.
+                Pick one rule you don&#39;t negotiate.
               </p>
             </div>
             <div className="ui-surface p-[var(--space-5)]">
               <div className="text-sm font-semibold text-zinc-900">
-                Run it daily
+                Run it by session
               </div>
               <p className="mt-2 text-sm text-zinc-600">
-                Check in once. The record is binary.
+                Log each session. The record is binary.
               </p>
             </div>
             <div className="ui-surface p-[var(--space-5)]">
@@ -114,7 +113,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-
       </main>
       <footer className="mx-auto mt-[var(--space-10)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-5)] text-xs text-zinc-600">
         <div className="space-y-2">

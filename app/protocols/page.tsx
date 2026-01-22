@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import QuadrantApp from "../components/QuadrantApp";
+import { QUADRANT_LOCAL_ACTIVE_RUN } from "@/lib/keys";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default function ProtocolsPage() {
     if (typeof window === "undefined") {
       return;
     }
-    const stored = localStorage.getItem("quadrant_active_run_v1");
+    const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
     if (!stored) {
       return;
     }

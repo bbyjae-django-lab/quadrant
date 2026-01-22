@@ -77,17 +77,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
           <button
             type="button"
             className="btn-tertiary"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                const context = sessionStorage.getItem("pricing_return_context");
-                if (context === "runEnded") {
-                  sessionStorage.setItem("dashboard_modal", "runEnded");
-                  router.replace("/dashboard");
-                  return;
-                }
-              }
-              router.replace(backHref);
-            }}
+            onClick={() => router.replace(backHref)}
           >
             Back to Today
           </button>
@@ -109,7 +99,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-700">
               <li>One active protocol</li>
-              <li>Daily check-in</li>
+              <li>Log sessions</li>
               <li>Run ends on violation</li>
               <li>No historical persistence</li>
             </ul>
@@ -136,8 +126,9 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               type="button"
               className="btn btn-primary mt-4"
               onClick={handleUpgrade}
+              disabled={isPro}
             >
-              Upgrade to Pro
+              {isPro ? "You're Pro" : "Upgrade to Pro"}
             </button>
             {isPro ? (
               <button

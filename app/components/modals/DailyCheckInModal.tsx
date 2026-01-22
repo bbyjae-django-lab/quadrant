@@ -1,37 +1,21 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Dispatch, SetStateAction } from "react";
-
-type ObservedBehaviour = {
-  id: string;
-  label: string;
-};
 
 type DailyCheckInModalProps = {
   checkInNote: string;
   onChangeNote: (note: string) => void;
   onClose: () => void;
-  onCleanDay: () => void;
+  onCleanSession: () => void;
   onViolated: () => void;
-  isPro: boolean;
-  availableObservedBehaviours: ObservedBehaviour[];
-  observedBehaviourLogSelection: string[];
-  setObservedBehaviourLogSelection: Dispatch<SetStateAction<string[]>>;
-  maxObservedBehaviours: number;
 };
 
 export default function DailyCheckInModal({
   checkInNote,
   onChangeNote,
   onClose,
-  onCleanDay,
+  onCleanSession,
   onViolated,
-  isPro,
-  availableObservedBehaviours,
-  observedBehaviourLogSelection,
-  setObservedBehaviourLogSelection,
-  maxObservedBehaviours,
 }: DailyCheckInModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
 
@@ -88,10 +72,10 @@ export default function DailyCheckInModal({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold tracking-wide text-zinc-500">
-              Daily check-in
+              Log session
             </p>
             <h2 className="mt-2 text-xl font-semibold text-zinc-900">
-              Did you break the protocol today?
+              Did you violate the protocol this session?
             </h2>
           </div>
           <button
@@ -100,7 +84,7 @@ export default function DailyCheckInModal({
             aria-label="Close"
             onClick={onClose}
           >
-            ✕
+            ƒo
           </button>
         </div>
         <div className="mt-4 space-y-4">
@@ -123,7 +107,7 @@ export default function DailyCheckInModal({
             <button
               type="button"
               className="btn btn-primary text-sm"
-              onClick={onCleanDay}
+              onClick={onCleanSession}
             >
               No
             </button>
@@ -135,55 +119,6 @@ export default function DailyCheckInModal({
               Yes
             </button>
           </div>
-          {isPro && availableObservedBehaviours.length > 0 ? (
-            <div className="ui-inset p-[var(--space-4)]">
-              <div className="text-sm font-semibold text-zinc-900">
-                Did any of these occur today?
-              </div>
-              <p className="mt-1 text-xs text-zinc-500">
-                Optional — tracked for insight only
-              </p>
-              <div className="mt-3 space-y-2">
-                {availableObservedBehaviours.map((behaviour) => {
-                  const isChecked =
-                    observedBehaviourLogSelection.includes(behaviour.id);
-                  return (
-                    <label
-                      key={behaviour.id}
-                      className="flex items-start gap-3 text-sm text-zinc-700"
-                    >
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-zinc-300 text-zinc-900"
-                        checked={isChecked}
-                        onChange={() => {
-                          if (isChecked) {
-                            setObservedBehaviourLogSelection((prev) =>
-                              prev.filter((id) => id !== behaviour.id),
-                            );
-                            return;
-                          }
-                          if (
-                            observedBehaviourLogSelection.length >=
-                            maxObservedBehaviours
-                          ) {
-                            return;
-                          }
-                          setObservedBehaviourLogSelection((prev) => [
-                            ...prev,
-                            behaviour.id,
-                          ]);
-                        }}
-                      />
-                      <span className="font-semibold text-zinc-900">
-                        {behaviour.label}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
         </div>
       </div>
     </div>

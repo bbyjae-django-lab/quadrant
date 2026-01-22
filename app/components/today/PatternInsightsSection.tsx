@@ -2,10 +2,8 @@ import InsightCard from "./InsightCard";
 
 type PatternInsight = {
   title: string;
-  isUnlocked: boolean;
-  requirement: string;
   value: string;
-  subtitle: string | null;
+  subtitle?: string | null;
   emphasis?: boolean;
   className?: string;
 };
@@ -13,25 +11,13 @@ type PatternInsight = {
 type PatternInsightsSectionProps = {
   collapsed: boolean;
   onToggle: () => void;
-  isAuthed: boolean;
-  isPro: boolean;
-  patternInsights: PatternInsight[];
-  showEmptyState?: boolean;
-  emptyStateMessage?: string;
-  onViewPricing: () => void;
-  onRequireAuth: () => void;
+  insights: PatternInsight[];
 };
 
 export default function PatternInsightsSection({
   collapsed,
   onToggle,
-  isAuthed,
-  isPro,
-  patternInsights,
-  showEmptyState = false,
-  emptyStateMessage,
-  onViewPricing,
-  onRequireAuth,
+  insights,
 }: PatternInsightsSectionProps) {
   return (
     <section className="ui-surface p-[var(--space-6)]">
@@ -47,59 +33,23 @@ export default function PatternInsightsSection({
       </button>
       {!collapsed ? (
         <>
-          {showEmptyState ? (
-            <p className="mt-2 text-xs text-zinc-500">
-              {emptyStateMessage}
-            </p>
-          ) : (
-            <>
-              <p className="mt-2 text-xs text-zinc-500">
-                Patterns emerge through repetition.
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Pro tracks them across runs.
-              </p>
-            </>
-          )}
-          {!isAuthed ? (
-            <button
-              type="button"
-              className="btn-tertiary mt-3"
-              onClick={onRequireAuth}
-            >
-              Sign in to continue
-            </button>
-          ) : !isPro ? (
-            <button
-              type="button"
-              className="btn-tertiary mt-3"
-              onClick={onViewPricing}
-            >
-              Upgrade to Pro
-            </button>
-          ) : null}
+          <p className="mt-2 text-xs text-zinc-500">
+            Patterns emerge through repetition.
+          </p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {patternInsights.map((insight) => {
-              const isConstraintSwitching =
-                insight.title === "Constraint switching";
-              const isLocked =
-                !isPro || (!insight.isUnlocked && !isConstraintSwitching);
-              const showProBadge =
-                isLocked && (!isPro || !isConstraintSwitching);
-              return (
-                <InsightCard
-                  key={insight.title}
-                  title={insight.title}
-                  value={isLocked ? null : insight.value}
-                  subtitle={isLocked ? null : insight.subtitle ?? null}
-                  isLocked={isLocked}
-                  lockReason={insight.requirement}
-                  proBadge={showProBadge}
-                  emphasis={insight.emphasis}
-                  className={insight.className}
-                />
-              );
-            })}
+            {insights.map((insight) => (
+              <InsightCard
+                key={insight.title}
+                title={insight.title}
+                value={insight.value}
+                subtitle={insight.subtitle ?? null}
+                isLocked={false}
+                lockReason={null}
+                proBadge={false}
+                emphasis={insight.emphasis}
+                className={insight.className}
+              />
+            ))}
           </div>
         </>
       ) : null}

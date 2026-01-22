@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 
+import { QUADRANT_LOCAL_ACTIVE_RUN } from "@/lib/keys";
+
 export default function AboutPage() {
   const router = useRouter();
   const handleReturn = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -15,7 +17,7 @@ export default function AboutPage() {
       router.replace(stored);
       return;
     }
-    const activeSnapshot = localStorage.getItem("quadrant_active_run_v1");
+    const activeSnapshot = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
     if (activeSnapshot) {
       try {
         const parsed = JSON.parse(activeSnapshot) as {
@@ -48,7 +50,7 @@ export default function AboutPage() {
 
         <section className="space-y-2 text-base text-zinc-700">
           <p>It enforces one non-negotiable rule at a time.</p>
-          <p>You check in once per day.</p>
+          <p>You log each session.</p>
           <p>If the rule breaks, the run ends.</p>
           <p>The system records what actually happens.</p>
         </section>

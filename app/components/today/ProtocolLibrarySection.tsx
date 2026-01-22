@@ -1,4 +1,4 @@
-import type { Protocol } from "../../types";
+import type { Protocol } from "@/lib/types";
 
 type ProtocolLibrarySectionProps = {
   collapsed: boolean;
@@ -67,7 +67,7 @@ export default function ProtocolLibrarySection({
                         {protocol.name}
                       </div>
                       <div className="mt-1 text-xs text-zinc-500">
-                        {protocol.commonBehaviourRemoved}
+                        {protocol.summary}
                       </div>
                     </div>
                     <span className="text-sm text-zinc-500">
@@ -75,36 +75,22 @@ export default function ProtocolLibrarySection({
                     </span>
                   </button>
                   {isExpanded ? (
-                    <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
-                      <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
-                        <dl className="space-y-4 text-sm text-zinc-700">
-                          <div>
-                            <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Behaviour removed
-                            </dt>
-                            <dd className="mt-1">
-                              {protocol.commonBehaviourRemoved}
-                            </dd>
+                      <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
+                        <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
+                          <div className="space-y-2 text-sm text-zinc-700">
+                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                              Summary
+                            </div>
+                            <div>{protocol.summary}</div>
+                            {protocol.details
+                              .split("\n")
+                              .filter((line) => line.trim().length > 0)
+                              .map((line, index) => (
+                                <div key={`${protocol.id}-detail-${index}`}>
+                                  {line}
+                                </div>
+                              ))}
                           </div>
-                          <div>
-                            <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Rule
-                            </dt>
-                            <dd className="mt-1">{protocol.rule}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Duration
-                            </dt>
-                            <dd className="mt-1">{protocol.duration}</dd>
-                          </div>
-                          <div>
-                            <dt className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Failure condition
-                            </dt>
-                            <dd className="mt-1">{protocol.failure}</dd>
-                          </div>
-                        </dl>
                         {canActivate ? (
                           <div className="pt-4">
                             <button
