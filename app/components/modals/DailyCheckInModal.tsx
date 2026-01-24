@@ -104,14 +104,14 @@ export default function DailyCheckInModal({
               className="btn btn-primary text-sm"
               onClick={onCleanSession}
             >
-              No
+              Clean
             </button>
             <button
               type="button"
               className="btn btn-secondary text-sm"
               onClick={onViolated}
             >
-              Yes
+              Violated
             </button>
           </div>
         </div>

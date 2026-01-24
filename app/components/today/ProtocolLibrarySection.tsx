@@ -31,9 +31,7 @@ export default function ProtocolLibrarySection({
         className="flex w-full items-center justify-between text-left"
         onClick={onToggle}
       >
-        <h2 className="text-lg font-semibold text-zinc-900">
-          Protocol library
-        </h2>
+        <h2 className="text-lg font-semibold text-zinc-900">Protocols</h2>
         <span className="text-sm text-zinc-500">{collapsed ? ">" : "v"}</span>
       </button>
       {!collapsed ? (
@@ -82,10 +80,10 @@ export default function ProtocolLibrarySection({
                               <div className="mt-1">{protocol.rule}</div>
                             </div>
                             <div>
-                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Violation:
-                            </div>
-                            <div className="mt-1">{protocol.violation}</div>
+                              <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                                Failure:
+                              </div>
+                              <div className="mt-1">{protocol.violation}</div>
                             </div>
                           </div>
                         {canActivate ? (

@@ -56,10 +56,7 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            Quadrant enforces one trading rule at a time, session by session.
-          </p>
-          <p className="max-w-2xl text-sm text-zinc-600">
-            You already know the rules. Quadrant makes you follow one.
+            Quadrant enforces one trading rule at a time — session by session.
           </p>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-4">
@@ -80,9 +77,6 @@ export default function LandingPage() {
             <p className="text-xs font-semibold text-zinc-500">
               Free. No account required.
             </p>
-            <p className="text-sm text-zinc-600">
-              Pick a rule. Log each session. A violation ends the run.
-            </p>
           </div>
         </section>
       </main>
@@ -90,7 +84,7 @@ export default function LandingPage() {
         <div className="space-y-2">
           <p>No brokerage connection.</p>
           <p>No trade data required.</p>
-          <p>Local-first. History saved only with Pro.</p>
+          <p>Runs are saved on this device. Pro adds a cross-device ledger.</p>
         </div>
       </footer>
     </div>

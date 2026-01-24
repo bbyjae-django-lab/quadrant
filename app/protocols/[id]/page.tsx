@@ -104,7 +104,7 @@ export default function ProtocolDetailPage() {
           </div>
           <div>
             <div className="text-xs font-semibold tracking-wide text-zinc-500">
-              Violation:
+              Failure:
             </div>
             <div className="mt-1">{protocol.violation}</div>
           </div>

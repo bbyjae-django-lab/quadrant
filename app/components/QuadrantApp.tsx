@@ -143,7 +143,7 @@ export default function QuadrantApp() {
                   {activeRule}
                 </div>
                 <div className="mt-2 text-sm text-zinc-600">
-                  Session {sessionNumber}
+                  Current session: {sessionNumber}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
@@ -154,12 +154,12 @@ export default function QuadrantApp() {
                     Log session
                   </button>
                 </div>
+                {!isAuthed ? (
+                  <div className="mt-4 text-xs text-zinc-500">
+                    Saved on this device only.
+                  </div>
+                ) : null}
               </div>
-              {!isAuthed ? (
-                <p className="mt-3 text-xs text-zinc-500">
-                  Saved on this device only.
-                </p>
-              ) : null}
             </div>
           ) : latestEndedRun ? (
             <div className="ui-surface p-[var(--space-6)]">
@@ -169,6 +169,9 @@ export default function QuadrantApp() {
               </div>
               <div className="mt-2 text-sm text-zinc-600">
                 Violation on Session {getViolationIndex(latestEndedRun)}
+              </div>
+              <div className="mt-2 text-sm text-zinc-600">
+                This run is saved on this device.
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
@@ -180,7 +183,7 @@ export default function QuadrantApp() {
                 </button>
                 {!isAuthed ? (
                   <a href="/pricing" className="text-sm text-zinc-600 underline">
-                    Preserve your record with Pro
+                    Save your ledger with Pro
                   </a>
                 ) : null}
               </div>
