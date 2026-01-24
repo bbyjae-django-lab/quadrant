@@ -81,7 +81,7 @@ export default function ProtocolLibrarySection({
                             </div>
                             <div>
                               <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                                Failure:
+                                Violation:
                               </div>
                               <div className="mt-1">{protocol.violation}</div>
                             </div>

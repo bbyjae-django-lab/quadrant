@@ -143,7 +143,7 @@ export default function QuadrantApp() {
                   {activeRule}
                 </div>
                 <div className="mt-2 text-sm text-zinc-600">
-                  Current session: {sessionNumber}
+                  Session {sessionNumber}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                   <button
@@ -166,7 +166,7 @@ export default function QuadrantApp() {
                 Violation on Session {getViolationIndex(latestEndedRun)}
               </div>
               <div className="mt-2 text-sm text-zinc-600">
-                Constraint broken. Record preserved.
+                Violation logged. Saved on this device.
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button

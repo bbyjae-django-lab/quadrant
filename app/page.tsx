@@ -76,9 +76,8 @@ export default function LandingPage() {
       </main>
       <footer className="mx-auto mt-[var(--space-10)] w-full max-w-4xl border-t border-[var(--border-color)] pt-[var(--space-5)] text-xs text-zinc-600">
         <div className="space-y-2">
-          <p>No brokerage connection.</p>
-          <p>No trade data required.</p>
-          <p>Runs are saved on this device. Pro adds a cross-device ledger.</p>
+          <p>No brokerage connection. No trade data required.</p>
+          <p>Runs save on this device. Pro adds a cross-device ledger.</p>
           <a href="/pricing?from=landing" className="text-xs underline">
             Pricing
           </a>

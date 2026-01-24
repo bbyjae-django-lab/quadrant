@@ -101,7 +101,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               <li>One active protocol</li>
               <li>Log sessions</li>
               <li>Run ends on violation</li>
-              <li>No historical persistence</li>
+              <li>Saved on this device</li>
             </ul>
           </div>
 
@@ -110,18 +110,11 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               <h2 className="text-2xl font-semibold">Pro</h2>
               <p className="text-sm text-zinc-300">${PRO_PRICE} / month</p>
             </div>
-            <p className="mt-4 text-xs text-zinc-300">
-              Pro preserves behavioural evidence.
-            </p>
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
-              <li>Run history across sessions</li>
-              <li>Cross-device persistence</li>
-              <li>Pattern visibility across runs</li>
-              <li>Run detail and review</li>
+              <li>Cross-device ledger</li>
+              <li>Run history across devices</li>
+              <li>Run detail and notes</li>
             </ul>
-            <p className="mt-3 text-xs text-zinc-300">
-              Behaviour changes when memory accumulates.
-            </p>
             <button
               type="button"
               className="btn btn-primary mt-4"
