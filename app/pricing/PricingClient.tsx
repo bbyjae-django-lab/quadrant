@@ -7,7 +7,11 @@ import { getSupabaseClient } from "../lib/supabaseClient";
 
 const PRO_PRICE = 29;
 
-export default function PricingClient() {
+type PricingClientProps = {
+  backHref: string;
+};
+
+export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
   const { isPro } = useAuth();
@@ -32,14 +36,7 @@ export default function PricingClient() {
   };
 
   const handleBack = () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    if (window.history.length > 1) {
-      router.back();
-      return;
-    }
-    router.replace("/");
+    router.replace(backHref);
   };
 
   const handleManageBilling = () => {

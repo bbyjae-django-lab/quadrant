@@ -1,5 +1,13 @@
 import PricingClient from "./PricingClient";
 
-export default function PricingPage() {
-  return <PricingClient />;
+type PricingPageProps = {
+  searchParams?: {
+    from?: string;
+  };
+};
+
+export default function PricingPage({ searchParams }: PricingPageProps) {
+  const from = searchParams?.from;
+  const backHref = from === "run-ended" ? "/dashboard" : "/";
+  return <PricingClient backHref={backHref} />;
 }

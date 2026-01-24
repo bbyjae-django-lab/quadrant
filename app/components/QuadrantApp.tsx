@@ -159,7 +159,7 @@ export default function QuadrantApp() {
               </div>
               {!isAuthed ? (
                 <a
-                  href="/pricing"
+                  href="/pricing?from=run-ended"
                   className="mt-3 inline-block text-sm text-zinc-600 underline"
                 >
                   Upgrade to Pro
