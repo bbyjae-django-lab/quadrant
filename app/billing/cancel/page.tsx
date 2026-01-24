@@ -7,7 +7,7 @@ export default function BillingCancelPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/dashboard");
+    router.replace("/pricing?canceled=1");
   }, [router]);
 
   return <div className="p-6 text-sm text-zinc-500">Checkout cancelled.</div>;

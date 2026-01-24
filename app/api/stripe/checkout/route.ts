@@ -26,7 +26,7 @@ export const POST = async (req: Request) => {
     mode: "subscription",
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${appUrl}/dashboard`,
+    cancel_url: `${appUrl}/billing/cancel`,
     metadata,
     customer_email: user?.email ?? undefined,
   });

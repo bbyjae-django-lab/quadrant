@@ -16,7 +16,7 @@ export default function PricingClient() {
       .then((res) => res.json())
       .then((data) => {
         if (data?.url) {
-          window.location.replace(data.url);
+          window.location.href = data.url;
           return;
         }
         setUpgradeNotice("Unable to start checkout.");
