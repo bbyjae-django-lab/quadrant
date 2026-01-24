@@ -53,7 +53,7 @@ export default function LandingPage() {
             Fix the behaviour that&#39;s costing you money.
           </h1>
           <p className="max-w-2xl text-base leading-7 text-zinc-600">
-            One trading constraint at a time — session by session.
+            One constraint at a time. One session at a time.
           </p>
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-4">
@@ -65,14 +65,11 @@ export default function LandingPage() {
                 Start a run
               </button>
             </div>
-            <p className="text-xs font-semibold text-zinc-500">
-              Free. No account required.
-            </p>
             <p className="text-xs text-zinc-600">
-              No brokerage. No trade data. Local by default.
+              Free. No account. No brokerage. No trade data. Local by default.
             </p>
             <a href="/pricing?from=landing" className="text-xs underline">
-              Pricing
+              View pricing
             </a>
           </div>
         </section>
