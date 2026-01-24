@@ -201,9 +201,6 @@ export default function QuadrantApp({
                         <div className="text-sm font-semibold text-zinc-900">
                           {protocol.name}
                         </div>
-                        <div className="mt-1 text-xs text-zinc-500">
-                          {protocol.summary}
-                        </div>
                       </div>
                       <span className="text-sm text-zinc-500">
                         {isExpanded ? "v" : ">"}
@@ -211,9 +208,20 @@ export default function QuadrantApp({
                     </button>
                     {isExpanded ? (
                       <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
-                        <p className="text-sm text-zinc-700 whitespace-pre-line">
-                          {protocol.details}
-                        </p>
+                        <div className="space-y-3 text-sm text-zinc-700">
+                          <div>
+                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                              Rule
+                            </div>
+                            <div className="mt-1">{protocol.rule}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                              Failure
+                            </div>
+                            <div className="mt-1">{protocol.failure}</div>
+                          </div>
+                        </div>
                         <div className="flex flex-wrap gap-3 pt-4">
                           <button
                             type="button"
@@ -244,6 +252,10 @@ export default function QuadrantApp({
   }
 
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
+  const activeRule = activeRun
+    ? PROTOCOLS.find((protocol) => protocol.id === activeRun.protocolId)?.rule ??
+      ""
+    : "";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
@@ -291,6 +303,10 @@ export default function QuadrantApp({
               </div>
               <div className="mt-3 text-sm font-semibold text-zinc-900">
                 {activeRun.protocolName}
+              </div>
+              <div className="mt-2 text-sm text-zinc-700">
+                <span className="font-semibold text-zinc-900">Rule:</span>{" "}
+                {activeRule}
               </div>
               <div className="mt-2 text-sm text-zinc-600">
                 Session {sessionNumber}

@@ -66,9 +66,6 @@ export default function ProtocolLibrarySection({
                       <div className="text-sm font-semibold text-zinc-900">
                         {protocol.name}
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">
-                        {protocol.summary}
-                      </div>
                     </div>
                     <span className="text-sm text-zinc-500">
                       {isExpanded ? "v" : ">"}
@@ -77,19 +74,19 @@ export default function ProtocolLibrarySection({
                   {isExpanded ? (
                       <div className="border-t border-[var(--border-color)] bg-zinc-50 px-[var(--space-4)] py-[var(--space-4)]">
                         <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
-                          <div className="space-y-2 text-sm text-zinc-700">
-                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                              Summary
+                          <div className="space-y-3 text-sm text-zinc-700">
+                            <div>
+                              <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                                Rule
+                              </div>
+                              <div className="mt-1">{protocol.rule}</div>
                             </div>
-                            <div>{protocol.summary}</div>
-                            {protocol.details
-                              .split("\n")
-                              .filter((line) => line.trim().length > 0)
-                              .map((line, index) => (
-                                <div key={`${protocol.id}-detail-${index}`}>
-                                  {line}
-                                </div>
-                              ))}
+                            <div>
+                              <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                                Failure
+                              </div>
+                              <div className="mt-1">{protocol.failure}</div>
+                            </div>
                           </div>
                         {canActivate ? (
                           <div className="pt-4">

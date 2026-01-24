@@ -1,9 +1,7 @@
 export type Protocol = {
   id: string;
   name: string;
-  commonBehaviourRemoved: string;
   rule: string;
-  duration: string;
   failure: string;
 };
 

@@ -1,8 +1,8 @@
 export type Protocol = {
   id: string;
   name: string;
-  summary: string;
-  details: string;
+  rule: string;
+  failure: string;
 };
 
 export type RunStatus = "active" | "ended";
