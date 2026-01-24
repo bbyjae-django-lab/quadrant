@@ -1,24 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type DailyCheckInModalProps = {
-  checkInNote: string;
-  onChangeNote: (note: string) => void;
   onClose: () => void;
   onCleanSession: () => void;
   onViolated: () => void;
 };
 
 export default function DailyCheckInModal({
-  checkInNote,
-  onChangeNote,
   onClose,
   onCleanSession,
   onViolated,
 }: DailyCheckInModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const [showNote, setShowNote] = useState(false);
 
   useEffect(() => {
     const modal = modalRef.current;
@@ -87,23 +82,6 @@ export default function DailyCheckInModal({
           <p className="text-sm text-zinc-700">
             Did you follow the constraint this session?
           </p>
-          {showNote ? (
-            <div className="space-y-2">
-              <label
-                htmlFor="check-in-note"
-                className="text-sm font-semibold text-zinc-800"
-              >
-                Note (optional)
-              </label>
-              <textarea
-                id="check-in-note"
-                value={checkInNote}
-                onChange={(event) => onChangeNote(event.target.value)}
-                placeholder="One sentence is enough."
-                className="min-h-[88px] w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-              />
-            </div>
-          ) : null}
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -115,13 +93,7 @@ export default function DailyCheckInModal({
             <button
               type="button"
               className="btn btn-secondary text-sm"
-              onClick={() => {
-                if (!showNote) {
-                  setShowNote(true);
-                  return;
-                }
-                onViolated();
-              }}
+              onClick={onViolated}
             >
               Violated
             </button>

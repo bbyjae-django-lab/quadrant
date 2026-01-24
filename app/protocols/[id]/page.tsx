@@ -92,6 +92,9 @@ export default function ProtocolDetailPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-6 ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
+        <a href="/protocols" className="text-xs text-zinc-400">
+          Back
+        </a>
         <h1 className="text-2xl font-semibold text-zinc-900">
           {protocol.name}
         </h1>
@@ -110,9 +113,6 @@ export default function ProtocolDetailPage() {
           >
             {isStarting ? "Starting…" : "Start run"}
           </button>
-          <a href="/protocols" className="btn-tertiary text-sm">
-            Back
-          </a>
         </div>
         {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>

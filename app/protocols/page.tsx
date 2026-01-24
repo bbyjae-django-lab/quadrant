@@ -36,9 +36,10 @@ export default function ProtocolsPage() {
           ))}
         </ul>
         {advancedProtocols.length ? (
-          <details className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white px-[var(--space-4)] py-[var(--space-3)]">
-            <summary className="cursor-pointer text-sm font-semibold text-zinc-600">
-              Advanced constraints
+          <details className="rounded-[var(--radius-card)] border border-[var(--border-color)] bg-white px-[var(--space-4)] py-[var(--space-3)] text-sm text-zinc-500">
+            <summary className="flex cursor-pointer items-center justify-between font-semibold text-zinc-500">
+              <span>Advanced constraints</span>
+              <span className="text-base">›</span>
             </summary>
             <ul className="mt-3 space-y-2">
               {advancedProtocols.map((protocol) => (
@@ -54,9 +55,6 @@ export default function ProtocolsPage() {
             </ul>
           </details>
         ) : null}
-        <a href="/about" className="text-xs text-zinc-400">
-          About Quadrant
-        </a>
       </main>
     </div>
   );

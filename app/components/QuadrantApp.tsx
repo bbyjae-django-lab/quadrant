@@ -33,7 +33,6 @@ export default function QuadrantApp() {
   const [activeRun, setActiveRun] = useState<Run | null>(null);
   const [runHistory, setRunHistory] = useState<Run[]>([]);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const [checkInNote, setCheckInNote] = useState("");
 
   useEffect(() => {
     storeRef.current = store;
@@ -80,12 +79,7 @@ export default function QuadrantApp() {
       return;
     }
     try {
-      const updated = await storeRef.current.addCheckin(
-        activeRun.id,
-        result,
-        checkInNote,
-      );
-      setCheckInNote("");
+      const updated = await storeRef.current.addCheckin(activeRun.id, result);
       if (updated.status === "active") {
         setActiveRun(updated);
       } else {
@@ -99,28 +93,23 @@ export default function QuadrantApp() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-[var(--space-6)] text-zinc-900">
+    <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="w-full max-w-3xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
         <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
-          <div className="flex items-center gap-3">
-            {isAuthed ? (
-              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                <span>Signed in</span>
-                <button
-                  type="button"
-                  className="btn-tertiary"
-                  onClick={() => {
-                    void signOut();
-                  }}
-                >
-                  Sign out
-                </button>
-              </div>
-            ) : null}
-            <a href="/about" className="btn-tertiary">
-              About Quadrant
-            </a>
-          </div>
+          {isAuthed ? (
+            <div className="flex items-center gap-2 text-xs text-zinc-500">
+              <span>Signed in</span>
+              <button
+                type="button"
+                className="btn-tertiary"
+                onClick={() => {
+                  void signOut();
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <section className="mt-8 space-y-6">
@@ -158,9 +147,6 @@ export default function QuadrantApp() {
               <h2 className="text-lg font-semibold text-zinc-900">Run ended</h2>
               <div className="mt-3 text-sm text-zinc-600">
                 Violation — Session {getViolationIndex(latestEndedRun)}
-              </div>
-              <div className="mt-2 text-sm text-zinc-600">
-                Violation logged. Saved on this device.
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
@@ -204,8 +190,6 @@ export default function QuadrantApp() {
 
       {showCheckInModal && activeRun ? (
         <DailyCheckInModal
-          checkInNote={checkInNote}
-          onChangeNote={setCheckInNote}
           onClose={() => setShowCheckInModal(false)}
           onCleanSession={() => handleCheckIn("clean")}
           onViolated={() => handleCheckIn("violated")}
