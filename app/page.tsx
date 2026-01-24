@@ -80,38 +80,9 @@ export default function LandingPage() {
             <p className="text-xs font-semibold text-zinc-500">
               Free. No account required.
             </p>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-sm font-semibold tracking-wide text-zinc-500">
-            How It Works
-          </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="ui-surface p-[var(--space-5)]">
-              <div className="text-sm font-semibold text-zinc-900">
-                Choose a constraint
-              </div>
-              <p className="mt-2 text-sm text-zinc-600">
-                Pick one rule you don&#39;t negotiate.
-              </p>
-            </div>
-            <div className="ui-surface p-[var(--space-5)]">
-              <div className="text-sm font-semibold text-zinc-900">
-                Run it by session
-              </div>
-              <p className="mt-2 text-sm text-zinc-600">
-                Log each session. The record is binary.
-              </p>
-            </div>
-            <div className="ui-surface p-[var(--space-5)]">
-              <div className="text-sm font-semibold text-zinc-900">
-                Let the outcome stand
-              </div>
-              <p className="mt-2 text-sm text-zinc-600">
-                If it breaks, the run ends.
-              </p>
-            </div>
+            <p className="text-sm text-zinc-600">
+              Pick a rule. Log each session. A violation ends the run.
+            </p>
           </div>
         </section>
       </main>

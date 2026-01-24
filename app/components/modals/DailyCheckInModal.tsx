@@ -70,14 +70,9 @@ export default function DailyCheckInModal({
         className="w-full max-w-lg ui-modal p-[var(--space-6)]"
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold tracking-wide text-zinc-500">
-              Log session
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-zinc-900">
-              Did you violate the protocol this session?
-            </h2>
-          </div>
+          <h2 className="text-xl font-semibold text-zinc-900">
+            Did you violate the protocol this session?
+          </h2>
           <button
             type="button"
             className="btn-tertiary"
@@ -93,7 +88,7 @@ export default function DailyCheckInModal({
               htmlFor="check-in-note"
               className="text-sm font-semibold text-zinc-800"
             >
-              Notes (optional)
+              Note (optional)
             </label>
             <textarea
               id="check-in-note"

@@ -76,16 +76,16 @@ export default function ProtocolLibrarySection({
                         <div className="border-l border-[var(--border-color)] pl-[var(--space-4)]">
                           <div className="space-y-3 text-sm text-zinc-700">
                             <div>
-                              <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                                Rule
-                              </div>
+                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                              Rule:
+                            </div>
                               <div className="mt-1">{protocol.rule}</div>
                             </div>
                             <div>
-                              <div className="text-xs font-semibold tracking-wide text-zinc-500">
-                                Failure
-                              </div>
-                              <div className="mt-1">{protocol.failure}</div>
+                            <div className="text-xs font-semibold tracking-wide text-zinc-500">
+                              Violation:
+                            </div>
+                            <div className="mt-1">{protocol.violation}</div>
                             </div>
                           </div>
                         {canActivate ? (

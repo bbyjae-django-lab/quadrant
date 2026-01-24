@@ -2,7 +2,7 @@ export type Protocol = {
   id: string;
   name: string;
   rule: string;
-  failure: string;
+  violation: string;
 };
 
 export type RunStatus = "active" | "ended";
