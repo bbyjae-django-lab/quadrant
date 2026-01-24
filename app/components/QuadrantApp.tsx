@@ -156,12 +156,15 @@ export default function QuadrantApp() {
                 >
                   Start another run
                 </button>
-                {!isAuthed ? (
-                  <a href="/pricing" className="text-sm text-zinc-600 underline">
-                    Upgrade to Pro
-                  </a>
-                ) : null}
               </div>
+              {!isAuthed ? (
+                <a
+                  href="/pricing"
+                  className="mt-3 inline-block text-sm text-zinc-600 underline"
+                >
+                  Upgrade to Pro
+                </a>
+              ) : null}
             </div>
           ) : (
             <div className="ui-surface p-[var(--space-6)]">
