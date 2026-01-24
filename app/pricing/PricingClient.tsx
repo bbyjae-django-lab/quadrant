@@ -114,8 +114,8 @@ export default function PricingClient() {
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
               <li>Cross-device history</li>
-              <li>Notes + review</li>
               <li>Preserved run record</li>
+              <li>Long-term accountability</li>
             </ul>
             <button
               type="button"
