@@ -71,7 +71,7 @@ export default function DailyCheckInModal({
       >
         <div className="flex items-start justify-between gap-4">
           <h2 className="text-xl font-semibold text-zinc-900">
-            Did you violate the protocol this session?
+            Session result
           </h2>
           <button
             type="button"

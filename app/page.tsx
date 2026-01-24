@@ -67,12 +67,6 @@ export default function LandingPage() {
               >
                 Start a run
               </button>
-              <a
-                href="/pricing?from=landing"
-                className="btn-tertiary text-sm"
-              >
-                Pricing
-              </a>
             </div>
             <p className="text-xs font-semibold text-zinc-500">
               Free. No account required.
@@ -85,6 +79,9 @@ export default function LandingPage() {
           <p>No brokerage connection.</p>
           <p>No trade data required.</p>
           <p>Runs are saved on this device. Pro adds a cross-device ledger.</p>
+          <a href="/pricing?from=landing" className="text-xs underline">
+            Pricing
+          </a>
         </div>
       </footer>
     </div>

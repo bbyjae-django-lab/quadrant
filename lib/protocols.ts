@@ -5,7 +5,7 @@ export const PROTOCOLS: Protocol[] = [
     id: "post-entry-time-frame-lock",
     name: "Post-entry time frame lock",
     rule:
-      "After entry, no lower time frame charts may be opened or viewed for that ticker until the position is fully closed.",
+      "After entry, do not open or view any lower time frame chart for that ticker until the position is fully closed.",
     violation:
       "Opening or viewing any lower time frame chart for an open position’s ticker after entry ends the run.",
   },
@@ -13,7 +13,7 @@ export const PROTOCOLS: Protocol[] = [
     id: "in-trade-parameter-lock",
     name: "In-trade parameter lock",
     rule:
-      "Before entry, position size, stop level, and exit conditions must be fully defined; after entry, no trade parameter may be changed.",
+      "Before entry, position size, stop level, and exit conditions are fully defined; after entry, no trade parameter changes.",
     violation:
       "Any change to size, stop, target, trailing logic, partials, or exit rules after entry ends the run.",
   },
@@ -21,7 +21,7 @@ export const PROTOCOLS: Protocol[] = [
     id: "single-attempt-per-ticker-per-session",
     name: "Single attempt per ticker per session",
     rule:
-      "A ticker may be traded once per session: one entry attempt total, regardless of outcome.",
+      "A ticker is traded once per session: one entry attempt total, regardless of outcome.",
     violation:
       "Any second entry on the same ticker in the same session ends the run.",
   },
@@ -29,7 +29,7 @@ export const PROTOCOLS: Protocol[] = [
     id: "trade-count-and-exposure-cap",
     name: "Trade count and exposure cap",
     rule:
-      "Before the session, declare a maximum number of total entries and a maximum number of concurrent positions; neither may be exceeded.",
+      "Before the session, declare a maximum number of total entries and a maximum number of concurrent positions; neither is exceeded.",
     violation:
       "Placing an entry that exceeds either declared maximum ends the run.",
   },
@@ -37,7 +37,7 @@ export const PROTOCOLS: Protocol[] = [
     id: "market-phase-filter",
     name: "Market phase filter",
     rule:
-      "Before the session begins, the market regime must be classified as risk-on or risk-off; trades are permitted only on risk-on days.",
+      "Before the session begins, classify the market regime as risk-on or risk-off; trades are permitted only on risk-on days.",
     violation:
       "Entering any trade without a recorded regime classification, or trading on a risk-off day, ends the run.",
   },

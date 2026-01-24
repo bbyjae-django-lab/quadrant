@@ -154,11 +154,6 @@ export default function QuadrantApp() {
                     Log session
                   </button>
                 </div>
-                {!isAuthed ? (
-                  <div className="mt-4 text-xs text-zinc-500">
-                    Saved on this device only.
-                  </div>
-                ) : null}
               </div>
             </div>
           ) : latestEndedRun ? (
@@ -171,7 +166,7 @@ export default function QuadrantApp() {
                 Violation on Session {getViolationIndex(latestEndedRun)}
               </div>
               <div className="mt-2 text-sm text-zinc-600">
-                This run is saved on this device.
+                Constraint broken. Record preserved.
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
