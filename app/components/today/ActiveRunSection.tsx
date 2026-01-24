@@ -76,7 +76,7 @@ export default function ActiveRunSection({
               {protocolName}
             </div>
             <div className="text-sm text-zinc-600">
-              Violation on Session {failureSession ?? 1}
+              Violation — Session {failureSession ?? 1}
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">

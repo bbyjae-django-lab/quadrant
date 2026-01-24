@@ -87,7 +87,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
             Pricing
           </h1>
           <p className="max-w-2xl text-lg leading-7 text-zinc-600">
-            Free enforces behaviour. Pro remembers it.
+            Free enforces. Pro remembers.
           </p>
         </section>
 
@@ -95,10 +95,9 @@ export default function PricingClient({ backHref }: PricingClientProps) {
           <div className="ui-surface p-[var(--space-6)]">
             <div className="space-y-2">
               <h2 className="text-2xl font-semibold text-zinc-900">Free</h2>
-              <p className="text-sm text-zinc-500">Experience constraint.</p>
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-              <li>One active protocol</li>
+              <li>One constraint at a time</li>
               <li>Log sessions</li>
               <li>Run ends on violation</li>
               <li>Saved on this device</li>
@@ -111,9 +110,9 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               <p className="text-sm text-zinc-300">${PRO_PRICE} / month</p>
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
-              <li>Cross-device ledger</li>
-              <li>Run history across devices</li>
-              <li>Run detail and notes</li>
+              <li>Cross-device history</li>
+              <li>Notes + review</li>
+              <li>Preserved run record</li>
             </ul>
             <button
               type="button"

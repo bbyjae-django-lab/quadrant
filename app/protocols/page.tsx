@@ -20,14 +20,8 @@ export default function ProtocolsPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-8)] ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
-        <div className="flex items-center justify-between text-sm font-medium text-zinc-500">
-          <span />
-          <a href="/about" className="btn-tertiary">
-            About Quadrant
-          </a>
-        </div>
         <h1 className="text-2xl font-semibold text-zinc-900">
-          Choose one constraint.
+          Pick a constraint.
         </h1>
         <ul className="space-y-2">
           {primaryProtocols.map((protocol) => (
@@ -60,6 +54,9 @@ export default function ProtocolsPage() {
             </ul>
           </details>
         ) : null}
+        <a href="/about" className="text-xs text-zinc-400">
+          About Quadrant
+        </a>
       </main>
     </div>
   );

@@ -95,19 +95,11 @@ export default function ProtocolDetailPage() {
         <h1 className="text-2xl font-semibold text-zinc-900">
           {protocol.name}
         </h1>
-        <div className="space-y-3 text-sm text-zinc-700">
-          <div>
-            <div className="text-xs font-semibold tracking-wide text-zinc-500">
-              Rule:
-            </div>
-            <div className="mt-1">{protocol.rule}</div>
+        <div className="text-sm text-zinc-700">
+          <div className="text-xs font-semibold tracking-wide text-zinc-500">
+            Constraint:
           </div>
-          <div>
-            <div className="text-xs font-semibold tracking-wide text-zinc-500">
-              Violation:
-            </div>
-            <div className="mt-1">{protocol.violation}</div>
-          </div>
+          <div className="mt-1">{protocol.rule}</div>
         </div>
         <div className="space-y-2">
           <button

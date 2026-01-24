@@ -138,10 +138,7 @@ export default function QuadrantApp() {
                 <div className="mt-3 text-sm font-semibold text-zinc-900">
                   {activeRun.protocolName}
                 </div>
-                <div className="mt-2 text-sm text-zinc-700">
-                  <span className="font-semibold text-zinc-900">Rule:</span>{" "}
-                  {activeRule}
-                </div>
+                <div className="mt-2 text-sm text-zinc-700">{activeRule}</div>
                 <div className="mt-2 text-sm text-zinc-600">
                   Session {sessionNumber}
                 </div>
@@ -159,11 +156,8 @@ export default function QuadrantApp() {
           ) : latestEndedRun ? (
             <div className="ui-surface p-[var(--space-6)]">
               <h2 className="text-lg font-semibold text-zinc-900">Run ended</h2>
-              <div className="mt-3 text-sm font-semibold text-zinc-900">
-                {latestEndedRun.protocolName}
-              </div>
-              <div className="mt-2 text-sm text-zinc-600">
-                Violation on Session {getViolationIndex(latestEndedRun)}
+              <div className="mt-3 text-sm text-zinc-600">
+                Violation — Session {getViolationIndex(latestEndedRun)}
               </div>
               <div className="mt-2 text-sm text-zinc-600">
                 Violation logged. Saved on this device.
