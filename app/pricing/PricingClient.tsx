@@ -7,11 +7,7 @@ import { getSupabaseClient } from "../lib/supabaseClient";
 
 const PRO_PRICE = 29;
 
-type PricingClientProps = {
-  backHref: string;
-};
-
-export default function PricingClient({ backHref }: PricingClientProps) {
+export default function PricingClient() {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
   const { isPro } = useAuth();
@@ -33,6 +29,17 @@ export default function PricingClient({ backHref }: PricingClientProps) {
     if (typeof window !== "undefined") {
       startCheckout();
     }
+  };
+
+  const handleBack = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.replace("/");
   };
 
   const handleManageBilling = () => {
@@ -73,13 +80,9 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
-        <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
-          <button
-            type="button"
-            className="btn-tertiary"
-            onClick={() => router.replace(backHref)}
-          >
-            Back to Today
+        <div className="text-xs text-zinc-500">
+          <button type="button" className="underline" onClick={handleBack}>
+            Back
           </button>
         </div>
         <section className="space-y-3">

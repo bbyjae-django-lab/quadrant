@@ -98,12 +98,7 @@ export default function ProtocolDetailPage() {
         <h1 className="text-2xl font-semibold text-zinc-900">
           {protocol.name}
         </h1>
-        <div className="text-sm text-zinc-700">
-          <div className="text-xs font-semibold tracking-wide text-zinc-500">
-            Constraint:
-          </div>
-          <div className="mt-1">{protocol.rule}</div>
-        </div>
+        <div className="text-sm text-zinc-700">{protocol.rule}</div>
         <div className="space-y-2">
           <button
             type="button"
@@ -111,7 +106,7 @@ export default function ProtocolDetailPage() {
             onClick={() => handleStartRun(protocol)}
             disabled={hydrating || isStarting}
           >
-            {isStarting ? "Starting…" : "Start run"}
+            {isStarting ? "Starting…" : "Start a run"}
           </button>
         </div>
         {error ? <p className="text-xs text-zinc-500">{error}</p> : null}

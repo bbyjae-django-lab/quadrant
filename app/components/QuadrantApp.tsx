@@ -158,7 +158,7 @@ export default function QuadrantApp() {
                 </button>
                 {!isAuthed ? (
                   <a href="/pricing" className="text-sm text-zinc-600 underline">
-                    Save your ledger with Pro
+                    Upgrade to Pro
                   </a>
                 ) : null}
               </div>
