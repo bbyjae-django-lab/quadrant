@@ -110,9 +110,9 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               <p className="text-sm text-zinc-300">${PRO_PRICE} / month</p>
             </div>
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
-              <li>Cross-device history</li>
-              <li>Preserved run record</li>
-              <li>Long-term accountability</li>
+              <li>Your discipline, preserved across sessions</li>
+              <li>History that survives resets, devices, and bad weeks</li>
+              <li>Proof you followed the rules when it mattered</li>
             </ul>
             <button
               type="button"
