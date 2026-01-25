@@ -110,13 +110,13 @@ export default function SuccessClient() {
           </div>
         ) : (
           <div className="space-y-3 text-sm text-zinc-600">
-            <p>Enter your email to continue.</p>
             <label className="text-sm font-semibold text-zinc-700">
               Email
               <input
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
                 className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
               />
             </label>
