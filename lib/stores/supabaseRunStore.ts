@@ -11,7 +11,16 @@ type RunRow = {
   started_at: string;
   ended_at: string | null;
   end_reason: "violation" | null;
-  checkins: Checkin[] | null;
+};
+
+type CheckinRow = {
+  id: string;
+  run_id: string;
+  user_id: string;
+  day_index: number;
+  result: CheckinResult;
+  note: string | null;
+  created_at: string;
 };
 
 const nowIso = () => new Date().toISOString();
@@ -24,7 +33,7 @@ const toRun = (row: RunRow): Run => ({
   startedAt: row.started_at,
   endedAt: row.ended_at ?? undefined,
   endReason: row.end_reason ?? undefined,
-  checkins: Array.isArray(row.checkins) ? row.checkins : [],
+  checkins: [],
 });
 
 export class SupabaseRunStore implements RunStore {
@@ -51,7 +60,26 @@ export class SupabaseRunStore implements RunStore {
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle<RunRow>();
-    this.activeRun = activeRow ? toRun(activeRow) : null;
+    if (activeRow) {
+      const activeRun = toRun(activeRow);
+      const { data: checkinRows } = await client
+        .from("checkins")
+        .select("*")
+        .eq("run_id", activeRow.id)
+        .eq("user_id", this.userId)
+        .order("day_index", { ascending: true });
+      activeRun.checkins = Array.isArray(checkinRows)
+        ? (checkinRows as CheckinRow[]).map((row) => ({
+            index: row.day_index,
+            result: row.result,
+            note: row.note ?? undefined,
+            createdAt: row.created_at,
+          }))
+        : [];
+      this.activeRun = activeRun;
+    } else {
+      this.activeRun = null;
+    }
 
     const { data: historyRows } = await client
       .from("runs")
@@ -92,7 +120,6 @@ export class SupabaseRunStore implements RunStore {
         started_at: now,
         ended_at: null,
         end_reason: null,
-        checkins: [],
       })
       .select("*")
       .single<RunRow>();
@@ -118,30 +145,44 @@ export class SupabaseRunStore implements RunStore {
       note: note?.trim() ? note.trim() : undefined,
       createdAt: nowIso(),
     };
-    const nextCheckins = [...this.activeRun.checkins, checkin];
     const endedAt = result === "violated" ? nowIso() : null;
-    const { data, error } = await client
-      .from("runs")
-      .update({
-        checkins: nextCheckins,
-        status: result === "violated" ? "ended" : "active",
-        ended_at: endedAt,
-        end_reason: result === "violated" ? "violation" : null,
-      })
-      .eq("id", runId)
-      .eq("user_id", this.userId)
-      .select("*")
-      .single<RunRow>();
-    if (error || !data) {
+    const { error: checkinError } = await client.from("checkins").insert({
+      user_id: this.userId,
+      run_id: runId,
+      day_index: checkin.index,
+      result: checkin.result,
+      note: checkin.note ?? null,
+      created_at: checkin.createdAt,
+    });
+    if (checkinError) {
       throw new Error("Unable to update run.");
     }
-    const run = toRun(data);
-    if (run.status === "ended") {
+    if (result === "violated") {
+      const { data, error } = await client
+        .from("runs")
+        .update({
+          status: "ended",
+          ended_at: endedAt,
+          end_reason: "violation",
+        })
+        .eq("id", runId)
+        .eq("user_id", this.userId)
+        .select("*")
+        .single<RunRow>();
+      if (error || !data) {
+        throw new Error("Unable to update run.");
+      }
+      const run = toRun(data);
+      run.checkins = [...this.activeRun.checkins, checkin];
       this.activeRun = null;
       this.runHistory = [run, ...this.runHistory.filter((item) => item.id !== run.id)];
-    } else {
-      this.activeRun = run;
+      return run;
     }
+    const run = {
+      ...this.activeRun,
+      checkins: [...this.activeRun.checkins, checkin],
+    };
+    this.activeRun = run;
     return run;
   }
 
