@@ -107,7 +107,7 @@ export default function SuccessClient() {
     setIsSending(true);
     const returnTo =
       typeof window !== "undefined"
-        ? sessionStorage.getItem("quadrant_return_to")
+        ? localStorage.getItem("quadrant_return_to")
         : null;
     const safeReturnTo = getSafeReturnTo(returnTo);
     const { error } = await client.auth.signInWithOtp({

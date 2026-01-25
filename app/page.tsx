@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { QUADRANT_LOCAL_ACTIVE_RUN } from "@/lib/keys";
+import { getSupabaseClient } from "./lib/supabaseClient";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -30,6 +31,14 @@ export default function LandingPage() {
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
+    }
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      supabase.auth.getSession().then((result) => {
+        if (result.data.session) {
+          router.replace("/dashboard");
+        }
+      });
     }
     const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
     if (!stored) {

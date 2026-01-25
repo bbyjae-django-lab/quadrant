@@ -8,6 +8,7 @@ import { LocalRunStore } from "@/lib/stores/localRunStore";
 import { SupabaseRunStore } from "@/lib/stores/supabaseRunStore";
 import type { Protocol } from "@/lib/types";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { getSupabaseClient } from "@/app/lib/supabaseClient";
 
 export default function ProtocolDetailPage() {
   const router = useRouter();
@@ -60,16 +61,29 @@ export default function ProtocolDetailPage() {
   }, [authLoading, router, store]);
 
   const handleStartRun = async (selected: Protocol) => {
-    if (hydrating || isStarting) {
+    if (hydrating || isStarting || authLoading) {
       return;
     }
     setError("");
     setIsStarting(true);
     try {
+      if (isAuthed) {
+        const client = getSupabaseClient();
+        const session = client ? await client.auth.getSession() : null;
+        if (!session?.data.session) {
+          const returnTo = `/protocols/${selected.id}`;
+          router.push(`/auth?returnTo=${encodeURIComponent(returnTo)}`);
+          setIsStarting(false);
+          return;
+        }
+      }
       await store.startRun(selected);
       router.replace("/dashboard");
-    } catch {
-      setError("Unable to start run.");
+    } catch (err) {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("Start run error:", err);
+      }
+      setError("Couldn't start run. Try again.");
       setIsStarting(false);
     }
   };

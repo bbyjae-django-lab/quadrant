@@ -39,6 +39,17 @@ export default function QuadrantApp() {
   }, [store]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const returnTo = localStorage.getItem("quadrant_return_to");
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (returnTo === current) {
+      localStorage.removeItem("quadrant_return_to");
+    }
+  }, []);
+
+  useEffect(() => {
     if (authLoading) {
       return;
     }

@@ -46,10 +46,28 @@ export const signInWithOtp = async (email: string) => {
     warnOnce("Supabase client unavailable; cannot send magic link.");
     return { error: new Error("Supabase client unavailable.") };
   }
+  const storedReturnTo =
+    typeof window !== "undefined"
+      ? localStorage.getItem("quadrant_return_to")
+      : null;
+  const returnTo =
+    storedReturnTo ??
+    (typeof window !== "undefined"
+      ? `${window.location.pathname}${window.location.search}`
+      : "/dashboard");
+  if (typeof window !== "undefined" && !storedReturnTo) {
+    localStorage.setItem("quadrant_return_to", returnTo);
+  }
+  const safeReturnTo =
+    returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? returnTo
+      : "/dashboard";
   return client.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback`,
+      emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+        safeReturnTo,
+      )}`,
     },
   });
 };
@@ -61,4 +79,3 @@ export const signOut = async () => {
   }
   await client.auth.signOut();
 };
-

@@ -17,7 +17,10 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   const { isPro } = useAuth();
   const startCheckout = () => {
     if (typeof window !== "undefined") {
-      sessionStorage.setItem("quadrant_return_to", backHref);
+      localStorage.setItem(
+        "quadrant_return_to",
+        `${window.location.pathname}${window.location.search}`,
+      );
     }
     fetch("/api/stripe/checkout", { method: "POST" })
       .then((res) => res.json())
