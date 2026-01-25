@@ -6,64 +6,59 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type BillingSuccessPageProps = {
-searchParams?: { session_id?: string | string[] };
+  searchParams?: { session_id?: string | string[] };
 };
 
 export default async function BillingSuccessPage({
-searchParams,
+  searchParams,
 }: BillingSuccessPageProps) {
-const raw = searchParams?.session_id;
-const sessionId = typeof raw === "string" ? raw : "";
+  const raw = searchParams?.session_id;
+  const sessionId = typeof raw === "string" ? raw : "";
 
-let email = "";
+  console.log("[billing/success] session_id =", sessionId);
 
-if (sessionId && process.env.STRIPE_SECRET_KEY) {
-try {
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-apiVersion: "2024-04-10",
-});
+  let email = "";
 
-const session = await stripe.checkout.sessions.retrieve(sessionId, {
-expand: ["customer", "customer_details"],
-});
+  if (sessionId && process.env.STRIPE_SECRET_KEY) {
+    try {
+      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2024-04-10",
+      });
 
-email =
-session.customer_details?.email ??
-session.customer_email ??
-"";
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ["customer", "customer_details"],
+      });
 
-// If still empty, try pulling from the Customer object
-if (!email) {
-const cust = session.customer;
+      console.log(
+        "[billing/success] session.customer_details?.email =",
+        session.customer_details?.email,
+      );
+      console.log(
+        "[billing/success] session.customer_email =",
+        session.customer_email,
+      );
+      console.log("[billing/success] session.customer =", session.customer);
 
-// Expanded customer object
-if (cust && typeof cust === "object" && "email" in cust) {
-email = (cust.email ?? "") as string;
-}
+      email =
+        session.customer_details?.email ??
+        session.customer_email ??
+        "";
 
-// Customer ID string (not expanded)
-if (!email && typeof cust === "string") {
-const customerRes = await stripe.customers.retrieve(cust);
-const customer = customerRes; // Stripe.Response<...>
+      if (!email && typeof session.customer === "string") {
+        const customer = await stripe.customers.retrieve(session.customer);
 
-// Narrow away DeletedCustomer safely
-if (customer && typeof customer === "object" && "deleted" in customer) {
-// deleted customer has no email
-email = "";
-} else {
-// customer is Stripe.Customer here
-email = (customer as Stripe.Customer).email ?? "";
-}
-}
-}
-} catch (e) {
-console.error("[billing/success] failed to resolve email", {
-sessionId,
-error: e,
-});
-email = "";
-}
-}
+        if (!("deleted" in customer) || customer.deleted === false) {
+          email = (customer as Stripe.Customer).email ?? "";
+        }
+      }
+    } catch (e) {
+      console.error("[billing/success] failed to resolve email", {
+        sessionId,
+        error: e,
+      });
+      email = "";
+    }
+  }
 
-return <SuccessClient initialEmail={email} />;
+  return <SuccessClient initialEmail={email} />;
 }
