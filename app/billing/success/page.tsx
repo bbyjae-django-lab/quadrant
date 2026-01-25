@@ -1,17 +1,19 @@
-export const runtime = "nodejs";
-
 import Stripe from "stripe";
 import SuccessClient from "./SuccessClient";
+
+export const runtime = "nodejs";
 
 type BillingSuccessPageProps = {
 searchParams?: { session_id?: string | string[] };
 };
 
-export default async function BillingSuccessPage({ searchParams }: BillingSuccessPageProps) {
-const rawSessionId = searchParams?.session_id;
-const sessionId = typeof rawSessionId === "string" ? rawSessionId : "";
+export default async function BillingSuccessPage({
+searchParams,
+}: BillingSuccessPageProps) {
+const raw = searchParams?.session_id;
+const sessionId = typeof raw === "string" ? raw : "";
 
-let emailFromSession = "";
+let email = "";
 
 if (sessionId && process.env.STRIPE_SECRET_KEY) {
 try {
@@ -19,25 +21,47 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 apiVersion: "2024-04-10",
 });
 
-const session = await stripe.checkout.sessions.retrieve(sessionId);
+const session = await stripe.checkout.sessions.retrieve(sessionId, {
+expand: ["customer", "customer_details"],
+});
 
-emailFromSession =
+email =
 session.customer_details?.email ??
 session.customer_email ??
 "";
 
-// Fallback: fetch Customer email if session doesn’t include it
-if (!emailFromSession && typeof session.customer === "string") {
-const customer = await stripe.customers.retrieve(session.customer);
-if (typeof customer !== "string") {
-emailFromSession = customer.email ?? "";
+// If still empty, try pulling from the Customer object
+if (!email) {
+const cust = session.customer;
+
+// Expanded customer object
+if (cust && typeof cust === "object" && "email" in cust) {
+email = (cust.email ?? "") as string;
+}
+
+// Customer ID string (not expanded)
+if (!email && typeof cust === "string") {
+const customerRes = await stripe.customers.retrieve(cust);
+const customer = customerRes; // Stripe.Response<...>
+
+// Narrow away DeletedCustomer safely
+if (customer && typeof customer === "object" && "deleted" in customer) {
+// deleted customer has no email
+email = "";
+} else {
+// customer is Stripe.Customer here
+email = (customer as Stripe.Customer).email ?? "";
+}
 }
 }
 } catch (e) {
-// Keep empty, but don’t pretend it succeeded.
-emailFromSession = "";
+console.error("[billing/success] failed to resolve email", {
+sessionId,
+error: e,
+});
+email = "";
 }
 }
 
-return <SuccessClient initialEmail={emailFromSession} />;
+return <SuccessClient initialEmail={email} />;
 }
