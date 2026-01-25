@@ -1,28 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
 type UiState = "idle" | "sending" | "sent";
-const getInitialEmail = () => {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  const params = new URLSearchParams(window.location.search);
-  const paramEmail = params.get("email");
-  if (paramEmail) {
-    localStorage.setItem("quadrant_checkout_email", paramEmail);
-    return paramEmail;
-  }
-  return localStorage.getItem("quadrant_checkout_email") ?? "";
+
+type SuccessClientProps = {
+  initialEmail: string;
 };
 
-export default function SuccessClient() {
-  const [email, setEmail] = useState(getInitialEmail);
+export default function SuccessClient({ initialEmail }: SuccessClientProps) {
+  const [email, setEmail] = useState(() => {
+    if (initialEmail.trim()) {
+      return initialEmail;
+    }
+    if (typeof window === "undefined") {
+      return "";
+    }
+    return localStorage.getItem("quadrant_checkout_email") ?? "";
+  });
   const [uiState, setUiState] = useState<UiState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    if (initialEmail.trim()) {
+      localStorage.setItem("quadrant_checkout_email", initialEmail.trim());
+    }
+  }, [initialEmail]);
 
   const sendMagicLink = async () => {
     const trimmed = email.trim();
