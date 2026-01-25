@@ -4,8 +4,7 @@ import { useState } from "react";
 
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
-type Status = "sent" | "error";
-
+type UiState = "idle" | "sending" | "sent";
 const getInitialEmail = () => {
   if (typeof window === "undefined") {
     return "";
@@ -21,8 +20,8 @@ const getInitialEmail = () => {
 
 export default function SuccessClient() {
   const [email, setEmail] = useState(getInitialEmail);
-  const [status, setStatus] = useState<Status>("sent");
-  const [hasSent, setHasSent] = useState(false);
+  const [uiState, setUiState] = useState<UiState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
 
   const sendMagicLink = async () => {
@@ -32,10 +31,12 @@ export default function SuccessClient() {
     }
     const client = getSupabaseClient();
     if (!client) {
-      setStatus("error");
+      setErrorMessage("Unable to send link.");
       return;
     }
     setIsSending(true);
+    setUiState("sending");
+    setErrorMessage(null);
     localStorage.setItem("quadrant_checkout_email", trimmed);
     const returnTo =
       typeof window !== "undefined"
@@ -61,13 +62,13 @@ export default function SuccessClient() {
           : undefined,
     });
     if (error) {
-      setStatus("error");
+      setErrorMessage("Unable to send link.");
       setIsSending(false);
+      setUiState("idle");
       return;
     }
-    setStatus("sent");
-    setHasSent(true);
     setIsSending(false);
+    setUiState("sent");
   };
 
   return (
@@ -77,10 +78,14 @@ export default function SuccessClient() {
           <h1 className="text-2xl font-semibold text-zinc-900">
             Pro is active.
           </h1>
-          <p className="text-sm text-zinc-600">Check your email to continue.</p>
+          <p className="text-sm text-zinc-600">
+            {uiState === "sent"
+              ? "Check your email to continue."
+              : "Enter your email to continue."}
+          </p>
         </div>
 
-        {hasSent ? (
+        {uiState === "sent" ? (
           <div className="space-y-3 text-sm text-zinc-600">
             {email ? (
               <div>
@@ -99,23 +104,22 @@ export default function SuccessClient() {
                 onClick={sendMagicLink}
                 disabled={isSending}
               >
-                Send another
+                Resend link
               </button>
             </p>
           </div>
         ) : (
           <div className="space-y-3 text-sm text-zinc-600">
-            {email ? null : (
-              <label className="text-sm font-semibold text-zinc-700">
-                Email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-                />
-              </label>
-            )}
+            <p>Enter your email to continue.</p>
+            <label className="text-sm font-semibold text-zinc-700">
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+              />
+            </label>
             <button
               type="button"
               className="btn btn-primary text-sm"
@@ -124,10 +128,8 @@ export default function SuccessClient() {
             >
               Send sign-in link
             </button>
-            {status === "error" ? (
-              <p className="text-xs text-zinc-500">
-                Unable to send link.
-              </p>
+            {errorMessage ? (
+              <p className="text-xs text-zinc-500">{errorMessage}</p>
             ) : null}
           </div>
         )}
