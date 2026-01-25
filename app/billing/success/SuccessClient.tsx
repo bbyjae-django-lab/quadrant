@@ -7,8 +7,15 @@ import { getSupabaseClient } from "../../lib/supabaseClient";
 
 const RESEND_COOLDOWN_MS = 8000;
 
+const isBadReturnTo = (value: string) => value === "/pricing" || value === "/";
+
 const getSafeReturnTo = (value: string | null) => {
-  if (value && value.startsWith("/") && !value.startsWith("//")) {
+  if (
+    value &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !isBadReturnTo(value)
+  ) {
     return value;
   }
   return "/dashboard";
@@ -107,7 +114,7 @@ export default function SuccessClient() {
     setIsSending(true);
     const returnTo =
       typeof window !== "undefined"
-        ? localStorage.getItem("quadrant_return_to")
+        ? sessionStorage.getItem("quadrant_return_to")
         : null;
     const safeReturnTo = getSafeReturnTo(returnTo);
     const { error } = await client.auth.signInWithOtp({

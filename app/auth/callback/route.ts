@@ -12,7 +12,9 @@ export const GET = async (request: Request) => {
 
   const safeNext =
     rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
-  const redirectUrl = new URL(safeNext, requestUrl.origin);
+  const finalNext =
+    safeNext === "/pricing" || safeNext === "/" ? "/dashboard" : safeNext;
+  const redirectUrl = new URL(finalNext, requestUrl.origin);
   if (!supabaseUrl || !anonKey || !code) {
     return NextResponse.redirect(redirectUrl);
   }

@@ -35,6 +35,12 @@ export default function ProtocolDetailPage() {
     if (authLoading) {
       return;
     }
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(
+        "quadrant_app_return_to",
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
     let active = true;
     setHydrating(true);
     store

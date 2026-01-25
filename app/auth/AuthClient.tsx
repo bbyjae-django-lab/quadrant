@@ -22,7 +22,7 @@ export default function AuthClient({ returnTo }: AuthClientProps) {
 
   useEffect(() => {
     const safeReturnTo = getSafeReturnTo(returnTo);
-    localStorage.setItem("quadrant_return_to", safeReturnTo);
+    sessionStorage.setItem("quadrant_return_to", safeReturnTo);
   }, [returnTo]);
 
   const handleSend = async () => {

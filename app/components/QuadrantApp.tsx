@@ -42,10 +42,11 @@ export default function QuadrantApp() {
     if (typeof window === "undefined") {
       return;
     }
-    const returnTo = localStorage.getItem("quadrant_return_to");
     const current = `${window.location.pathname}${window.location.search}`;
+    sessionStorage.setItem("quadrant_app_return_to", current);
+    const returnTo = sessionStorage.getItem("quadrant_return_to");
     if (returnTo === current) {
-      localStorage.removeItem("quadrant_return_to");
+      sessionStorage.removeItem("quadrant_return_to");
     }
   }, []);
 
