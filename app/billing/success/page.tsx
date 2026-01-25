@@ -2,6 +2,8 @@ import Stripe from "stripe";
 import SuccessClient from "./SuccessClient";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type BillingSuccessPageProps = {
 searchParams?: { session_id?: string | string[] };
