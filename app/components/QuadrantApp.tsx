@@ -200,6 +200,11 @@ export default function QuadrantApp() {
               </div>
             </div>
           )}
+          {isAuthed ? (
+            <a href="/ledger" className="text-xs text-zinc-500 underline">
+              View ledger
+            </a>
+          ) : null}
         </section>
       </main>
 
