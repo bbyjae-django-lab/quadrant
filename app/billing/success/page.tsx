@@ -47,8 +47,10 @@ export default async function BillingSuccessPage({
       if (!email && typeof session.customer === "string") {
         const customer = await stripe.customers.retrieve(session.customer);
 
-        if (!("deleted" in customer) || customer.deleted === false) {
-          email = (customer as Stripe.Customer).email ?? "";
+        if ("deleted" in customer) {
+          // deleted customer -> no email to use
+        } else {
+          email = customer.email ?? "";
         }
       }
     } catch (e) {
