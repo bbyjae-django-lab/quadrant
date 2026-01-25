@@ -16,11 +16,14 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   const router = useRouter();
   const { isPro } = useAuth();
   const startCheckout = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("quadrant_return_to", backHref);
+    }
     fetch("/api/stripe/checkout", { method: "POST" })
       .then((res) => res.json())
       .then((data) => {
         if (data?.url) {
-          window.location.href = data.url;
+          window.location.replace(data.url);
           return;
         }
         setUpgradeNotice("Unable to start checkout.");
