@@ -124,6 +124,10 @@ export const POST = async (req: Request) => {
   const session = event.data.object as Stripe.Checkout.Session;
   let email = "";
   let returnTo = "/dashboard";
+  let stripeCustomerId: string | null = null;
+  let stripeSubscriptionId: string | null = null;
+  let stripePriceId: string | null = null;
+  let currentPeriodEnd: string | null = null;
 
   try {
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
@@ -134,12 +138,29 @@ export const POST = async (req: Request) => {
       fullSession.customer_email ??
       "";
     returnTo = getSafeReturnTo(fullSession.metadata?.return_to);
+    stripePriceId = fullSession.metadata?.price_id ?? null;
+    stripeCustomerId =
+      typeof fullSession.customer === "string"
+        ? fullSession.customer
+        : fullSession.customer?.id ?? null;
+    stripeSubscriptionId =
+      typeof fullSession.subscription === "string"
+        ? fullSession.subscription
+        : fullSession.subscription?.id ?? null;
 
     if (!email && typeof fullSession.customer === "string") {
       const customer = await stripe.customers.retrieve(fullSession.customer);
       if (!("deleted" in customer)) {
         email = customer.email ?? "";
       }
+    }
+    if (stripeSubscriptionId) {
+      const subscription = await stripe.subscriptions.retrieve(
+        stripeSubscriptionId,
+      );
+      currentPeriodEnd = new Date(
+        subscription.current_period_end * 1000,
+      ).toISOString();
     }
   } catch (error) {
     console.error("[stripe/webhook] session lookup failed", error);
@@ -149,6 +170,25 @@ export const POST = async (req: Request) => {
   if (!email) {
     console.log("[stripe/webhook] missing email for session", session.id);
     return NextResponse.json({ ok: true });
+  }
+
+  const { error: pendingError } = await admin
+    .from("pending_entitlements")
+    .upsert(
+      {
+        email,
+        is_pro: true,
+        stripe_customer_id: stripeCustomerId,
+        stripe_subscription_id: stripeSubscriptionId,
+        stripe_price_id: stripePriceId,
+        current_period_end: currentPeriodEnd,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "email" },
+    );
+  if (pendingError) {
+    console.error("[stripe/webhook] pending entitlements upsert failed", pendingError);
+    return NextResponse.json({ error: "Pending entitlements failed" }, { status: 500 });
   }
 
   const supabase = createClient(supabaseUrl, anonKey, {

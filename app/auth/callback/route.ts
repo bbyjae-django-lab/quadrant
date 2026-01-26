@@ -9,6 +9,7 @@ export const GET = async (request: Request) => {
   const code = requestUrl.searchParams.get("code");
   const supabaseUrl = process.env.SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const safeNext =
     rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/dashboard";
@@ -26,6 +27,37 @@ export const GET = async (request: Request) => {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error || !data?.session) {
     return NextResponse.redirect(redirectUrl);
+  }
+
+  const userEmail = data.session.user?.email ?? "";
+  if (supabaseUrl && serviceRoleKey && userEmail) {
+    const admin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
+    const { data: pending } = await admin
+      .from("pending_entitlements")
+      .select(
+        "email,is_pro,stripe_customer_id,stripe_subscription_id,stripe_price_id,current_period_end",
+      )
+      .eq("email", userEmail)
+      .maybeSingle();
+    if (pending?.is_pro) {
+      await admin
+        .from("user_entitlements")
+        .upsert(
+          {
+            user_id: data.session.user.id,
+            is_pro: true,
+            stripe_customer_id: pending.stripe_customer_id ?? null,
+            stripe_subscription_id: pending.stripe_subscription_id ?? null,
+            stripe_price_id: pending.stripe_price_id ?? null,
+            current_period_end: pending.current_period_end ?? null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+      await admin.from("pending_entitlements").delete().eq("email", userEmail);
+    }
   }
 
   const response = NextResponse.redirect(redirectUrl);
