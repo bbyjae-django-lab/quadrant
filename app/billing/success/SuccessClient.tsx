@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type SuccessClientProps = {
   sessionId: string;
@@ -8,12 +9,15 @@ type SuccessClientProps = {
 };
 
 export default function SuccessClient({ sessionId, debug }: SuccessClientProps) {
+  const searchParams = useSearchParams();
+  const urlSessionId = searchParams.get("session_id") ?? "";
+  const effectiveSessionId = sessionId || urlSessionId;
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [cooldownActive, setCooldownActive] = useState(false);
 
   const handleResend = async () => {
-    if (!sessionId || isSending || cooldownActive) {
+    if (!effectiveSessionId || isSending || cooldownActive) {
       return;
     }
     setIsSending(true);
@@ -22,7 +26,7 @@ export default function SuccessClient({ sessionId, debug }: SuccessClientProps) 
       const response = await fetch("/api/auth/resend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId: effectiveSessionId }),
       });
       if (!response.ok) {
         setErrorMessage("Unable to resend link.");
@@ -52,7 +56,7 @@ export default function SuccessClient({ sessionId, debug }: SuccessClientProps) 
             type="button"
             className="btn btn-primary w-fit text-sm"
             onClick={handleResend}
-            disabled={!sessionId || isSending || cooldownActive}
+            disabled={!effectiveSessionId || isSending || cooldownActive}
           >
             Resend link
           </button>
@@ -60,9 +64,9 @@ export default function SuccessClient({ sessionId, debug }: SuccessClientProps) 
             debug: {debug ?? "(none)"}
           </p>
           <p className="text-[10px] text-zinc-400 break-all">
-            sessionId: {sessionId || "(empty)"}
+            sessionId: {effectiveSessionId || "(empty)"}
           </p>
-          {!sessionId ? (
+          {!effectiveSessionId ? (
             <p className="text-xs text-zinc-500">
               Missing checkout session. Please refresh.
             </p>
