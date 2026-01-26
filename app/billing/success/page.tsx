@@ -15,7 +15,6 @@ export default function BillingSuccessPage({
   cookies();
   const raw = searchParams?.session_id;
   const sessionId = typeof raw === "string" ? raw : "";
-  const debug = JSON.stringify(searchParams ?? {});
 
-  return <SuccessClient sessionId={sessionId} debug={debug} />;
+  return <SuccessClient sessionId={sessionId} />;
 }
