@@ -164,7 +164,7 @@ export default function QuadrantApp() {
                   Start another run
                 </button>
               </div>
-              {isAuthed && !isPro ? (
+              {!isPro ? (
                 <a
                   href="/pricing"
                   className="mt-3 inline-block text-xs text-zinc-500 underline"
