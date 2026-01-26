@@ -40,6 +40,7 @@ export default function AuthProvider({
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [isPro, setIsPro] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -64,10 +65,36 @@ export default function AuthProvider({
     };
   }, []);
 
-  const refreshEntitlements = useCallback(() => {}, []);
+  const refreshEntitlements = useCallback(() => {
+    if (!session?.access_token) {
+      setIsPro(false);
+      return;
+    }
+    fetch("/api/entitlements", {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        setIsPro(Boolean(data?.isPro));
+      })
+      .catch(() => {
+        setIsPro(false);
+      });
+  }, [session?.access_token]);
+
+  useEffect(() => {
+    if (!session?.access_token) {
+      setIsPro(false);
+      return;
+    }
+    refreshEntitlements();
+  }, [session?.access_token, refreshEntitlements]);
 
   const handleSignOut = useCallback(async () => {
     await authSignOut();
+    setIsPro(false);
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -76,11 +103,11 @@ export default function AuthProvider({
       session,
       isAuthed: Boolean(user),
       authLoading,
-      isPro: Boolean(user),
+      isPro,
       signOut: handleSignOut,
       refreshEntitlements,
     }),
-    [user, session, authLoading, handleSignOut, refreshEntitlements],
+    [user, session, authLoading, isPro, handleSignOut, refreshEntitlements],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
