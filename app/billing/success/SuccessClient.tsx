@@ -5,10 +5,9 @@ import { useSearchParams } from "next/navigation";
 
 type SuccessClientProps = {
   sessionId: string;
-  debug?: string;
 };
 
-export default function SuccessClient({ sessionId, debug }: SuccessClientProps) {
+export default function SuccessClient({ sessionId }: SuccessClientProps) {
   const searchParams = useSearchParams();
   const urlSessionId = searchParams.get("session_id") ?? "";
   const effectiveSessionId = sessionId || urlSessionId;
@@ -54,18 +53,15 @@ export default function SuccessClient({ sessionId, debug }: SuccessClientProps) 
           <p>Open the email on this device and click the link.</p>
           <button
             type="button"
-            className="btn btn-primary w-fit text-sm"
+            className="btn btn-secondary w-fit text-sm"
             onClick={handleResend}
             disabled={!effectiveSessionId || isSending || cooldownActive}
           >
             Resend link
           </button>
-          <p className="text-[10px] text-zinc-400 break-all">
-            debug: {debug ?? "(none)"}
-          </p>
-          <p className="text-[10px] text-zinc-400 break-all">
-            sessionId: {effectiveSessionId || "(empty)"}
-          </p>
+          {cooldownActive ? (
+            <p className="text-xs text-zinc-500">Try again in a moment.</p>
+          ) : null}
           {!effectiveSessionId ? (
             <p className="text-xs text-zinc-500">
               Missing checkout session. Please refresh.
