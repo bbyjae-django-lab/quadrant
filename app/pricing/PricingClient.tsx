@@ -16,12 +16,17 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   const router = useRouter();
   const { isPro } = useAuth();
   const startCheckout = () => {
+    let returnTo = "/dashboard";
     if (typeof window !== "undefined") {
-      const appReturnTo =
+      returnTo =
         sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
-      sessionStorage.setItem("quadrant_return_to", appReturnTo);
+      sessionStorage.setItem("quadrant_return_to", returnTo);
     }
-    fetch("/api/stripe/checkout", { method: "POST" })
+    fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ returnTo }),
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data?.url) {

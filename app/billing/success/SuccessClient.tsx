@@ -1,80 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-import { getSupabaseClient } from "../../lib/supabaseClient";
-
-type UiState = "idle" | "sending" | "sent";
+import { useState } from "react";
 
 type SuccessClientProps = {
-  initialEmail: string;
+  sessionId: string;
 };
 
-export default function SuccessClient({ initialEmail }: SuccessClientProps) {
-  const [email, setEmail] = useState(() => {
-    if (initialEmail.trim()) {
-      return initialEmail;
-    }
-    if (typeof window === "undefined") {
-      return "";
-    }
-    return localStorage.getItem("quadrant_checkout_email") ?? "";
-  });
-  const [uiState, setUiState] = useState<UiState>("idle");
+export default function SuccessClient({ sessionId }: SuccessClientProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
 
-  useEffect(() => {
-    if (initialEmail.trim()) {
-      localStorage.setItem("quadrant_checkout_email", initialEmail.trim());
-    }
-  }, [initialEmail]);
-
-  const sendMagicLink = async () => {
-    const trimmed = email.trim();
-    if (!trimmed || isSending) {
-      return;
-    }
-    const client = getSupabaseClient();
-    if (!client) {
-      setErrorMessage("Unable to send link.");
+  const handleResend = async () => {
+    if (!sessionId || isSending || Date.now() < cooldownUntil) {
       return;
     }
     setIsSending(true);
-    setUiState("sending");
     setErrorMessage(null);
-    localStorage.setItem("quadrant_checkout_email", trimmed);
-    const returnTo =
-      typeof window !== "undefined"
-        ? sessionStorage.getItem("quadrant_return_to")
-        : null;
-    const safeReturnTo =
-      returnTo &&
-      returnTo.startsWith("/") &&
-      !returnTo.startsWith("//") &&
-      returnTo !== "/pricing" &&
-      returnTo !== "/"
-        ? returnTo
-        : "/dashboard";
-    const { error } = await client.auth.signInWithOtp({
-      email: trimmed,
-      options:
-        typeof window !== "undefined"
-          ? {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-                safeReturnTo,
-              )}`,
-            }
-          : undefined,
-    });
-    if (error) {
-      setErrorMessage("Unable to send link.");
-      setIsSending(false);
-      setUiState("idle");
-      return;
+    try {
+      const response = await fetch("/api/auth/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      });
+      if (!response.ok) {
+        setErrorMessage("Unable to resend link.");
+      } else {
+        setCooldownUntil(Date.now() + 10_000);
+      }
+    } catch {
+      setErrorMessage("Unable to resend link.");
     }
     setIsSending(false);
-    setUiState("sent");
   };
 
   return (
@@ -82,63 +39,25 @@ export default function SuccessClient({ initialEmail }: SuccessClientProps) {
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-zinc-900">
-            Pro is active.
+            Payment complete.
           </h1>
-          <p className="text-sm text-zinc-600">
-            {uiState === "sent"
-              ? "Check your email to continue."
-              : "Enter your email to continue."}
-          </p>
+          <p className="text-sm text-zinc-600">Check your email to continue.</p>
         </div>
 
-        {uiState === "sent" ? (
-          <div className="space-y-3 text-sm text-zinc-600">
-            {email ? (
-              <div>
-                <p className="font-semibold text-zinc-700">
-                  We&#39;ve sent a sign-in link to:
-                </p>
-                <p className="mt-1 text-sm text-zinc-900">{email}</p>
-              </div>
-            ) : null}
-            <p>Open the email on this device and click the link.</p>
-            <p className="text-xs text-zinc-500">
-              Didn&#39;t receive it?{" "}
-              <button
-                type="button"
-                className="underline"
-                onClick={sendMagicLink}
-                disabled={isSending}
-              >
-                Resend link
-              </button>
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3 text-sm text-zinc-600">
-            <label className="text-sm font-semibold text-zinc-700">
-              Email
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="you@example.com"
-                className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-              />
-            </label>
-            <button
-              type="button"
-              className="btn btn-primary text-sm"
-              onClick={sendMagicLink}
-              disabled={!email.trim() || isSending}
-            >
-              Send sign-in link
-            </button>
-            {errorMessage ? (
-              <p className="text-xs text-zinc-500">{errorMessage}</p>
-            ) : null}
-          </div>
-        )}
+        <div className="space-y-3 text-sm text-zinc-600">
+          <p>Open the email on this device and click the link.</p>
+          <button
+            type="button"
+            className="btn btn-primary w-fit text-sm"
+            onClick={handleResend}
+            disabled={!sessionId || isSending || Date.now() < cooldownUntil}
+          >
+            Resend link
+          </button>
+          {errorMessage ? (
+            <p className="text-xs text-zinc-500">{errorMessage}</p>
+          ) : null}
+        </div>
       </main>
     </div>
   );

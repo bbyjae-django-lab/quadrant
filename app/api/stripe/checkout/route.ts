@@ -14,9 +14,25 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ error: "Missing config" }, { status: 500 });
   }
   const stripe = new Stripe(stripeSecret, { apiVersion: "2024-04-10" });
+  let returnTo = "/dashboard";
+  try {
+    const body = (await req.json()) as { returnTo?: string };
+    if (
+      body?.returnTo &&
+      body.returnTo.startsWith("/") &&
+      !body.returnTo.startsWith("//") &&
+      body.returnTo !== "/" &&
+      body.returnTo !== "/pricing"
+    ) {
+      returnTo = body.returnTo;
+    }
+  } catch {
+    // ignore empty or invalid body
+  }
   const metadata: Record<string, string> = {
     app: "quadrant",
     price_id: priceId,
+    return_to: returnTo,
   };
   if (user?.id) {
     metadata.supabase_user_id = user.id;
