@@ -56,9 +56,6 @@ export default function QuadrantApp() {
     }
     let active = true;
     setHydrating(true);
-    if (!isAuthed) {
-      store.clearLocalAppKeys();
-    }
     store
       .hydrate()
       .then(() => {

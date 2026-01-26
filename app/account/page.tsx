@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
-import { LocalRunStore } from "@/lib/stores/localRunStore";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -51,7 +50,6 @@ export default function AccountPage() {
   };
 
   const handleSignOut = async () => {
-    new LocalRunStore().clearLocalAppKeys();
     await signOut();
     router.replace("/dashboard");
   };
