@@ -1,4 +1,5 @@
 import SuccessClient from "./SuccessClient";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,8 +12,10 @@ type BillingSuccessPageProps = {
 export default function BillingSuccessPage({
   searchParams,
 }: BillingSuccessPageProps) {
+  cookies();
   const raw = searchParams?.session_id;
   const sessionId = typeof raw === "string" ? raw : "";
+  const debug = JSON.stringify(searchParams ?? {});
 
-  return <SuccessClient sessionId={sessionId} />;
+  return <SuccessClient sessionId={sessionId} debug={debug} />;
 }

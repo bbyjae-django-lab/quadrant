@@ -4,9 +4,10 @@ import { useState } from "react";
 
 type SuccessClientProps = {
   sessionId: string;
+  debug?: string;
 };
 
-export default function SuccessClient({ sessionId }: SuccessClientProps) {
+export default function SuccessClient({ sessionId, debug }: SuccessClientProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [cooldownActive, setCooldownActive] = useState(false);
@@ -55,6 +56,12 @@ export default function SuccessClient({ sessionId }: SuccessClientProps) {
           >
             Resend link
           </button>
+          <p className="text-[10px] text-zinc-400 break-all">
+            debug: {debug ?? "(none)"}
+          </p>
+          <p className="text-[10px] text-zinc-400 break-all">
+            sessionId: {sessionId || "(empty)"}
+          </p>
           {!sessionId ? (
             <p className="text-xs text-zinc-500">
               Missing checkout session. Please refresh.
