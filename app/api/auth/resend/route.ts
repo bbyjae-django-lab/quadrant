@@ -4,6 +4,36 @@ import Stripe from "stripe";
 
 export const runtime = "nodejs";
 
+const getConfig = () => {
+  const missing: string[] = [];
+  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+
+  if (!stripeSecret) {
+    missing.push("STRIPE_SECRET_KEY");
+  }
+  if (!appUrl) {
+    missing.push("NEXT_PUBLIC_APP_URL");
+  }
+  if (!supabaseUrl) {
+    missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.SUPABASE_ANON_KEY) {
+    missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
+  }
+
+  return {
+    stripeSecret,
+    appUrl,
+    supabaseUrl,
+    anonKey,
+    missing,
+  };
+};
+
 const getSafeReturnTo = (value: unknown) => {
   if (typeof value !== "string") {
     return "/dashboard";
@@ -18,12 +48,12 @@ const getSafeReturnTo = (value: unknown) => {
 };
 
 export const POST = async (req: Request) => {
-  const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
-  if (!stripeSecret || !appUrl || !supabaseUrl || !anonKey) {
-    return NextResponse.json({ error: "Missing config" }, { status: 500 });
+  const { stripeSecret, appUrl, supabaseUrl, anonKey, missing } = getConfig();
+  if (missing.length > 0 || !stripeSecret || !appUrl || !supabaseUrl || !anonKey) {
+    return NextResponse.json(
+      { error: "Missing config", missing },
+      { status: 500 },
+    );
   }
 
   let payload: { sessionId?: string } | null = null;

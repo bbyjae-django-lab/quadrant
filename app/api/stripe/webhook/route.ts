@@ -5,6 +5,46 @@ import Stripe from "stripe";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const getConfig = () => {
+  const missing: string[] = [];
+  const stripeSecret = process.env.STRIPE_SECRET_KEY;
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!stripeSecret) {
+    missing.push("STRIPE_SECRET_KEY");
+  }
+  if (!webhookSecret) {
+    missing.push("STRIPE_WEBHOOK_SECRET");
+  }
+  if (!appUrl) {
+    missing.push("NEXT_PUBLIC_APP_URL");
+  }
+  if (!supabaseUrl) {
+    missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.SUPABASE_ANON_KEY) {
+    missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
+  }
+  if (!serviceRoleKey) {
+    missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
+
+  return {
+    stripeSecret,
+    webhookSecret,
+    appUrl,
+    supabaseUrl,
+    anonKey,
+    serviceRoleKey,
+    missing,
+  };
+};
+
 // SQL (run once):
 // create table if not exists public.stripe_webhook_events (
 //   event_id text primary key,
@@ -25,13 +65,17 @@ const getSafeReturnTo = (value: unknown) => {
 };
 
 export const POST = async (req: Request) => {
-  const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const anonKey = process.env.SUPABASE_ANON_KEY;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const {
+    stripeSecret,
+    webhookSecret,
+    appUrl,
+    supabaseUrl,
+    anonKey,
+    serviceRoleKey,
+    missing,
+  } = getConfig();
   if (
+    missing.length > 0 ||
     !stripeSecret ||
     !webhookSecret ||
     !appUrl ||
@@ -39,7 +83,10 @@ export const POST = async (req: Request) => {
     !anonKey ||
     !serviceRoleKey
   ) {
-    return NextResponse.json({ error: "Missing config" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Missing config", missing },
+      { status: 500 },
+    );
   }
 
   const sig = req.headers.get("stripe-signature");
