@@ -9,10 +9,10 @@ type SuccessClientProps = {
 export default function SuccessClient({ sessionId }: SuccessClientProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const [cooldownActive, setCooldownActive] = useState(false);
 
   const handleResend = async () => {
-    if (!sessionId || isSending || Date.now() < cooldownUntil) {
+    if (!sessionId || isSending || cooldownActive) {
       return;
     }
     setIsSending(true);
@@ -26,7 +26,8 @@ export default function SuccessClient({ sessionId }: SuccessClientProps) {
       if (!response.ok) {
         setErrorMessage("Unable to resend link.");
       } else {
-        setCooldownUntil(Date.now() + 10_000);
+        setCooldownActive(true);
+        window.setTimeout(() => setCooldownActive(false), 10_000);
       }
     } catch {
       setErrorMessage("Unable to resend link.");
@@ -50,10 +51,15 @@ export default function SuccessClient({ sessionId }: SuccessClientProps) {
             type="button"
             className="btn btn-primary w-fit text-sm"
             onClick={handleResend}
-            disabled={!sessionId || isSending || Date.now() < cooldownUntil}
+            disabled={!sessionId || isSending || cooldownActive}
           >
             Resend link
           </button>
+          {!sessionId ? (
+            <p className="text-xs text-zinc-500">
+              Missing checkout session. Please refresh.
+            </p>
+          ) : null}
           {errorMessage ? (
             <p className="text-xs text-zinc-500">{errorMessage}</p>
           ) : null}
