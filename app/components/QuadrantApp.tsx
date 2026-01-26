@@ -20,7 +20,7 @@ const getViolationIndex = (run: Run) => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const { user, isAuthed, authLoading } = useAuth();
+  const { user, isAuthed, authLoading, isPro } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
       return new SupabaseRunStore(user.id);
@@ -164,6 +164,14 @@ export default function QuadrantApp() {
                   Start another run
                 </button>
               </div>
+              {!isPro ? (
+                <a
+                  href="/pricing"
+                  className="mt-3 inline-block text-xs text-zinc-500 underline"
+                >
+                  Upgrade to Pro
+                </a>
+              ) : null}
             </div>
           ) : (
             <div className="ui-surface p-[var(--space-6)]">
