@@ -20,7 +20,7 @@ const getViolationIndex = (run: Run) => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const { user, isAuthed, authLoading, signOut } = useAuth();
+  const { user, isAuthed, authLoading } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
       return new SupabaseRunStore(user.id);
@@ -56,6 +56,9 @@ export default function QuadrantApp() {
     }
     let active = true;
     setHydrating(true);
+    if (!isAuthed) {
+      store.clearLocalAppKeys();
+    }
     store
       .hydrate()
       .then(() => {
@@ -107,21 +110,16 @@ export default function QuadrantApp() {
   return (
     <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="w-full max-w-3xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
-        <div className="flex items-center justify-end text-sm font-medium text-zinc-500">
+        <div className="flex items-center justify-end text-xs text-zinc-500">
           {isAuthed ? (
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-              <span>Signed in</span>
-              <button
-                type="button"
-                className="btn-tertiary"
-                onClick={() => {
-                  void signOut();
-                }}
-              >
-                Sign out
-              </button>
-            </div>
-          ) : null}
+            <a href="/account" className="underline">
+              Account
+            </a>
+          ) : (
+            <a href="/auth?returnTo=/dashboard" className="underline">
+              Sign in
+            </a>
+          )}
         </div>
 
         <section className="mt-8 space-y-6">
@@ -169,23 +167,12 @@ export default function QuadrantApp() {
                   Start another run
                 </button>
               </div>
-              {!isAuthed ? (
-                <a
-                  href="/pricing?from=run-ended"
-                  className="mt-3 inline-block text-sm text-zinc-600 underline"
-                >
-                  Upgrade to Pro
-                </a>
-              ) : null}
             </div>
           ) : (
             <div className="ui-surface p-[var(--space-6)]">
               <h2 className="text-lg font-semibold text-zinc-900">
                 No active run
               </h2>
-              <p className="mt-2 text-sm text-zinc-600">
-                Select one constraint to enforce next session.
-              </p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -194,17 +181,9 @@ export default function QuadrantApp() {
                 >
                   Start a run
                 </button>
-                <a href="/pricing" className="btn-tertiary text-sm">
-                  How this works
-                </a>
               </div>
             </div>
           )}
-          {isAuthed ? (
-            <a href="/ledger" className="text-xs text-zinc-500 underline">
-              View ledger
-            </a>
-          ) : null}
         </section>
       </main>
 
