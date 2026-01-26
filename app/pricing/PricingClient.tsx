@@ -14,7 +14,7 @@ type PricingClientProps = {
 export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
-  const { isPro } = useAuth();
+  const { isPro, isAuthed } = useAuth();
   const startCheckout = () => {
     let returnTo = "/dashboard";
     if (typeof window !== "undefined") {
@@ -41,6 +41,10 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   };
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
+      if (!isAuthed) {
+        router.push("/auth?returnTo=/pricing");
+        return;
+      }
       startCheckout();
     }
   };
