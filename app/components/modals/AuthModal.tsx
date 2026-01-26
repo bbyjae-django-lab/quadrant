@@ -7,11 +7,13 @@ import { signInWithOtp } from "../../lib/auth";
 type AuthModalProps = {
   onClose: () => void;
   title?: string;
+  subtitle?: string;
 };
 
 export default function AuthModal({
   onClose,
-  title = "Sign in to preserve history",
+  title = "Sign in",
+  subtitle = "We’ll email you a secure sign-in link.",
 }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -82,13 +84,14 @@ export default function AuthModal({
         role="dialog"
         aria-modal="true"
         data-quadrant-modal
-        className="w-full max-w-md ui-modal p-[var(--space-6)]"
+        className="w-full max-w-md ui-surface p-[var(--space-6)]"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-zinc-900">
               {title}
             </h2>
+            <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
           </div>
           <button
             type="button"
@@ -100,24 +103,22 @@ export default function AuthModal({
           </button>
         </div>
         <div className="mt-4 space-y-4">
-          <label className="text-sm font-semibold text-zinc-700">
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
-              placeholder="you@example.com"
-            />
-          </label>
-          {submitting ? (
-            <p className="text-sm text-zinc-600">Sending…</p>
-          ) : sent ? (
+          {sent ? (
             <p className="text-sm text-zinc-600">
-              Check your email for the link.
+              Check your email to continue.
             </p>
           ) : (
-            <div className="flex flex-wrap gap-3">
+            <>
+              <label className="text-sm font-semibold text-zinc-700">
+                Email
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+                  placeholder="you@example.com"
+                />
+              </label>
               <button
                 type="button"
                 className="btn btn-primary text-sm"
@@ -126,14 +127,7 @@ export default function AuthModal({
               >
                 Send link
               </button>
-              <button
-                type="button"
-                className="btn btn-secondary text-sm"
-                onClick={onClose}
-              >
-                Not now
-              </button>
-            </div>
+            </>
           )}
           {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
         </div>
