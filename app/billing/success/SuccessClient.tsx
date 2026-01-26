@@ -50,10 +50,9 @@ export default function SuccessClient({ sessionId }: SuccessClientProps) {
         </div>
 
         <div className="space-y-3 text-sm text-zinc-600">
-          <p>Open the email on this device and click the link.</p>
           <button
             type="button"
-            className="btn btn-secondary w-fit text-sm"
+            className="text-xs text-zinc-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleResend}
             disabled={!effectiveSessionId || isSending || cooldownActive}
           >
