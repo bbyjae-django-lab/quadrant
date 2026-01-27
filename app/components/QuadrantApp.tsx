@@ -20,7 +20,7 @@ const getViolationIndex = (run: Run) => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const { user, isAuthed, authLoading, isPro } = useAuth();
+  const { user, isAuthed, authLoading, isPro, proStatus } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
       return new SupabaseRunStore(user.id);
@@ -107,7 +107,12 @@ export default function QuadrantApp() {
   return (
     <div className="flex min-h-screen items-start justify-center bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="w-full max-w-3xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
-        <div className="flex items-center justify-end text-xs text-zinc-500">
+        <div className="flex items-center justify-end gap-4 text-xs text-zinc-500">
+          {isAuthed && proStatus === "pro" ? (
+            <a href="/ledger" className="underline">
+              View ledger
+            </a>
+          ) : null}
           {isAuthed ? (
             <a href="/account" className="underline">
               Account
@@ -164,14 +169,23 @@ export default function QuadrantApp() {
                   Start another run
                 </button>
               </div>
-              {!isPro ? (
+              {!isAuthed ? (
+                <a
+                  href="/auth?returnTo=/pricing"
+                  className="mt-3 inline-block text-xs text-zinc-500 underline"
+                >
+                  Sign in to upgrade
+                </a>
+              ) : proStatus === "unknown" ? (
+                <p className="mt-3 text-xs text-zinc-500">Checking plan...</p>
+              ) : isPro ? null : (
                 <a
                   href="/pricing"
                   className="mt-3 inline-block text-xs text-zinc-500 underline"
                 >
                   Upgrade to Pro
                 </a>
-              ) : null}
+              )}
             </div>
           ) : (
             <div className="ui-surface p-[var(--space-6)]">
