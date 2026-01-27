@@ -21,7 +21,7 @@ const getViolationIndex = (run: Run) => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const { user, isAuthed, authLoading, isPro, proStatus } = useAuth();
+  const { user, session, isAuthed, authLoading, isPro, proStatus } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
       return new SupabaseRunStore(user.id);
@@ -34,6 +34,9 @@ export default function QuadrantApp() {
   const [activeRun, setActiveRun] = useState<Run | null>(null);
   const [runHistory, setRunHistory] = useState<Run[]>([]);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
+  const [endingRun, setEndingRun] = useState(false);
+  const [suppressEndedState, setSuppressEndedState] = useState(false);
 
   useEffect(() => {
     storeRef.current = store;
@@ -80,7 +83,13 @@ export default function QuadrantApp() {
     };
   }, [authLoading, store]);
 
-  const latestEndedRun = runHistory[0] ?? null;
+  useEffect(() => {
+    if (activeRun) {
+      setSuppressEndedState(false);
+    }
+  }, [activeRun]);
+
+  const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
   const activeRule = activeRun
     ? PROTOCOLS.find((protocol) => protocol.id === activeRun.protocolId)?.rule ??
@@ -97,11 +106,53 @@ export default function QuadrantApp() {
         setActiveRun(updated);
       } else {
         setActiveRun(null);
+        setSuppressEndedState(false);
       }
       setRunHistory(storeRef.current.getRuns());
       setShowCheckInModal(false);
     } catch {
       // no-op
+    }
+  };
+
+  const handleEndRun = async () => {
+    if (!activeRun || endingRun) {
+      return;
+    }
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      console.error("[runs/end] missing access token");
+      return;
+    }
+    setEndingRun(true);
+    try {
+      const response = await fetch("/api/runs/end", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok) {
+        console.error("[runs/end] request failed", response.status, payload);
+        return;
+      }
+      if (payload?.ok || payload?.alreadyEnded) {
+        try {
+          await storeRef.current.hydrate();
+        } catch {
+          // no-op
+        }
+        setActiveRun(null);
+        setShowEndRunConfirm(false);
+        setSuppressEndedState(true);
+      } else {
+        console.error("[runs/end] unexpected response", payload);
+      }
+    } catch (error) {
+      console.error("[runs/end] request error", error);
+    } finally {
+      setEndingRun(false);
     }
   };
 
@@ -152,6 +203,41 @@ export default function QuadrantApp() {
                   >
                     Log session
                   </button>
+                </div>
+                <div className="mt-2 text-xs text-zinc-500">
+                  {showEndRunConfirm ? (
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span>
+                        End this run now? This will be recorded as ended.
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={() => setShowEndRunConfirm(false)}
+                          disabled={endingRun}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="underline"
+                          onClick={handleEndRun}
+                          disabled={endingRun}
+                        >
+                          {endingRun ? "Ending..." : "End run"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="underline"
+                      onClick={() => setShowEndRunConfirm(true)}
+                    >
+                      End run
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
