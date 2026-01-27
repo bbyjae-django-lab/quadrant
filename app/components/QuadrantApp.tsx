@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { PROTOCOLS } from "@/lib/protocols";
@@ -170,21 +171,21 @@ export default function QuadrantApp() {
                 </button>
               </div>
               {!isAuthed ? (
-                <a
+                <Link
                   href="/pricing?intent=upgrade&returnTo=/dashboard"
                   className="mt-3 inline-block text-xs text-zinc-500 underline"
                 >
                   Upgrade to Pro
-                </a>
+                </Link>
               ) : proStatus === "unknown" ? (
                 <p className="mt-3 text-xs text-zinc-500">Checking plan...</p>
               ) : isPro ? null : (
-                <a
+                <Link
                   href="/pricing?intent=upgrade&returnTo=/dashboard"
                   className="mt-3 inline-block text-xs text-zinc-500 underline"
                 >
                   Upgrade to Pro
-                </a>
+                </Link>
               )}
             </div>
           ) : (

@@ -58,7 +58,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
       const authHref = `/auth?returnTo=${encodeURIComponent(returnTo)}`;
       if (!supabase) {
         setUpgradeNotice("Sign in to continue.");
-        router.push(authHref);
+        window.location.href = authHref;
         return;
       }
       supabase.auth
@@ -67,14 +67,14 @@ export default function PricingClient({ backHref }: PricingClientProps) {
           const accessToken = result.data.session?.access_token;
           if (!accessToken) {
             setUpgradeNotice("Sign in to continue.");
-            router.push(authHref);
+            window.location.href = authHref;
             return;
           }
           startCheckout();
         })
         .catch(() => {
           setUpgradeNotice("Sign in to continue.");
-          router.push(authHref);
+          window.location.href = authHref;
         });
     }
   };
