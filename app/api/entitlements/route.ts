@@ -8,15 +8,19 @@ export const GET = async (req: Request) => {
   const anonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !anonKey) {
-    return NextResponse.json(
-      { error: "Missing config" },
-      { status: 500 },
-    );
+  const missing: string[] = [];
+  if (!supabaseUrl) {
+    missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  }
+  if (!anonKey) {
+    missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
   }
   if (!serviceRoleKey) {
+    missing.push("SUPABASE_SERVICE_ROLE_KEY");
+  }
+  if (missing.length > 0 || !supabaseUrl || !anonKey || !serviceRoleKey) {
     return NextResponse.json(
-      { error: "Missing config", missing: ["SUPABASE_SERVICE_ROLE_KEY"] },
+      { error: "Missing config", missing },
       { status: 500 },
     );
   }
@@ -27,14 +31,14 @@ export const GET = async (req: Request) => {
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const supabase = createClient(supabaseUrl, anonKey, {
+  const supabaseAnon = createClient(supabaseUrl, anonKey, {
     auth: { persistSession: false },
   });
-  const { data: userData, error: userError } = await supabase.auth.getUser(
+  const { data: userData, error: userError } = await supabaseAnon.auth.getUser(
     token,
   );
-  const user = userData?.user ?? null;
-  if (!user) {
+  const userId = userData?.user?.id ?? null;
+  if (!userId) {
     return NextResponse.json(
       { error: "Unauthorized", detail: userError?.message },
       { status: 401 },
@@ -46,7 +50,7 @@ export const GET = async (req: Request) => {
   const { data: row, error } = await admin
     .from("user_entitlements")
     .select("is_pro,current_period_end")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
   if (error) {
     return NextResponse.json(
@@ -60,5 +64,5 @@ export const GET = async (req: Request) => {
     : null;
   const isActive = periodEnd ? periodEnd > Date.now() : true;
   const isPro = isProFlag && isActive;
-  return NextResponse.json({ isPro });
+  return NextResponse.json({ isPro, userId, hasRow: Boolean(row) });
 };

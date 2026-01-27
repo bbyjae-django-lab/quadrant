@@ -51,12 +51,12 @@ export const GET = async (request: Request) => {
     if (pendingError) {
       console.error(
         "[auth/callback] pending entitlement lookup failed",
+        pendingError?.code,
         pendingError?.message ?? pendingError,
       );
     } else if (!pending) {
       console.log("[auth/callback] no pending entitlement for", userEmail);
     } else if (pending?.is_pro === true) {
-      // NOTE: user_entitlements.user_id must be UNIQUE for upsert(onConflict) to work.
       const { error: upsertError } = await admin
         .from("user_entitlements")
           .upsert(
@@ -77,17 +77,6 @@ export const GET = async (request: Request) => {
           upsertError?.code,
           upsertError?.message ?? upsertError,
         );
-        const upsertMessage = String(
-          upsertError?.message ?? upsertError ?? "",
-        ).toLowerCase();
-        if (
-          upsertMessage.includes("on conflict") ||
-          upsertMessage.includes("constraint")
-        ) {
-          console.error(
-            "[auth/callback] user_entitlements.user_id must be UNIQUE for upsert",
-          );
-        }
       } else {
         const { error: deleteError } = await admin
           .from("pending_entitlements")
@@ -96,6 +85,7 @@ export const GET = async (request: Request) => {
         if (deleteError) {
           console.error(
             "[auth/callback] pending entitlement delete failed",
+            deleteError?.code,
             deleteError?.message ?? deleteError,
           );
         }
