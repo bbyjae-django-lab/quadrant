@@ -7,13 +7,11 @@ import { signInWithOtp } from "../../lib/auth";
 type AuthModalProps = {
   onClose: () => void;
   title?: string;
-  subtitle?: string;
 };
 
 export default function AuthModal({
   onClose,
   title = "Sign in",
-  subtitle = "We’ll email you a secure sign-in link.",
 }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -78,18 +76,17 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/25 px-[var(--space-6)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/20 px-[var(--space-6)]">
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         data-quadrant-modal
-        className="w-full max-w-[420px] ui-surface p-[var(--space-5)] sm:p-[var(--space-6)]"
+        className="w-full max-w-sm ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
-            <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
           </div>
           <button
             type="button"
@@ -117,14 +114,20 @@ export default function AuthModal({
                   placeholder="you@example.com"
                 />
               </label>
-              <button
-                type="button"
-                className="btn btn-primary text-sm"
-                onClick={handleSendLink}
-                disabled={submitting}
-              >
-                Send link
-              </button>
+              <div className="text-sm">
+                <button
+                  type="button"
+                  onClick={handleSendLink}
+                  disabled={submitting}
+                  className={
+                    submitting
+                      ? "cursor-not-allowed text-zinc-400 no-underline"
+                      : "text-zinc-700 underline underline-offset-4 hover:text-zinc-900"
+                  }
+                >
+                  Send link
+                </button>
+              </div>
             </>
           )}
           {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
