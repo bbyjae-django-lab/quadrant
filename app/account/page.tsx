@@ -10,12 +10,13 @@ export default function AccountPage() {
   const router = useRouter();
   const { user, isAuthed, isPro, proStatus, authLoading, signOut } = useAuth();
   const [notice, setNotice] = useState<string | null>(null);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !isAuthed) {
+    if (!authLoading && !isAuthed && !isSigningOut) {
       router.replace("/auth?returnTo=/dashboard");
     }
-  }, [authLoading, isAuthed, router]);
+  }, [authLoading, isAuthed, isSigningOut, router]);
 
   const handleManageBilling = () => {
     const supabase = getSupabaseClient();
@@ -50,8 +51,9 @@ export default function AccountPage() {
   };
 
   const handleSignOut = async () => {
+    setIsSigningOut(true);
     await signOut();
-    router.replace("/dashboard");
+    router.replace("/");
   };
 
   if (!isAuthed) {
