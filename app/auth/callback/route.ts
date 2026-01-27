@@ -7,7 +7,7 @@ export const GET = async (request: Request) => {
   const requestUrl = new URL(request.url);
   const rawNext = requestUrl.searchParams.get("next") ?? "/dashboard";
   const code = requestUrl.searchParams.get("code");
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -29,34 +29,50 @@ export const GET = async (request: Request) => {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const userEmail = data.session.user?.email ?? "";
-  if (supabaseUrl && serviceRoleKey && userEmail) {
+  const user = data.session.user;
+  const userEmail = (user?.email ?? "").trim().toLowerCase();
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("Auth callback: missing Supabase admin env vars.");
+  } else if (userEmail) {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
-    const { data: pending } = await admin
+    const { data: pending, error: pendingError } = await admin
       .from("pending_entitlements")
       .select(
-        "email,is_pro,stripe_customer_id,stripe_subscription_id,stripe_price_id,current_period_end",
+        "email,is_pro,stripe_customer_id,stripe_subscription_id,stripe_price_id,current_period_end,updated_at",
       )
       .eq("email", userEmail)
       .maybeSingle();
-    if (pending?.is_pro) {
-      await admin
-        .from("user_entitlements")
-        .upsert(
-          {
-            user_id: data.session.user.id,
-            is_pro: true,
-            stripe_customer_id: pending.stripe_customer_id ?? null,
-            stripe_subscription_id: pending.stripe_subscription_id ?? null,
-            stripe_price_id: pending.stripe_price_id ?? null,
-            current_period_end: pending.current_period_end ?? null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" },
-        );
-      await admin.from("pending_entitlements").delete().eq("email", userEmail);
+    if (pendingError) {
+      console.error("Auth callback: failed to load pending entitlement.");
+    } else if (pending) {
+      if (pending.is_pro === true) {
+        const { error: upsertError } = await admin
+          .from("user_entitlements")
+          .upsert(
+            {
+              user_id: user.id,
+              is_pro: true,
+              stripe_customer_id: pending.stripe_customer_id ?? null,
+              stripe_subscription_id: pending.stripe_subscription_id ?? null,
+              stripe_price_id: pending.stripe_price_id ?? null,
+              current_period_end: pending.current_period_end ?? null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id" },
+          );
+        if (upsertError) {
+          console.error("Auth callback: failed to promote entitlement.");
+        }
+      }
+      const { error: deleteError } = await admin
+        .from("pending_entitlements")
+        .delete()
+        .eq("email", userEmail);
+      if (deleteError) {
+        console.error("Auth callback: failed to delete pending entitlement.");
+      }
     }
   }
 
