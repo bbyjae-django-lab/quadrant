@@ -167,7 +167,8 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ error: "Session lookup failed" }, { status: 500 });
   }
 
-  if (!email) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
     console.log("[stripe/webhook] missing email for session", session.id);
     return NextResponse.json({ ok: true });
   }
@@ -176,7 +177,7 @@ export const POST = async (req: Request) => {
     .from("pending_entitlements")
     .upsert(
       {
-        email,
+        email: normalizedEmail,
         is_pro: true,
         stripe_customer_id: stripeCustomerId,
         stripe_subscription_id: stripeSubscriptionId,
@@ -195,7 +196,7 @@ export const POST = async (req: Request) => {
     auth: { persistSession: false },
   });
   const { error: sendError } = await supabase.auth.signInWithOtp({
-    email,
+    email: normalizedEmail,
     options: {
       emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(
         returnTo,

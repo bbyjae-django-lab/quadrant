@@ -7,9 +7,16 @@ export const GET = async (req: Request) => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !anonKey) {
     return NextResponse.json(
       { error: "Missing config" },
+      { status: 500 },
+    );
+  }
+  if (!serviceRoleKey) {
+    return NextResponse.json(
+      { error: "Missing config", missing: ["SUPABASE_SERVICE_ROLE_KEY"] },
       { status: 500 },
     );
   }
@@ -33,7 +40,10 @@ export const GET = async (req: Request) => {
       { status: 401 },
     );
   }
-  const { data: row, error } = await supabase
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false },
+  });
+  const { data: row, error } = await admin
     .from("user_entitlements")
     .select("is_pro,current_period_end")
     .eq("user_id", user.id)

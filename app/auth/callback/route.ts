@@ -39,16 +39,13 @@ export const GET = async (request: Request) => {
     });
     const { data: pending, error: pendingError } = await admin
       .from("pending_entitlements")
-      .select(
-        "email,is_pro,stripe_customer_id,stripe_subscription_id,stripe_price_id,current_period_end,updated_at",
-      )
+      .select("*")
       .eq("email", userEmail)
       .maybeSingle();
     if (pendingError) {
       console.error("Auth callback: failed to load pending entitlement.");
-    } else if (pending) {
-      if (pending.is_pro === true) {
-        const { error: upsertError } = await admin
+    } else if (pending?.is_pro === true) {
+      const { error: upsertError } = await admin
           .from("user_entitlements")
           .upsert(
             {
@@ -62,16 +59,16 @@ export const GET = async (request: Request) => {
             },
             { onConflict: "user_id" },
           );
-        if (upsertError) {
-          console.error("Auth callback: failed to promote entitlement.");
+      if (upsertError) {
+        console.error("Auth callback: failed to promote entitlement.");
+      } else {
+        const { error: deleteError } = await admin
+          .from("pending_entitlements")
+          .delete()
+          .eq("email", userEmail);
+        if (deleteError) {
+          console.error("Auth callback: failed to delete pending entitlement.");
         }
-      }
-      const { error: deleteError } = await admin
-        .from("pending_entitlements")
-        .delete()
-        .eq("email", userEmail);
-      if (deleteError) {
-        console.error("Auth callback: failed to delete pending entitlement.");
       }
     }
   }
