@@ -29,10 +29,11 @@ export const GET = async (request: Request) => {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const user = data.session.user;
+  const session = data.session;
+  const user = session.user;
   const userEmail = (user?.email ?? "").trim().toLowerCase();
   if (!user || !userEmail) {
-    console.error("[auth/callback] missing user/email after exchange");
+    // Skip promotion if we cannot resolve a user/email, but keep login redirect intact.
   } else if (!supabaseUrl || !serviceRoleKey) {
     console.error(
       "[auth/callback] admin client config missing",
@@ -73,6 +74,7 @@ export const GET = async (request: Request) => {
       if (upsertError) {
         console.error(
           "[auth/callback] entitlement upsert failed",
+          upsertError?.code,
           upsertError?.message ?? upsertError,
         );
         const upsertMessage = String(
@@ -98,8 +100,6 @@ export const GET = async (request: Request) => {
           );
         }
       }
-    } else {
-      console.log("[auth/callback] pending found but not pro for", userEmail);
     }
   }
 
