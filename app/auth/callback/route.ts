@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export const GET = async (request: Request) => {
   const requestUrl = new URL(request.url);
@@ -31,8 +32,9 @@ export const GET = async (request: Request) => {
 
   const sessionUser = data.session.user;
   const userId = sessionUser?.id ?? "";
-  const userEmail = (sessionUser?.email ?? "").trim().toLowerCase();
-  if (!userId || !userEmail) {
+  const rawEmail = (sessionUser?.email ?? "").trim();
+  const emailNorm = rawEmail.toLowerCase();
+  if (!userId || !emailNorm) {
     console.error("[auth/callback] missing user after exchange", {
       hasSession: Boolean(data?.session),
     });
@@ -45,11 +47,23 @@ export const GET = async (request: Request) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
-    const { data: pending, error: pendingError } = await admin
+    console.log("[auth/callback] promo lookup", {
+      userId,
+      rawEmail,
+      emailNorm,
+    });
+    let { data: pending, error: pendingError } = await admin
       .from("pending_entitlements")
       .select("*")
-      .eq("email", userEmail)
+      .in("email", [emailNorm, rawEmail])
       .maybeSingle();
+    if (!pending && !pendingError) {
+      ({ data: pending, error: pendingError } = await admin
+        .from("pending_entitlements")
+        .select("*")
+        .ilike("email", emailNorm)
+        .maybeSingle());
+    }
     if (pendingError) {
       console.error(
         "[auth/callback] pending entitlement lookup failed",
@@ -57,8 +71,13 @@ export const GET = async (request: Request) => {
         pendingError?.message ?? pendingError,
       );
     } else if (!pending) {
-      console.log("[auth/callback] no pending entitlement for", userEmail);
+      console.log("[auth/callback] promo not found", { emailNorm, rawEmail });
     } else if (pending?.is_pro === true) {
+      console.log("[auth/callback] promo pending found", {
+        email: pending.email,
+        isPro: pending.is_pro,
+        stripeCustomerId: pending.stripe_customer_id ?? null,
+      });
       const { error: upsertError } = await admin
         .from("user_entitlements")
           .upsert(
@@ -74,20 +93,21 @@ export const GET = async (request: Request) => {
             { onConflict: "user_id" },
           );
       if (upsertError) {
-        console.error(
-          "[auth/callback] entitlement upsert failed",
-          upsertError?.code,
-          upsertError?.message ?? upsertError,
-        );
+        console.error("[auth/callback] entitlement upsert failed", {
+          code: upsertError?.code,
+          message: upsertError?.message ?? upsertError,
+          userId,
+          stripeCustomerId: pending.stripe_customer_id ?? null,
+        });
       } else {
         console.log("[auth/callback] promoted pro", {
           userId,
-          email: userEmail,
+          email: emailNorm,
         });
         const { error: deleteError } = await admin
           .from("pending_entitlements")
           .delete()
-          .eq("email", userEmail);
+          .eq("email", emailNorm);
         if (deleteError) {
           console.error(
             "[auth/callback] pending entitlement delete failed",
