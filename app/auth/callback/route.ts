@@ -29,11 +29,13 @@ export const GET = async (request: Request) => {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const session = data.session;
-  const user = session.user;
-  const userEmail = (user?.email ?? "").trim().toLowerCase();
-  if (!user || !userEmail) {
-    // Skip promotion if we cannot resolve a user/email, but keep login redirect intact.
+  const sessionUser = data.session.user;
+  const userId = sessionUser?.id ?? "";
+  const userEmail = (sessionUser?.email ?? "").trim().toLowerCase();
+  if (!userId || !userEmail) {
+    console.error("[auth/callback] missing user after exchange", {
+      hasSession: Boolean(data?.session),
+    });
   } else if (!supabaseUrl || !serviceRoleKey) {
     console.error(
       "[auth/callback] admin client config missing",
@@ -61,7 +63,7 @@ export const GET = async (request: Request) => {
         .from("user_entitlements")
           .upsert(
             {
-              user_id: user.id,
+              user_id: userId,
               is_pro: true,
               stripe_customer_id: pending.stripe_customer_id ?? null,
               stripe_subscription_id: pending.stripe_subscription_id ?? null,
@@ -78,6 +80,10 @@ export const GET = async (request: Request) => {
           upsertError?.message ?? upsertError,
         );
       } else {
+        console.log("[auth/callback] promoted pro", {
+          userId,
+          email: userEmail,
+        });
         const { error: deleteError } = await admin
           .from("pending_entitlements")
           .delete()
