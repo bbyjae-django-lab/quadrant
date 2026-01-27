@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
@@ -14,7 +14,19 @@ type PricingClientProps = {
 export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isPro } = useAuth();
+  const upgradeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (searchParams?.get("intent") === "upgrade") {
+      upgradeButtonRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      upgradeButtonRef.current?.focus();
+    }
+  }, [searchParams]);
   const startCheckout = () => {
     let returnTo = "/dashboard";
     if (typeof window !== "undefined") {
@@ -41,7 +53,29 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   };
   const handleUpgrade = () => {
     if (typeof window !== "undefined") {
-      startCheckout();
+      const supabase = getSupabaseClient();
+      const returnTo = "/pricing?intent=upgrade&returnTo=/dashboard";
+      const authHref = `/auth?returnTo=${encodeURIComponent(returnTo)}`;
+      if (!supabase) {
+        setUpgradeNotice("Sign in to continue.");
+        router.push(authHref);
+        return;
+      }
+      supabase.auth
+        .getSession()
+        .then((result) => {
+          const accessToken = result.data.session?.access_token;
+          if (!accessToken) {
+            setUpgradeNotice("Sign in to continue.");
+            router.push(authHref);
+            return;
+          }
+          startCheckout();
+        })
+        .catch(() => {
+          setUpgradeNotice("Sign in to continue.");
+          router.push(authHref);
+        });
     }
   };
 
@@ -129,6 +163,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
               className="btn btn-primary mt-4"
               onClick={handleUpgrade}
               disabled={isPro}
+              ref={upgradeButtonRef}
             >
               {isPro ? "You're Pro" : "Upgrade to Pro"}
             </button>
