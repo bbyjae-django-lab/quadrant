@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { getUserFromRequest } from "../../../lib/serverAuth";
-
 export const runtime = "nodejs";
 
 export const POST = async (req: Request) => {
-  const user = await getUserFromRequest(req);
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
   const priceId = process.env.STRIPE_PRICE_ID;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -34,9 +31,6 @@ export const POST = async (req: Request) => {
     price_id: priceId,
     return_to: returnTo,
   };
-  if (user?.id) {
-    metadata.supabase_user_id = user.id;
-  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
@@ -44,7 +38,6 @@ export const POST = async (req: Request) => {
     success_url: `${appUrl}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/billing/cancel`,
     metadata,
-    customer_email: user?.email ?? undefined,
   });
 
   return NextResponse.json({ url: session.url });

@@ -28,10 +28,13 @@ export default function PricingClient({ backHref }: PricingClientProps) {
     }
   }, [searchParams]);
   const startCheckout = () => {
-    let returnTo = "/dashboard";
+    const returnParam = searchParams?.get("returnTo");
+    let returnTo = returnParam || "/dashboard";
     if (typeof window !== "undefined") {
-      returnTo =
-        sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
+      if (!returnParam) {
+        returnTo =
+          sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
+      }
       sessionStorage.setItem("quadrant_return_to", returnTo);
     }
     fetch("/api/stripe/checkout", {
@@ -52,31 +55,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
       });
   };
   const handleUpgrade = () => {
-    if (typeof window !== "undefined") {
-      const supabase = getSupabaseClient();
-      const returnTo = "/pricing?intent=upgrade&returnTo=/dashboard";
-      const authHref = `/auth?returnTo=${encodeURIComponent(returnTo)}`;
-      if (!supabase) {
-        setUpgradeNotice("Sign in to continue.");
-        window.location.href = authHref;
-        return;
-      }
-      supabase.auth
-        .getSession()
-        .then((result) => {
-          const accessToken = result.data.session?.access_token;
-          if (!accessToken) {
-            setUpgradeNotice("Sign in to continue.");
-            window.location.href = authHref;
-            return;
-          }
-          startCheckout();
-        })
-        .catch(() => {
-          setUpgradeNotice("Sign in to continue.");
-          window.location.href = authHref;
-        });
-    }
+    startCheckout();
   };
 
   const handleBack = () => {
