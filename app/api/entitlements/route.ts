@@ -37,13 +37,15 @@ export const GET = async (req: Request) => {
   const { data: userData, error: userError } = await supabaseAnon.auth.getUser(
     token,
   );
-  const userId = userData?.user?.id ?? null;
+  const user = userData?.user ?? null;
+  const userId = user?.id ?? null;
   if (!userId) {
     return NextResponse.json(
       { error: "Unauthorized", detail: userError?.message },
       { status: 401 },
     );
   }
+  const emailNorm = (user?.email ?? "").trim().toLowerCase();
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
   });
@@ -64,5 +66,61 @@ export const GET = async (req: Request) => {
     : null;
   const isActive = periodEnd ? periodEnd > Date.now() : true;
   const isPro = isProFlag && isActive;
-  return NextResponse.json({ isPro, userId, hasRow: Boolean(row) });
+  if (row) {
+    return NextResponse.json({ isPro, userId, hasRow: true });
+  }
+
+  if (!emailNorm) {
+    return NextResponse.json({ isPro: false, userId, hasRow: false });
+  }
+
+  const { data: pending, error: pendingError } = await admin
+    .from("pending_entitlements")
+    .select(
+      "email,is_pro,stripe_customer_id,stripe_subscription_id,stripe_price_id,current_period_end,updated_at",
+    )
+    .eq("email", emailNorm)
+    .maybeSingle();
+  if (pendingError) {
+    return NextResponse.json(
+      { error: "Pending entitlements lookup failed" },
+      { status: 500 },
+    );
+  }
+  if (pending?.is_pro === true) {
+    const { error: upsertError } = await admin
+      .from("user_entitlements")
+      .upsert(
+        {
+          user_id: userId,
+          is_pro: true,
+          stripe_customer_id: pending.stripe_customer_id ?? null,
+          stripe_subscription_id: pending.stripe_subscription_id ?? null,
+          stripe_price_id: pending.stripe_price_id ?? null,
+          current_period_end: pending.current_period_end ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+    if (upsertError) {
+      return NextResponse.json(
+        { error: "Entitlements promotion failed" },
+        { status: 500 },
+      );
+    }
+    const { error: deleteError } = await admin
+      .from("pending_entitlements")
+      .delete()
+      .eq("email", emailNorm);
+    if (deleteError) {
+      console.error(
+        "[entitlements] pending cleanup failed",
+        deleteError?.code,
+        deleteError?.message ?? deleteError,
+      );
+    }
+    return NextResponse.json({ isPro: true, userId, hasRow: true, promoted: true });
+  }
+
+  return NextResponse.json({ isPro: false, userId, hasRow: false });
 };

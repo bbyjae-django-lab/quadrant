@@ -9,7 +9,8 @@ export const GET = async (request: Request) => {
   const rawNext = requestUrl.searchParams.get("next") ?? "/dashboard";
   const code = requestUrl.searchParams.get("code");
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const anonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   const safeNext =
@@ -47,11 +48,6 @@ export const GET = async (request: Request) => {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
-    console.log("[auth/callback] promo lookup", {
-      userId,
-      rawEmail,
-      emailNorm,
-    });
     let { data: pending, error: pendingError } = await admin
       .from("pending_entitlements")
       .select("*")
@@ -71,13 +67,11 @@ export const GET = async (request: Request) => {
         pendingError?.message ?? pendingError,
       );
     } else if (!pending) {
-      console.log("[auth/callback] promo not found", { emailNorm, rawEmail });
-    } else if (pending?.is_pro === true) {
-      console.log("[auth/callback] promo pending found", {
-        email: pending.email,
-        isPro: pending.is_pro,
-        stripeCustomerId: pending.stripe_customer_id ?? null,
+      console.error("[auth/callback] pending entitlement missing", {
+        userId,
+        email: emailNorm,
       });
+    } else if (pending?.is_pro === true) {
       const { error: upsertError } = await admin
         .from("user_entitlements")
           .upsert(
@@ -96,14 +90,8 @@ export const GET = async (request: Request) => {
         console.error("[auth/callback] entitlement upsert failed", {
           code: upsertError?.code,
           message: upsertError?.message ?? upsertError,
-          userId,
-          stripeCustomerId: pending.stripe_customer_id ?? null,
         });
       } else {
-        console.log("[auth/callback] promoted pro", {
-          userId,
-          email: emailNorm,
-        });
         const { error: deleteError } = await admin
           .from("pending_entitlements")
           .delete()
