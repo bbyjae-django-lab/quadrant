@@ -61,7 +61,7 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto w-full max-w-2xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
-        <h1 className="text-2xl font-semibold text-zinc-900">Account</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">Account</h1>
         <div className="mt-6 space-y-4 text-sm text-zinc-700">
           <div>
             <p className="text-xs text-zinc-500">Email</p>
@@ -77,22 +77,29 @@ export default function AccountPage() {
                   : "Free"}
             </p>
           </div>
-          {proStatus === "pro" ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            {proStatus === "pro" ? (
+              <>
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={handleManageBilling}
+                >
+                  Manage billing
+                </button>
+                <span aria-hidden="true" className="text-zinc-400">
+                  ·
+                </span>
+              </>
+            ) : null}
             <button
               type="button"
-              className="btn btn-secondary w-fit text-sm"
-              onClick={handleManageBilling}
+              className="underline"
+              onClick={handleSignOut}
             >
-              Manage billing
+              Sign out
             </button>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn-secondary w-fit text-sm"
-            onClick={handleSignOut}
-          >
-            Sign out
-          </button>
+          </div>
           {notice ? (
             <p className="text-xs text-zinc-500">{notice}</p>
           ) : null}

@@ -78,31 +78,29 @@ export default function AuthModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 px-[var(--space-6)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/25 px-[var(--space-6)]">
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         data-quadrant-modal
-        className="w-full max-w-md ui-surface p-[var(--space-6)]"
+        className="w-full max-w-[420px] ui-surface p-[var(--space-5)] sm:p-[var(--space-6)]"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-zinc-900">
-              {title}
-            </h2>
+            <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
             <p className="mt-1 text-sm text-zinc-600">{subtitle}</p>
           </div>
           <button
             type="button"
-            className="btn-tertiary"
+            className="btn-tertiary text-sm"
             aria-label="Close"
             onClick={onClose}
           >
             ✕
           </button>
         </div>
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-3">
           {sent ? (
             <p className="text-sm text-zinc-600">
               Check your email to continue.
@@ -115,7 +113,7 @@ export default function AuthModal({
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] p-[var(--space-3)] text-sm text-zinc-800 outline-none transition focus:border-zinc-400"
+                  className="mt-2 w-full rounded-[var(--radius-card)] border border-[var(--border-color)] bg-transparent p-[var(--space-3)] text-sm text-zinc-900 outline-none transition focus:border-zinc-400"
                   placeholder="you@example.com"
                 />
               </label>
