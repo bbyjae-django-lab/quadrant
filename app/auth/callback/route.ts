@@ -29,11 +29,20 @@ export const GET = async (request: Request) => {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const user = data.session.user;
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) {
+    console.error("[auth/callback] getUser failed", userError?.message ?? userError);
+  }
+  const user = userData?.user ?? null;
   const userEmail = (user?.email ?? "").trim().toLowerCase();
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.error("Auth callback: missing Supabase admin env vars.");
-  } else if (userEmail) {
+  if (!user || !userEmail) {
+    // Skip promotion if we cannot resolve a user/email, but keep login redirect intact.
+  } else if (!supabaseUrl || !serviceRoleKey) {
+    console.error(
+      "[auth/callback] admin client config missing",
+      "NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+    );
+  } else {
     const admin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
@@ -43,8 +52,12 @@ export const GET = async (request: Request) => {
       .eq("email", userEmail)
       .maybeSingle();
     if (pendingError) {
-      console.error("Auth callback: failed to load pending entitlement.");
+      console.error(
+        "[auth/callback] pending entitlement lookup failed",
+        pendingError?.message ?? pendingError,
+      );
     } else if (pending?.is_pro === true) {
+      // NOTE: user_entitlements.user_id must be UNIQUE for upsert(onConflict) to work.
       const { error: upsertError } = await admin
           .from("user_entitlements")
           .upsert(
@@ -60,14 +73,31 @@ export const GET = async (request: Request) => {
             { onConflict: "user_id" },
           );
       if (upsertError) {
-        console.error("Auth callback: failed to promote entitlement.");
+        console.error(
+          "[auth/callback] entitlement upsert failed",
+          upsertError?.message ?? upsertError,
+        );
+        const upsertMessage = String(
+          upsertError?.message ?? upsertError ?? "",
+        ).toLowerCase();
+        if (
+          upsertMessage.includes("on conflict") ||
+          upsertMessage.includes("constraint")
+        ) {
+          console.error(
+            "[auth/callback] user_entitlements.user_id must be UNIQUE for upsert",
+          );
+        }
       } else {
         const { error: deleteError } = await admin
           .from("pending_entitlements")
           .delete()
           .eq("email", userEmail);
         if (deleteError) {
-          console.error("Auth callback: failed to delete pending entitlement.");
+          console.error(
+            "[auth/callback] pending entitlement delete failed",
+            deleteError?.message ?? deleteError,
+          );
         }
       }
     }
