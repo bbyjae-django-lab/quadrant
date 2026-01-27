@@ -29,14 +29,10 @@ export const GET = async (request: Request) => {
     return NextResponse.redirect(redirectUrl);
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError) {
-    console.error("[auth/callback] getUser failed", userError?.message ?? userError);
-  }
-  const user = userData?.user ?? null;
+  const user = data.session.user;
   const userEmail = (user?.email ?? "").trim().toLowerCase();
   if (!user || !userEmail) {
-    // Skip promotion if we cannot resolve a user/email, but keep login redirect intact.
+    console.error("[auth/callback] missing user/email after exchange");
   } else if (!supabaseUrl || !serviceRoleKey) {
     console.error(
       "[auth/callback] admin client config missing",
@@ -56,10 +52,12 @@ export const GET = async (request: Request) => {
         "[auth/callback] pending entitlement lookup failed",
         pendingError?.message ?? pendingError,
       );
+    } else if (!pending) {
+      console.log("[auth/callback] no pending entitlement for", userEmail);
     } else if (pending?.is_pro === true) {
       // NOTE: user_entitlements.user_id must be UNIQUE for upsert(onConflict) to work.
       const { error: upsertError } = await admin
-          .from("user_entitlements")
+        .from("user_entitlements")
           .upsert(
             {
               user_id: user.id,
@@ -100,6 +98,8 @@ export const GET = async (request: Request) => {
           );
         }
       }
+    } else {
+      console.log("[auth/callback] pending found but not pro for", userEmail);
     }
   }
 
