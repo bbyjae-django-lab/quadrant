@@ -39,18 +39,34 @@ export default function AuthClient({ next }: AuthClientProps) {
       const url = new URL(href);
       const code = url.searchParams.get("code");
       const hash = url.hash ?? "";
+      const hasHashTokens =
+        hash.includes("access_token=") && hash.includes("refresh_token=");
 
       try {
-        if (code) {
-          const { data, error } = await client.auth.exchangeCodeForSession(code);
-          if (!error && data?.session) {
-            router.replace(next);
-            return;
+        if (hasHashTokens) {
+          const hashParams = new URLSearchParams(hash.startsWith("#") ? hash.slice(1) : hash);
+          const accessToken = hashParams.get("access_token");
+          const refreshToken = hashParams.get("refresh_token");
+
+          if (accessToken && refreshToken) {
+            const { data, error } = await client.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+            if (error) {
+              console.error("Failed to set Supabase session from magic link.");
+            }
+
+            if (!error && data?.session) {
+              url.hash = "";
+              window.history.replaceState({}, document.title, url.toString());
+              router.replace(next);
+              return;
+            }
           }
-        } else if (hash.includes("access_token=")) {
-          const { data, error } = await client.auth.getSessionFromUrl({
-            storeSession: true,
-          });
+        } else if (code) {
+          const { data, error } = await client.auth.exchangeCodeForSession(code);
           if (!error && data?.session) {
             router.replace(next);
             return;
