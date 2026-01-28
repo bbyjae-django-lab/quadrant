@@ -206,7 +206,7 @@ export default function QuadrantApp() {
       const returnTo = returnToBase.includes("?")
         ? `${returnToBase}&endRun=1`
         : `${returnToBase}?endRun=1`;
-      router.push(`/auth?returnTo=${returnTo}`);
+      router.push(`/auth?returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
     setEndingRun(true);
@@ -255,7 +255,10 @@ export default function QuadrantApp() {
               Account
             </a>
           ) : (
-            <a href="/auth?returnTo=/dashboard" className="underline">
+            <a
+              href={`/auth?returnTo=${encodeURIComponent("/dashboard")}`}
+              className="underline"
+            >
               Sign in
             </a>
           )}

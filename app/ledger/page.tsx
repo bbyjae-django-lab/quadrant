@@ -45,7 +45,7 @@ export default function LedgerPage() {
       return;
     }
     if (!isAuthed || !user?.id) {
-      router.replace("/auth?returnTo=/ledger");
+      router.replace(`/auth?returnTo=${encodeURIComponent("/ledger")}`);
       return;
     }
     if (!client) {
