@@ -40,36 +40,18 @@ export const onAuthStateChange = (
   };
 };
 
-export const signInWithOtp = async (email: string) => {
+export const signInWithOtp = async (email: string, next?: string) => {
   const client = getSupabaseClient();
   if (!client) {
     warnOnce("Supabase client unavailable; cannot send magic link.");
     return { error: new Error("Supabase client unavailable.") };
   }
-  const isBadReturnTo = (path: string) => path === "/pricing" || path === "/";
-  const storedNext =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("quadrant_return_to")
-      : null;
-  const returnTo =
-    storedNext ??
-    (typeof window !== "undefined"
-      ? `${window.location.pathname}${window.location.search}`
-      : "/dashboard");
-  const safeReturnTo =
-    returnTo.startsWith("/") && !returnTo.startsWith("//") && !isBadReturnTo(returnTo)
-      ? returnTo
-      : "/dashboard";
-  if (typeof window !== "undefined" && !storedNext) {
-    sessionStorage.setItem("quadrant_return_to", safeReturnTo);
-  }
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    (typeof window !== "undefined" ? window.location.origin : "");
+  const returnTo = next ?? "/dashboard";
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "";
   return client.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${appUrl}/auth?next=${encodeURIComponent(safeReturnTo)}`,
+      emailRedirectTo: `${appUrl}/auth?next=${encodeURIComponent(returnTo)}`,
     },
   });
 };

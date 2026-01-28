@@ -66,7 +66,8 @@ export default function AuthModal({
     }
     setError(null);
     setSubmitting(true);
-    const { error } = await signInWithOtp(email.trim());
+    const next = sessionStorage.getItem("quadrant_return_to") ?? "/dashboard";
+    const { error } = await signInWithOtp(email.trim(), next);
     setSubmitting(false);
     if (!error) {
       setSent(true);
