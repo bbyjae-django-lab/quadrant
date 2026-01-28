@@ -202,11 +202,7 @@ export default function QuadrantApp() {
     }
     const accessToken = session?.access_token;
     if (!accessToken) {
-      const returnToBase = "/dashboard";
-      const returnTo = returnToBase.includes("?")
-        ? `${returnToBase}&endRun=1`
-        : `${returnToBase}?endRun=1`;
-      router.push(`/auth?next=${encodeURIComponent(returnTo)}`);
+      router.push(`/auth?next=${encodeURIComponent("/dashboard?endRun=1")}`);
       return;
     }
     setEndingRun(true);

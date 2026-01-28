@@ -12,11 +12,12 @@ const getSafeReturnTo = (raw: string | string[] | undefined) => {
   if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) {
     return value;
   }
-  return "/dashboard";
+  return null;
 };
 
 export default function AuthPage({ searchParams }: AuthPageProps) {
-  const raw = searchParams?.next ?? searchParams?.returnTo;
-  const next = getSafeReturnTo(raw);
+  const safeNext = getSafeReturnTo(searchParams?.next);
+  const safeReturnTo = getSafeReturnTo(searchParams?.returnTo);
+  const next = safeNext ?? safeReturnTo ?? "/dashboard";
   return <AuthClient next={next} />;
 }

@@ -40,13 +40,24 @@ export const onAuthStateChange = (
   };
 };
 
-export const signInWithOtp = async (email: string, next?: string) => {
+const getReturnTo = () => {
+  if (typeof window === "undefined") {
+    return "/dashboard";
+  }
+  const stored = sessionStorage.getItem("quadrant_return_to");
+  if (stored && stored.startsWith("/") && !stored.startsWith("//")) {
+    return stored;
+  }
+  return "/dashboard";
+};
+
+export const signInWithOtp = async (email: string) => {
   const client = getSupabaseClient();
   if (!client) {
     warnOnce("Supabase client unavailable; cannot send magic link.");
     return { error: new Error("Supabase client unavailable.") };
   }
-  const returnTo = next ?? "/dashboard";
+  const returnTo = getReturnTo();
   const appUrl = typeof window !== "undefined" ? window.location.origin : "";
   return client.auth.signInWithOtp({
     email,
