@@ -121,7 +121,7 @@ export default function QuadrantApp() {
     }
     const accessToken = session?.access_token;
     if (!accessToken) {
-      console.error("[runs/end] missing access token");
+      router.push("/auth?returnTo=/dashboard");
       return;
     }
     setEndingRun(true);
