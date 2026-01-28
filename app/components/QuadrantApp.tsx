@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { QUADRANT_LOCAL_ACTIVE_RUN, QUADRANT_LOCAL_RUN_HISTORY } from "@/lib/keys";
 import { PROTOCOLS } from "@/lib/protocols";
@@ -32,6 +32,7 @@ const clearRunOutcomeStorage = () => {
 
 export default function QuadrantApp() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, session, isAuthed, authLoading, isPro, proStatus } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
@@ -48,6 +49,7 @@ export default function QuadrantApp() {
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [endingRun, setEndingRun] = useState(false);
   const [suppressEndedState, setSuppressEndedState] = useState(false);
+  const endRunIntentHandled = useRef(false);
 
   useEffect(() => {
     storeRef.current = store;
@@ -148,6 +150,26 @@ export default function QuadrantApp() {
     }
   }, [activeRun]);
 
+  useEffect(() => {
+    if (endRunIntentHandled.current || hydrating) {
+      return;
+    }
+    const endRunIntent = searchParams.get("endRun");
+    if (endRunIntent !== "1") {
+      return;
+    }
+    if (activeRun) {
+      setShowEndRunConfirm(true);
+    }
+    endRunIntentHandled.current = true;
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("endRun");
+    const nextQuery = nextParams.toString();
+    router.replace(nextQuery ? `/dashboard?${nextQuery}` : "/dashboard", {
+      scroll: false,
+    });
+  }, [activeRun, hydrating, router, searchParams]);
+
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
   const activeRule = activeRun
@@ -180,7 +202,11 @@ export default function QuadrantApp() {
     }
     const accessToken = session?.access_token;
     if (!accessToken) {
-      router.push("/auth?returnTo=/dashboard");
+      const returnToBase = "/dashboard";
+      const returnTo = returnToBase.includes("?")
+        ? `${returnToBase}&endRun=1`
+        : `${returnToBase}?endRun=1`;
+      router.push(`/auth?returnTo=${returnTo}`);
       return;
     }
     setEndingRun(true);
