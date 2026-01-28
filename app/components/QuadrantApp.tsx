@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { QUADRANT_LOCAL_ACTIVE_RUN, QUADRANT_LOCAL_RUN_HISTORY } from "@/lib/keys";
 import { PROTOCOLS } from "@/lib/protocols";
 import { LocalRunStore } from "@/lib/stores/localRunStore";
 import { SupabaseRunStore } from "@/lib/stores/supabaseRunStore";
@@ -17,6 +18,16 @@ const getViolationIndex = (run: Run) => {
     return violated.index;
   }
   return Math.max(run.checkins.length, 1);
+};
+
+const clearRunOutcomeStorage = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.removeItem(QUADRANT_LOCAL_ACTIVE_RUN);
+  localStorage.removeItem(QUADRANT_LOCAL_RUN_HISTORY);
+  localStorage.removeItem("runHistory");
+  localStorage.removeItem("checkIns");
 };
 
 export default function QuadrantApp() {
@@ -82,6 +93,54 @@ export default function QuadrantApp() {
       active = false;
     };
   }, [authLoading, store]);
+
+  useEffect(() => {
+    if (authLoading || !isAuthed || !session?.access_token) {
+      return;
+    }
+    let active = true;
+    const accessToken = session.access_token;
+    const fetchLatestRun = async () => {
+      try {
+        const response = await fetch("/api/runs/latest", {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        if (!response.ok) {
+          const payload = await response.json().catch(() => null);
+          console.error("[runs/latest] request failed", response.status, payload);
+          return;
+        }
+        const payload = await response.json().catch(() => null);
+        if (!payload?.ok) {
+          console.error("[runs/latest] unexpected response", payload);
+          return;
+        }
+        if (!active) {
+          return;
+        }
+        const latestRun = payload.run;
+        if (!latestRun) {
+          setSuppressEndedState(false);
+          return;
+        }
+        const isEnded = Boolean(latestRun.ended_at) || latestRun.status === "ended";
+        if (isEnded && latestRun.end_reason === "ended") {
+          clearRunOutcomeStorage();
+          setSuppressEndedState(true);
+          return;
+        }
+        setSuppressEndedState(false);
+      } catch (error) {
+        console.error("[runs/latest] request error", error);
+      }
+    };
+    fetchLatestRun();
+    return () => {
+      active = false;
+    };
+  }, [authLoading, isAuthed, session?.access_token]);
 
   useEffect(() => {
     if (activeRun) {
@@ -241,7 +300,7 @@ export default function QuadrantApp() {
                 </div>
               </div>
             </div>
-          ) : latestEndedRun ? (
+          ) : latestEndedRun && latestEndedRun.endReason === "violation" ? (
             <div className="ui-surface p-[var(--space-6)]">
               <h2 className="text-lg font-semibold text-zinc-900">Run ended</h2>
               <div className="mt-3 text-sm text-zinc-600">

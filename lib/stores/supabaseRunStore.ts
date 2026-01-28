@@ -10,7 +10,7 @@ type RunRow = {
   status: "active" | "ended";
   started_at: string;
   ended_at: string | null;
-  end_reason: "violation" | null;
+  end_reason: "violation" | "ended" | null;
 };
 
 type CheckinRow = {

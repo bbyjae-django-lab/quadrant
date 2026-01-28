@@ -23,6 +23,6 @@ export type Run = {
   status: RunStatus;
   startedAt: string;
   endedAt?: string;
-  endReason?: "violation";
+  endReason?: "violation" | "ended";
   checkins: Checkin[];
 };
