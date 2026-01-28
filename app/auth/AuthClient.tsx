@@ -6,22 +6,22 @@ import { useRouter } from "next/navigation";
 import AuthModal from "../components/modals/AuthModal";
 
 type AuthClientProps = {
-  returnTo: string;
+  next: string;
 };
 
-export default function AuthClient({ returnTo }: AuthClientProps) {
+export default function AuthClient({ next }: AuthClientProps) {
   const router = useRouter();
 
   useEffect(() => {
-    sessionStorage.setItem("quadrant_return_to", returnTo);
-  }, [returnTo]);
+    sessionStorage.setItem("quadrant_return_to", next);
+  }, [next]);
 
   const handleClose = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
       return;
     }
-    router.replace(returnTo);
+    router.replace(next);
   };
 
   return <AuthModal onClose={handleClose} />;

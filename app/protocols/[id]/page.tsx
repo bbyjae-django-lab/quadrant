@@ -78,7 +78,7 @@ export default function ProtocolDetailPage() {
         const session = client ? await client.auth.getSession() : null;
         if (!session?.data.session) {
           const returnTo = `/protocols/${selected.id}`;
-          router.push(`/auth?returnTo=${encodeURIComponent(returnTo)}`);
+          router.push(`/auth?next=${encodeURIComponent(returnTo)}`);
           setIsStarting(false);
           return;
         }

@@ -14,7 +14,7 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!authLoading && !isAuthed && !isSigningOut) {
-      router.replace(`/auth?returnTo=${encodeURIComponent("/dashboard")}`);
+      router.replace(`/auth?next=${encodeURIComponent("/dashboard")}`);
     }
   }, [authLoading, isAuthed, isSigningOut, router]);
 

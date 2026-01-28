@@ -47,12 +47,12 @@ export const signInWithOtp = async (email: string) => {
     return { error: new Error("Supabase client unavailable.") };
   }
   const isBadReturnTo = (path: string) => path === "/pricing" || path === "/";
-  const storedReturnTo =
+  const storedNext =
     typeof window !== "undefined"
       ? sessionStorage.getItem("quadrant_return_to")
       : null;
   const returnTo =
-    storedReturnTo ??
+    storedNext ??
     (typeof window !== "undefined"
       ? `${window.location.pathname}${window.location.search}`
       : "/dashboard");
@@ -60,15 +60,16 @@ export const signInWithOtp = async (email: string) => {
     returnTo.startsWith("/") && !returnTo.startsWith("//") && !isBadReturnTo(returnTo)
       ? returnTo
       : "/dashboard";
-  if (typeof window !== "undefined" && !storedReturnTo) {
+  if (typeof window !== "undefined" && !storedNext) {
     sessionStorage.setItem("quadrant_return_to", safeReturnTo);
   }
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (typeof window !== "undefined" ? window.location.origin : "");
   return client.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-        safeReturnTo,
-      )}`,
+      emailRedirectTo: `${appUrl}/auth?next=${encodeURIComponent(safeReturnTo)}`,
     },
   });
 };

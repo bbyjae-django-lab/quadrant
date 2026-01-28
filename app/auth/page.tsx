@@ -4,10 +4,11 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 type AuthPageProps = {
-  searchParams?: { returnTo?: string | string[] };
+  searchParams?: { next?: string | string[]; returnTo?: string | string[] };
 };
 
-const getSafeReturnTo = (value: string | string[] | undefined) => {
+const getSafeReturnTo = (raw: string | string[] | undefined) => {
+  const value = Array.isArray(raw) ? raw[0] : raw;
   if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//")) {
     return value;
   }
@@ -15,6 +16,7 @@ const getSafeReturnTo = (value: string | string[] | undefined) => {
 };
 
 export default function AuthPage({ searchParams }: AuthPageProps) {
-  const returnTo = getSafeReturnTo(searchParams?.returnTo);
-  return <AuthClient returnTo={returnTo} />;
+  const raw = searchParams?.next ?? searchParams?.returnTo;
+  const next = getSafeReturnTo(raw);
+  return <AuthClient next={next} />;
 }
