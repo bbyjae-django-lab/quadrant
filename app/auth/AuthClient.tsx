@@ -59,15 +59,21 @@ export default function AuthClient({ next }: AuthClientProps) {
             }
 
             if (!error && data?.session) {
-              url.hash = "";
-              window.history.replaceState({}, document.title, url.toString());
+              window.history.replaceState({}, "", url.pathname + url.search);
               router.replace(next);
               return;
             }
           }
         } else if (code) {
           const { data, error } = await client.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Failed to exchange auth code for session.");
+          }
           if (!error && data?.session) {
+            url.searchParams.delete("code");
+            const search = url.searchParams.toString();
+            const nextUrl = search ? `${url.pathname}?${search}` : url.pathname;
+            window.history.replaceState({}, "", nextUrl);
             router.replace(next);
             return;
           }
