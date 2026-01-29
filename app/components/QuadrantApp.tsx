@@ -195,9 +195,10 @@ export default function QuadrantApp() {
     if (endRunIntent !== "1") {
       return;
     }
-    if (activeRun) {
-      setShowEndRunConfirm(true);
+    if (!activeRun) {
+      return;
     }
+    setShowEndRunConfirm(true);
     endRunIntentHandled.current = true;
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete("endRun");
