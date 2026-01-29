@@ -51,28 +51,22 @@ const getReturnTo = () => {
   return "/dashboard";
 };
 
-export const signInWithOtp = async (email: string, returnTo?: string) => {
-const client = getSupabaseClient();
-if (!client) {
-warnOnce("Supabase client unavailable; cannot send magic link.");
-return { error: new Error("Supabase client unavailable.") };
-}
+export const signInWithOtp = async (email: string, returnToOverride?: string) => {
+  const client = getSupabaseClient();
+  if (!client) {
+    warnOnce("Supabase client unavailable; cannot send magic link.");
+    return { error: new Error("Supabase client unavailable.") };
+  }
 
-const resolvedReturnTo =
-typeof returnTo === "string" &&
-returnTo.startsWith("/") &&
-!returnTo.startsWith("//")
-? returnTo
-: getReturnTo();
+  const returnTo = returnToOverride ?? getReturnTo();
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "";
 
-const appUrl = typeof window !== "undefined" ? window.location.origin : "";
-
-return client.auth.signInWithOtp({
-email,
-options: {
-emailRedirectTo: `${appUrl}/auth?next=${encodeURIComponent(resolvedReturnTo)}`,
-},
-});
+  return client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: `${appUrl}/auth?next=${encodeURIComponent(returnTo)}`,
+    },
+  });
 };
 
 export const signOut = async () => {
