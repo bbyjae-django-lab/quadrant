@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { QUADRANT_LOCAL_ACTIVE_RUN, QUADRANT_LOCAL_RUN_HISTORY } from "@/lib/keys";
 import { PROTOCOLS } from "@/lib/protocols";
@@ -32,7 +32,6 @@ const clearRunOutcomeStorage = () => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, session, isAuthed, authLoading, isPro, proStatus } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
@@ -206,34 +205,15 @@ export default function QuadrantApp() {
     if (endRunIntentHandled.current) {
       return;
     }
-    let shouldOpen = false;
     if (typeof window !== "undefined") {
       const storedIntent = sessionStorage.getItem("quadrant_end_run_intent");
       if (storedIntent === "1") {
-        shouldOpen = true;
+        setShowEndRunConfirm(true);
         sessionStorage.removeItem("quadrant_end_run_intent");
       }
     }
-    if (!shouldOpen) {
-      const endRunIntent = searchParams.get("endRun");
-      if (endRunIntent === "1") {
-        shouldOpen = true;
-        if (typeof window !== "undefined") {
-          const nextParams = new URLSearchParams(searchParams.toString());
-          nextParams.delete("endRun");
-          const nextQuery = nextParams.toString();
-          const nextUrl = nextQuery
-            ? `${window.location.pathname}?${nextQuery}`
-            : window.location.pathname;
-          window.history.replaceState({}, "", nextUrl);
-        }
-      }
-    }
-    if (shouldOpen) {
-      setShowEndRunConfirm(true);
-    }
     endRunIntentHandled.current = true;
-  }, [activeRun, hydrating, searchParams]);
+  }, [activeRun, hydrating]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
