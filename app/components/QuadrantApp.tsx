@@ -12,6 +12,8 @@ import type { CheckinResult, Run } from "@/lib/types";
 import { useAuth } from "../providers/AuthProvider";
 import DailyCheckInModal from "./modals/DailyCheckInModal";
 
+const shouldRestoreEndRunConfirm = useRef(false);
+
 const END_RUN_INTENT_KEY = "quadrant_end_run_intent";
 
 const getViolationIndex = (run: Run) => {
@@ -201,30 +203,24 @@ export default function QuadrantApp() {
   }, [activeRun]);
 
   useEffect(() => {
-  if (hydrating || !activeRun) return;
-
-  // Only handle once per run
-  if (endRunIntentHandledForRun.current === activeRun.id) return;
-
   if (typeof window === "undefined") return;
 
   const intent = localStorage.getItem(END_RUN_INTENT_KEY);
-  if (intent !== "1") return;
-
-  // 🔥 OPEN CONFIRM
-  setShowEndRunConfirm(true);
-
-  // 🔥 CONSUME INTENT
-  localStorage.removeItem(END_RUN_INTENT_KEY);
-  endRunIntentHandledForRun.current = activeRun.id;
-}, [activeRun, hydrating]);
-
-// Reset handler when there's no active run (so future runs can trigger again)
-useEffect(() => {
-  if (!activeRun) {
-    endRunIntentHandledForRun.current = null;
+  if (intent === "1") {
+    shouldRestoreEndRunConfirm.current = true;
   }
-}, [activeRun]);
+}, []);
+
+useEffect(() => {
+  if (hydrating) return;
+  if (!activeRun) return;
+
+  if (shouldRestoreEndRunConfirm.current) {
+    setShowEndRunConfirm(true);
+    shouldRestoreEndRunConfirm.current = false;
+    localStorage.removeItem(END_RUN_INTENT_KEY);
+  }
+}, [hydrating, activeRun]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
