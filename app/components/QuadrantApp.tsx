@@ -50,6 +50,7 @@ export default function QuadrantApp() {
   const [endingRun, setEndingRun] = useState(false);
   const [suppressEndedState, setSuppressEndedState] = useState(false);
   const endRunIntentHandled = useRef(false);
+  const importAttemptedRef = useRef<string | null>(null);
 
   useEffect(() => {
     storeRef.current = store;
@@ -73,28 +74,64 @@ export default function QuadrantApp() {
     }
     let active = true;
     setHydrating(true);
-    store
-      .hydrate()
-      .then(() => {
-        if (!active) {
-          return;
+    const hydrate = async () => {
+      if (isAuthed && session?.access_token && user?.id) {
+        const userId = user.id;
+        if (importAttemptedRef.current !== userId) {
+          importAttemptedRef.current = userId;
+          try {
+            const localStore = new LocalRunStore();
+            await localStore.hydrate();
+            const localActive = localStore.getActiveRun();
+            if (localActive) {
+              const response = await fetch("/api/runs/import-active", {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  protocol_id: localActive.protocolId,
+                  protocol_name: localActive.protocolName,
+                  started_at: localActive.startedAt,
+                }),
+              });
+              const payload = await response.json().catch(() => null);
+              if (response.ok && payload?.ok) {
+                localStore.clearLocalAppKeys();
+              }
+            }
+          } catch (error) {
+            console.error("[runs/import-active] request error", error);
+          }
         }
-        setActiveRun(store.getActiveRun());
-        setRunHistory(store.getRuns());
-        setHydrating(false);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-        setActiveRun(null);
-        setRunHistory([]);
-        setHydrating(false);
-      });
+      }
+      await store.hydrate();
+      if (!active) {
+        return;
+      }
+      setActiveRun(store.getActiveRun());
+      setRunHistory(store.getRuns());
+      setHydrating(false);
+    };
+    hydrate().catch(() => {
+      if (!active) {
+        return;
+      }
+      setActiveRun(null);
+      setRunHistory([]);
+      setHydrating(false);
+    });
     return () => {
       active = false;
     };
-  }, [authLoading, store]);
+  }, [authLoading, isAuthed, session?.access_token, store, user?.id]);
+
+  useEffect(() => {
+    if (!isAuthed) {
+      importAttemptedRef.current = null;
+    }
+  }, [isAuthed]);
 
   useEffect(() => {
     if (authLoading || !isAuthed || !session?.access_token) {
