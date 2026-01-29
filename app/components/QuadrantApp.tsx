@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { QUADRANT_LOCAL_ACTIVE_RUN, QUADRANT_LOCAL_RUN_HISTORY } from "@/lib/keys";
 import { PROTOCOLS } from "@/lib/protocols";
@@ -32,8 +32,6 @@ const clearRunOutcomeStorage = () => {
 
 export default function QuadrantApp() {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { user, session, isAuthed, authLoading, isPro, proStatus } = useAuth();
   const store = useMemo(() => {
     if (isAuthed && user?.id) {
@@ -50,7 +48,7 @@ export default function QuadrantApp() {
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
   const [endingRun, setEndingRun] = useState(false);
   const [suppressEndedState, setSuppressEndedState] = useState(false);
-  const endRunIntentHandled = useRef(false);
+  const endRunIntentHandledForRun = useRef<string | null>(null);
   const importAttemptedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -202,26 +200,27 @@ export default function QuadrantApp() {
 
   useEffect(() => {
   if (hydrating || !activeRun) return;
-  if (endRunIntentHandled.current) return;
 
-  const endRunIntent = searchParams.get("endRun");
-  if (endRunIntent !== "1") {
-    // CRITICAL: do NOT set handled yet — the param may arrive on the next render
-    return;
-  }
-
-  setShowEndRunConfirm(true);
-  endRunIntentHandled.current = true;
-
-  const nextParams = new URLSearchParams(searchParams.toString());
-  nextParams.delete("endRun");
-  const nextQuery = nextParams.toString();
-  const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+  // Only handle once per active run id
+  if (endRunIntentHandledForRun.current === activeRun.id) return;
 
   if (typeof window !== "undefined") {
-    window.history.replaceState({}, "", nextUrl);
+    const intent = sessionStorage.getItem("quadrant_end_run_intent");
+    if (intent === "1") {
+      setShowEndRunConfirm(true);
+      sessionStorage.removeItem("quadrant_end_run_intent");
+    }
   }
-}, [activeRun, hydrating, pathname, searchParams]);
+
+  endRunIntentHandledForRun.current = activeRun.id;
+}, [activeRun, hydrating]);
+
+// Reset handler when there's no active run (so future runs can trigger again)
+useEffect(() => {
+  if (!activeRun) {
+    endRunIntentHandledForRun.current = null;
+  }
+}, [activeRun]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
@@ -253,14 +252,14 @@ export default function QuadrantApp() {
   if (!activeRun || endingRun) return;
 
   const accessToken = session?.access_token;
-  if (!accessToken) {
-    const nextUrl = "/dashboard?endRun=1";
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("quadrant_return_to", nextUrl);
-    }
-    router.push(`/auth?next=${encodeURIComponent(nextUrl)}`);
-    return;
+if (!accessToken) {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("quadrant_end_run_intent", "1");
+    sessionStorage.setItem("quadrant_return_to", "/dashboard");
   }
+  router.push(`/auth?next=${encodeURIComponent("/dashboard")}`);
+  return;
+}
     setEndingRun(true);
     try {
       const response = await fetch("/api/runs/end", {
