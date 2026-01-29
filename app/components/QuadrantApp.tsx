@@ -94,11 +94,23 @@ export default function QuadrantApp() {
                   protocol_id: localActive.protocolId,
                   protocol_name: localActive.protocolName,
                   started_at: localActive.startedAt,
+                  checkins: localActive.checkins.map((checkin) => ({
+                    day_index: checkin.index,
+                    result: checkin.result,
+                    note: checkin.note ?? undefined,
+                    created_at: checkin.createdAt,
+                  })),
                 }),
               });
               const payload = await response.json().catch(() => null);
               if (response.ok && payload?.ok) {
                 localStore.clearLocalAppKeys();
+                await store.hydrate();
+                if (!active) {
+                  return;
+                }
+                setActiveRun(store.getActiveRun());
+                setRunHistory(store.getRuns());
               }
             }
           } catch (error) {
@@ -188,27 +200,38 @@ export default function QuadrantApp() {
   }, [activeRun]);
 
   useEffect(() => {
+    if (!activeRun) {
+      return;
+    }
     if (endRunIntentHandled.current || hydrating) {
       return;
     }
-    const endRunIntent = searchParams.get("endRun");
-    if (endRunIntent !== "1") {
-      return;
+    let shouldOpen = false;
+    if (typeof window !== "undefined") {
+      const storedIntent = sessionStorage.getItem("quadrant_end_run_intent");
+      if (storedIntent === "1") {
+        shouldOpen = true;
+        sessionStorage.removeItem("quadrant_end_run_intent");
+      }
     }
-    if (!activeRun) {
+    const endRunIntent = searchParams.get("endRun");
+    if (endRunIntent === "1") {
+      shouldOpen = true;
+      if (typeof window !== "undefined") {
+        const nextParams = new URLSearchParams(searchParams.toString());
+        nextParams.delete("endRun");
+        const nextQuery = nextParams.toString();
+        const nextUrl = nextQuery
+          ? `${window.location.pathname}?${nextQuery}`
+          : window.location.pathname;
+        window.history.replaceState({}, "", nextUrl);
+      }
+    }
+    if (!shouldOpen) {
       return;
     }
     setShowEndRunConfirm(true);
     endRunIntentHandled.current = true;
-    if (typeof window !== "undefined") {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.delete("endRun");
-      const nextQuery = nextParams.toString();
-      const nextUrl = nextQuery
-        ? `${window.location.pathname}?${nextQuery}`
-        : window.location.pathname;
-      window.history.replaceState({}, "", nextUrl);
-    }
   }, [activeRun, hydrating, router, searchParams]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
@@ -243,7 +266,10 @@ export default function QuadrantApp() {
     }
     const accessToken = session?.access_token;
     if (!accessToken) {
-      router.push(`/auth?next=${encodeURIComponent("/dashboard?endRun=1")}`);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("quadrant_end_run_intent", "1");
+      }
+      router.push(`/auth?next=${encodeURIComponent("/dashboard")}`);
       return;
     }
     setEndingRun(true);
