@@ -200,12 +200,15 @@ export default function QuadrantApp() {
     }
     setShowEndRunConfirm(true);
     endRunIntentHandled.current = true;
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete("endRun");
-    const nextQuery = nextParams.toString();
-    router.replace(nextQuery ? `/dashboard?${nextQuery}` : "/dashboard", {
-      scroll: false,
-    });
+    if (typeof window !== "undefined") {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("endRun");
+      const nextQuery = nextParams.toString();
+      const nextUrl = nextQuery
+        ? `${window.location.pathname}?${nextQuery}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", nextUrl);
+    }
   }, [activeRun, hydrating, router, searchParams]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
