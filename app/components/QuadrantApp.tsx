@@ -12,6 +12,8 @@ import type { CheckinResult, Run } from "@/lib/types";
 import { useAuth } from "../providers/AuthProvider";
 import DailyCheckInModal from "./modals/DailyCheckInModal";
 
+const END_RUN_INTENT_KEY = "quadrant_end_run_intent";
+
 const getViolationIndex = (run: Run) => {
   const violated = run.checkins.find((checkin) => checkin.result === "violated");
   if (violated?.index) {
@@ -201,17 +203,19 @@ export default function QuadrantApp() {
   useEffect(() => {
   if (hydrating || !activeRun) return;
 
-  // Only handle once per active run id
+  // Only handle once per run
   if (endRunIntentHandledForRun.current === activeRun.id) return;
 
-  if (typeof window !== "undefined") {
-    const intent = sessionStorage.getItem("quadrant_end_run_intent");
-    if (intent === "1") {
-      setShowEndRunConfirm(true);
-      sessionStorage.removeItem("quadrant_end_run_intent");
-    }
-  }
+  if (typeof window === "undefined") return;
 
+  const intent = localStorage.getItem(END_RUN_INTENT_KEY);
+  if (intent !== "1") return;
+
+  // 🔥 OPEN CONFIRM
+  setShowEndRunConfirm(true);
+
+  // 🔥 CONSUME INTENT
+  localStorage.removeItem(END_RUN_INTENT_KEY);
   endRunIntentHandledForRun.current = activeRun.id;
 }, [activeRun, hydrating]);
 
@@ -254,8 +258,7 @@ useEffect(() => {
   const accessToken = session?.access_token;
 if (!accessToken) {
   if (typeof window !== "undefined") {
-    sessionStorage.setItem("quadrant_end_run_intent", "1");
-    sessionStorage.setItem("quadrant_return_to", "/dashboard");
+    localStorage.setItem(END_RUN_INTENT_KEY, "1");
   }
   router.push(`/auth?next=${encodeURIComponent("/dashboard")}`);
   return;
