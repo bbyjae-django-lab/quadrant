@@ -201,23 +201,25 @@ export default function QuadrantApp() {
   }, [activeRun]);
 
   useEffect(() => {
-  if (typeof window === "undefined") return;
+if (typeof window === "undefined") return;
 
-  const intent = localStorage.getItem(END_RUN_INTENT_KEY);
-  if (intent === "1") {
-    shouldRestoreEndRunConfirm.current = true;
-  }
+// read intent once on mount
+shouldRestoreEndRunConfirm.current =
+localStorage.getItem(END_RUN_INTENT_KEY) === "1";
 }, []);
 
 useEffect(() => {
-  if (hydrating) return;
-  if (!activeRun) return;
+if (hydrating || !activeRun) return;
 
-  if (shouldRestoreEndRunConfirm.current) {
-    setShowEndRunConfirm(true);
-    shouldRestoreEndRunConfirm.current = false;
-    localStorage.removeItem(END_RUN_INTENT_KEY);
-  }
+// only restore once per page load
+if (!shouldRestoreEndRunConfirm.current) return;
+
+setShowEndRunConfirm(true);
+shouldRestoreEndRunConfirm.current = false;
+
+if (typeof window !== "undefined") {
+localStorage.removeItem(END_RUN_INTENT_KEY);
+}
 }, [hydrating, activeRun]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
