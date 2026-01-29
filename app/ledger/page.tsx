@@ -32,6 +32,23 @@ const formatDate = (value: string) => {
   return [weekday, day, month].filter(Boolean).join(" ");
 };
 
+const getLedgerResult = (run: Pick<LedgerRun, "endReason" | "status">) => {
+  if (run.endReason === "violation") {
+    return { label: "Violation", className: "text-zinc-700" };
+  }
+
+  if (run.endReason === "ended") {
+    return { label: "Ended", className: "text-zinc-500" };
+  }
+
+  // Future-proof fallback (in case endReason is null but status is ended)
+  if (run.status === "ended") {
+    return { label: "Ended", className: "text-zinc-500" };
+  }
+
+  return { label: "", className: "" };
+};
+
 export default function LedgerPage() {
   const router = useRouter();
   const { user, isAuthed, authLoading } = useAuth();
@@ -142,8 +159,13 @@ export default function LedgerPage() {
                     <td className="py-3 pr-4">{run.protocolName}</td>
                     <td className="py-3 pr-4">{run.sessions}</td>
                     <td className="py-3">
-                      {run.endReason === "violation" ? "Violation" : "Clean"}
-                    </td>
+  {(() => {
+    const result = getLedgerResult(run);
+    return result.label ? (
+      <span className={result.className}>{result.label}</span>
+    ) : null;
+  })()}
+</td>
                   </tr>
                 ))}
               </tbody>
