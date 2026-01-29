@@ -12,8 +12,6 @@ import type { CheckinResult, Run } from "@/lib/types";
 import { useAuth } from "../providers/AuthProvider";
 import DailyCheckInModal from "./modals/DailyCheckInModal";
 
-const shouldRestoreEndRunConfirm = useRef(false);
-
 const END_RUN_INTENT_KEY = "quadrant_end_run_intent";
 
 const getViolationIndex = (run: Run) => {
@@ -44,7 +42,7 @@ export default function QuadrantApp() {
     return new LocalRunStore();
   }, [isAuthed, user?.id]);
   const storeRef = useRef(store);
-
+  const shouldRestoreEndRunConfirm = useRef(false);
   const [hydrating, setHydrating] = useState(true);
   const [activeRun, setActiveRun] = useState<Run | null>(null);
   const [runHistory, setRunHistory] = useState<Run[]>([]);
