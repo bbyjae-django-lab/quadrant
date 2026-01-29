@@ -200,10 +200,10 @@ export default function QuadrantApp() {
   }, [activeRun]);
 
   useEffect(() => {
-    if (!activeRun) {
+    if (hydrating || !activeRun) {
       return;
     }
-    if (endRunIntentHandled.current || hydrating) {
+    if (endRunIntentHandled.current) {
       return;
     }
     let shouldOpen = false;
@@ -214,25 +214,26 @@ export default function QuadrantApp() {
         sessionStorage.removeItem("quadrant_end_run_intent");
       }
     }
-    const endRunIntent = searchParams.get("endRun");
-    if (endRunIntent === "1") {
-      shouldOpen = true;
-      if (typeof window !== "undefined") {
-        const nextParams = new URLSearchParams(searchParams.toString());
-        nextParams.delete("endRun");
-        const nextQuery = nextParams.toString();
-        const nextUrl = nextQuery
-          ? `${window.location.pathname}?${nextQuery}`
-          : window.location.pathname;
-        window.history.replaceState({}, "", nextUrl);
+    if (!shouldOpen) {
+      const endRunIntent = searchParams.get("endRun");
+      if (endRunIntent === "1") {
+        shouldOpen = true;
+        if (typeof window !== "undefined") {
+          const nextParams = new URLSearchParams(searchParams.toString());
+          nextParams.delete("endRun");
+          const nextQuery = nextParams.toString();
+          const nextUrl = nextQuery
+            ? `${window.location.pathname}?${nextQuery}`
+            : window.location.pathname;
+          window.history.replaceState({}, "", nextUrl);
+        }
       }
     }
-    if (!shouldOpen) {
-      return;
+    if (shouldOpen) {
+      setShowEndRunConfirm(true);
     }
-    setShowEndRunConfirm(true);
     endRunIntentHandled.current = true;
-  }, [activeRun, hydrating, router, searchParams]);
+  }, [activeRun, hydrating, searchParams]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
