@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
 
-const PRO_PRICE = 29;
+const PRO_PRICE = 49;
 
 type PricingClientProps = {
   backHref: string;
