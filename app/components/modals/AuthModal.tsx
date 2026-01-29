@@ -5,13 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import { signInWithOtp } from "../../lib/auth";
 
 type AuthModalProps = {
-  onClose: () => void;
-  title?: string;
+onClose: () => void;
+title?: string;
+returnTo?: string;
 };
 
 export default function AuthModal({
-  onClose,
-  title = "Sign in",
+onClose,
+title = "Sign in",
+returnTo,
 }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
@@ -66,7 +68,7 @@ export default function AuthModal({
     }
     setError(null);
     setSubmitting(true);
-    const { error } = await signInWithOtp(email.trim());
+    const { error } = await signInWithOtp(email.trim(), returnTo);
     setSubmitting(false);
     if (!error) {
       setSent(true);

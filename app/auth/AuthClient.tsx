@@ -106,5 +106,5 @@ export default function AuthClient({ next }: AuthClientProps) {
     return null;
   }
 
-  return <AuthModal onClose={handleClose} />;
+return <AuthModal onClose={handleClose} returnTo={next} />;
 }
