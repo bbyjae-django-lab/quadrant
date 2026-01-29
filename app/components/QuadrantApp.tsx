@@ -201,25 +201,27 @@ export default function QuadrantApp() {
   }, [activeRun]);
 
   useEffect(() => {
-    if (hydrating || !activeRun) {
-      return;
-    }
-    if (endRunIntentHandled.current) {
-      return;
-    }
-    const endRunIntent = searchParams.get("endRun");
-    if (endRunIntent === "1") {
-      setShowEndRunConfirm(true);
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.delete("endRun");
-      const nextQuery = nextParams.toString();
-      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
-      if (typeof window !== "undefined") {
-        window.history.replaceState({}, "", nextUrl);
-      }
-    }
-    endRunIntentHandled.current = true;
-  }, [activeRun, hydrating, pathname, searchParams]);
+  if (hydrating || !activeRun) return;
+  if (endRunIntentHandled.current) return;
+
+  const endRunIntent = searchParams.get("endRun");
+  if (endRunIntent !== "1") {
+    // CRITICAL: do NOT set handled yet — the param may arrive on the next render
+    return;
+  }
+
+  setShowEndRunConfirm(true);
+  endRunIntentHandled.current = true;
+
+  const nextParams = new URLSearchParams(searchParams.toString());
+  nextParams.delete("endRun");
+  const nextQuery = nextParams.toString();
+  const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname;
+
+  if (typeof window !== "undefined") {
+    window.history.replaceState({}, "", nextUrl);
+  }
+}, [activeRun, hydrating, pathname, searchParams]);
 
   const latestEndedRun = suppressEndedState ? null : runHistory[0] ?? null;
   const sessionNumber = activeRun ? activeRun.checkins.length + 1 : 1;
@@ -248,14 +250,17 @@ export default function QuadrantApp() {
   };
 
   const handleEndRun = async () => {
-    if (!activeRun || endingRun) {
-      return;
+  if (!activeRun || endingRun) return;
+
+  const accessToken = session?.access_token;
+  if (!accessToken) {
+    const nextUrl = "/dashboard?endRun=1";
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("quadrant_return_to", nextUrl);
     }
-    const accessToken = session?.access_token;
-    if (!accessToken) {
-      router.push(`/auth?next=${encodeURIComponent("/dashboard?endRun=1")}`);
-      return;
-    }
+    router.push(`/auth?next=${encodeURIComponent(nextUrl)}`);
+    return;
+  }
     setEndingRun(true);
     try {
       const response = await fetch("/api/runs/end", {
