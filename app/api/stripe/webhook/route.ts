@@ -195,19 +195,24 @@ export const POST = async (req: Request) => {
       );
 
     if (entitlementsError) {
-      console.error("[stripe/webhook] entitlements upsert failed", entitlementsError);
+      console.error(
+        "[stripe/webhook] entitlements upsert failed",
+        entitlementsError,
+      );
       return NextResponse.json(
         { error: "Entitlements upsert failed" },
         { status: 500 },
       );
     }
 
-    // ✅ Since Pro is identity-bound, we’re done.
     return NextResponse.json({ ok: true });
   }
 
   // Fallback only (should be rare once checkout requires sign-in)
-  console.error("[stripe/webhook] missing user_id metadata for session", session.id);
+  console.error(
+    "[stripe/webhook] missing user_id metadata for session",
+    session.id,
+  );
 
   const { error: pendingError } = await admin
     .from("pending_entitlements")
@@ -223,8 +228,12 @@ export const POST = async (req: Request) => {
       },
       { onConflict: "email" },
     );
+
   if (pendingError) {
-    console.error("[stripe/webhook] pending entitlements upsert failed", pendingError);
+    console.error(
+      "[stripe/webhook] pending entitlements upsert failed",
+      pendingError,
+    );
     return NextResponse.json(
       { error: "Pending entitlements failed" },
       { status: 500 },
@@ -232,4 +241,4 @@ export const POST = async (req: Request) => {
   }
 
   return NextResponse.json({ ok: true });
-
+};
