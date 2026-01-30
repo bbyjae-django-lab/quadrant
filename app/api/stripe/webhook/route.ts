@@ -128,6 +128,7 @@ export const POST = async (req: Request) => {
   let stripeSubscriptionId: string | null = null;
   let stripePriceId: string | null = null;
   let currentPeriodEnd: string | null = null;
+  let userId: string | null = null;
 
   try {
     const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
@@ -140,6 +141,7 @@ export const POST = async (req: Request) => {
     returnTo = getSafeReturnTo(fullSession.metadata?.return_to);
     stripePriceId = fullSession.metadata?.price_id ?? null;
     stripeCustomerId =
+    userId = (fullSession.metadata?.user_id as string | undefined) ?? null;
       typeof fullSession.customer === "string"
         ? fullSession.customer
         : fullSession.customer?.id ?? null;
@@ -173,6 +175,33 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ ok: true });
   }
 
+  // ✅ Upgrade the actual user entitlements (source of truth for the app)
+  if (!userId) {
+    console.error("[stripe/webhook] missing user_id metadata for session", session.id);
+    // We will still write pending_entitlements as a fallback, but this should not be considered "done".
+  } else {
+    const { error: entitlementsError } = await admin
+      .from("entitlements")
+      .upsert(
+        {
+          user_id: userId,
+          is_pro: true,
+          stripe_customer_id: stripeCustomerId,
+          stripe_subscription_id: stripeSubscriptionId,
+          stripe_price_id: stripePriceId,
+          current_period_end: currentPeriodEnd,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+
+    if (entitlementsError) {
+      console.error("[stripe/webhook] entitlements upsert failed", entitlementsError);
+      return NextResponse.json({ error: "Entitlements upsert failed" }, { status: 500 });
+    }
+  }
+
+
   const { error: pendingError } = await admin
     .from("pending_entitlements")
     .upsert(
@@ -190,22 +219,6 @@ export const POST = async (req: Request) => {
   if (pendingError) {
     console.error("[stripe/webhook] pending entitlements upsert failed", pendingError);
     return NextResponse.json({ error: "Pending entitlements failed" }, { status: 500 });
-  }
-
-  const supabase = createClient(supabaseUrl, anonKey, {
-    auth: { persistSession: false },
-  });
-  const { error: sendError } = await supabase.auth.signInWithOtp({
-    email: normalizedEmail,
-    options: {
-      emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(
-        returnTo,
-      )}`,
-    },
-  });
-  if (sendError) {
-    console.error("[stripe/webhook] otp send failed", sendError);
-    return NextResponse.json({ error: "OTP send failed" }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
