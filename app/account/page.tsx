@@ -5,29 +5,33 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import AuthModal from "../components/modals/AuthModal";
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, isAuthed, isPro, proStatus, authLoading, signOut } = useAuth();
   const [notice, setNotice] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
-  useEffect(() => {
-    if (!authLoading && !isAuthed && !isSigningOut) {
-      router.replace(`/auth?next=${encodeURIComponent("/dashboard")}`);
+    useEffect(() => {
+    if (!authLoading && !isAuthed) {
+      setShowAuth(true);
     }
-  }, [authLoading, isAuthed, isSigningOut, router]);
+  }, [authLoading, isAuthed]);
 
   const handleManageBilling = () => {
     const supabase = getSupabaseClient();
     if (!supabase) {
-      setNotice("Sign in to continue.");
+      setNotice(null);
+      setShowAuth(true);
       return;
     }
     supabase.auth.getSession().then((result) => {
       const accessToken = result.data.session?.access_token;
       if (!accessToken) {
-        setNotice("Sign in to continue.");
+        setNotice(null);
+        setShowAuth(true);
         return;
       }
       fetch("/api/stripe/portal", {
@@ -55,10 +59,6 @@ export default function AccountPage() {
     await signOut();
     router.replace("/");
   };
-
-  if (!isAuthed) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
@@ -107,6 +107,14 @@ export default function AccountPage() {
           ) : null}
         </div>
       </main>
+
+      {showAuth ? (
+  <AuthModal
+    title="Attach to your record"
+    next="/account"
+    onClose={() => setShowAuth(false)}
+  />
+) : null}
     </div>
   );
 }
