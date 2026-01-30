@@ -20,6 +20,11 @@ export default function ProtocolsPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-[var(--space-8)] ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
+        <div className="text-xs">
+          <Link href="/" className="underline">
+            Back
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold text-zinc-900">
           Pick a constraint.
         </h1>

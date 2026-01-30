@@ -1,44 +1,52 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { QUADRANT_LOCAL_ACTIVE_RUN } from "@/lib/keys";
-import { getSupabaseClient } from "./lib/supabaseClient";
+import AuthModal from "./components/modals/AuthModal";
+import { useAuth } from "./providers/AuthProvider";
 
 export default function LandingPage() {
   const router = useRouter();
+  const { isAuthed, authLoading } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
+  const [desiredNext, setDesiredNext] = useState("/protocols");
 
   const handleStartRun = () => {
     if (typeof window === "undefined") {
       return;
     }
+    if (authLoading) {
+      return;
+    }
     const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
+    let next = "/protocols";
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as { status?: string };
         if (parsed.status === "active") {
-          router.push("/dashboard");
-          return;
+          next = "/dashboard";
         }
       } catch {
         // ignore
       }
     }
-    router.push("/protocols");
+    if (!isAuthed) {
+      setDesiredNext(next);
+      setShowAuth(true);
+      return;
+    }
+    router.push(next);
   };
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      supabase.auth.getSession().then((result) => {
-        if (result.data.session) {
-          router.replace("/dashboard");
-        }
-      });
+    if (!authLoading && isAuthed) {
+      router.replace("/dashboard");
+      return;
     }
     const stored = localStorage.getItem(QUADRANT_LOCAL_ACTIVE_RUN);
     if (!stored) {
@@ -52,7 +60,7 @@ export default function LandingPage() {
     } catch {
       // ignore
     }
-  }, [router]);
+  }, [authLoading, isAuthed, router]);
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
@@ -75,14 +83,58 @@ export default function LandingPage() {
               </button>
             </div>
             <p className="text-xs text-zinc-600">
-              Free. No account. No brokerage. No trade data. Local by default.
+              Free saves runs to your account. Pro keeps a permanent ledger.
             </p>
-            <a href="/pricing?from=landing" className="text-xs underline">
-              View pricing
-            </a>
+            <p className="text-xs text-zinc-600">
+              No brokerage connections. No trade data.
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-xs">
+              <a href="/pricing?from=landing" className="underline">
+                View pricing
+              </a>
+              <a href="#how-it-works" className="underline">
+                How it works
+              </a>
+            </div>
+          </div>
+        </section>
+        <section id="how-it-works" className="space-y-4">
+          <h2 className="text-2xl font-semibold text-zinc-900">
+            How it works
+          </h2>
+          <div className="space-y-3 text-sm text-zinc-700">
+            <div>
+              <p className="font-semibold text-zinc-900">
+                Choose a constraint
+              </p>
+              <p>Pick one rule you're committing to for this session.</p>
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-900">Start a run</p>
+              <p>
+                Quadrant enforces it until you end the run or violate it.
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-zinc-900">
+                End clean - or violate
+              </p>
+              <p>Either outcome is recorded. Pro makes it permanent.</p>
+            </div>
+          </div>
+          <div className="space-y-1 text-xs text-zinc-600">
+            <p>Free enforces. Pro remembers.</p>
+            <p>No brokerage connections. No trade data.</p>
           </div>
         </section>
       </main>
+      {showAuth ? (
+        <AuthModal
+          title="Attach your run to your record"
+          next={desiredNext}
+          onClose={() => setShowAuth(false)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export const POST = async (req: Request) => {
   const stripe = new Stripe(stripeSecret, { apiVersion: "2024-04-10" });
   const session = await stripe.billingPortal.sessions.create({
     customer: entitlement.stripe_customer_id,
-    return_url: `${appUrl}/pricing`,
+    return_url: `${appUrl}/account`,
   });
   return NextResponse.json({ url: session.url });
 };

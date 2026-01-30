@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "../providers/AuthProvider";
@@ -14,7 +15,7 @@ export default function AccountPage() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!authLoading && !isAuthed) {
       setShowAuth(true);
     }
@@ -63,6 +64,11 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto w-full max-w-2xl ui-surface p-[var(--space-8)] sm:p-[var(--space-10)]">
+        <div className="text-xs">
+          <Link href="/dashboard" className="underline">
+            Back
+          </Link>
+        </div>
         <h1 className="text-xl font-semibold text-zinc-900">Account</h1>
         <div className="mt-6 space-y-4 text-sm text-zinc-700">
           <div>
@@ -80,6 +86,19 @@ export default function AccountPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            {proStatus === "free" ? (
+              <>
+                <Link
+                  href={`/pricing?intent=upgrade&returnTo=${encodeURIComponent("/account")}`}
+                  className="underline"
+                >
+                  Upgrade to Pro
+                </Link>
+                <span aria-hidden="true" className="text-zinc-400">
+                  |
+                </span>
+              </>
+            ) : null}
             {proStatus === "pro" ? (
               <>
                 <button
@@ -90,7 +109,7 @@ export default function AccountPage() {
                   Manage billing
                 </button>
                 <span aria-hidden="true" className="text-zinc-400">
-                  ·
+                  |
                 </span>
               </>
             ) : null}
@@ -109,12 +128,12 @@ export default function AccountPage() {
       </main>
 
       {showAuth ? (
-  <AuthModal
-    title="Attach to your record"
-    next="/account"
-    onClose={() => setShowAuth(false)}
-  />
-) : null}
+        <AuthModal
+          title="Attach to your record"
+          next="/account"
+          onClose={() => setShowAuth(false)}
+        />
+      ) : null}
     </div>
   );
 }
