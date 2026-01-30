@@ -15,7 +15,7 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isPro, isAuthed, user } = useAuth();
+  const { isPro, isAuthed, user, session } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
   const upgradeButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -86,36 +86,30 @@ const startCheckout = async () => {
     if (typeof window === "undefined") {
       return;
     }
-    const supabase = getSupabaseClient();
-    const tokenPromise = supabase
-      ? supabase.auth
-          .getSession()
-          .then((result) => result.data.session?.access_token)
-      : Promise.resolve(null);
-    tokenPromise.then((accessToken) => {
-      if (!accessToken) {
-        setUpgradeNotice("Sign in to continue.");
-        return;
-      }
-      fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.url) {
-            window.location.href = data.url;
-            return;
-          }
-          setUpgradeNotice("Unable to open billing.");
-        })
-        .catch(() => {
-          setUpgradeNotice("Unable to open billing.");
-        });
-    });
-  };
+    const accessToken = session?.access_token ?? null;
+if (!accessToken) {
+  setUpgradeNotice("Sign in to continue.");
+  return;
+}
+
+fetch("/api/stripe/portal", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+  },
+})
+  .then((res) => res.json())
+  .then((data) => {
+    if (data?.url) {
+      window.location.href = data.url;
+      return;
+    }
+    setUpgradeNotice("Unable to open billing.");
+  })
+  .catch(() => {
+    setUpgradeNotice("Unable to open billing.");
+  });
+
 
   return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
@@ -164,7 +158,7 @@ const startCheckout = async () => {
               disabled={isPro}
               ref={upgradeButtonRef}
             >
-              {isPro ? "You're Pro" : "Upgrade to Pro"}
+            {isPro ? "You're Pro" : isAuthed ? "Upgrade to Pro" : "Sign in to upgrade"}
             </button>
             {isPro ? (
               <button
