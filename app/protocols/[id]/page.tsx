@@ -7,6 +7,7 @@ import { PROTOCOLS } from "@/lib/protocols";
 import { LocalRunStore } from "@/lib/stores/localRunStore";
 import { SupabaseRunStore } from "@/lib/stores/supabaseRunStore";
 import type { Protocol } from "@/lib/types";
+import AuthModal from "@/app/components/modals/AuthModal";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getSupabaseClient } from "@/app/lib/supabaseClient";
 
@@ -17,8 +18,10 @@ export default function ProtocolDetailPage() {
   const [hydrating, setHydrating] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
 
   const protocolId = typeof params?.id === "string" ? params.id : "";
+  const returnTo = `/protocols/${protocolId}`;
   const protocol = useMemo(
     () => PROTOCOLS.find((item) => item.id === protocolId) ?? null,
     [protocolId],
@@ -77,8 +80,7 @@ export default function ProtocolDetailPage() {
         const client = getSupabaseClient();
         const session = client ? await client.auth.getSession() : null;
         if (!session?.data.session) {
-          const returnTo = `/protocols/${selected.id}`;
-          router.push(`/auth?next=${encodeURIComponent(returnTo)}`);
+          setShowAuth(true);
           setIsStarting(false);
           return;
         }
@@ -131,6 +133,13 @@ export default function ProtocolDetailPage() {
         </div>
         {error ? <p className="text-xs text-zinc-500">{error}</p> : null}
       </main>
+      {showAuth ? (
+        <AuthModal
+          title="Attach to your record"
+          next={returnTo}
+          onClose={() => setShowAuth(false)}
+        />
+      ) : null}
     </div>
   );
 }

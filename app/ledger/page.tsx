@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { useAuth } from "../providers/AuthProvider";
 import { getSupabaseClient } from "../lib/supabaseClient";
+import AuthModal from "../components/modals/AuthModal";
 
 type LedgerRun = {
   id: string;
@@ -54,6 +55,7 @@ export default function LedgerPage() {
   const { user, isAuthed, authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [runs, setRuns] = useState<LedgerRun[]>([]);
+  const [showAuth, setShowAuth] = useState(false);
 
   const client = useMemo(() => getSupabaseClient(), []);
 
@@ -62,7 +64,8 @@ export default function LedgerPage() {
       return;
     }
     if (!isAuthed || !user?.id) {
-      router.replace(`/auth?next=${encodeURIComponent("/ledger")}`);
+      setShowAuth(true);
+      setLoading(false);
       return;
     }
     if (!client) {
@@ -173,6 +176,13 @@ export default function LedgerPage() {
           </div>
         )}
       </main>
+      {showAuth ? (
+        <AuthModal
+          title="Attach to your record"
+          next="/ledger"
+          onClose={() => setShowAuth(false)}
+        />
+      ) : null}
     </div>
   );
 }

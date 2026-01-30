@@ -10,6 +10,7 @@ import { LocalRunStore } from "@/lib/stores/localRunStore";
 import { SupabaseRunStore } from "@/lib/stores/supabaseRunStore";
 import type { CheckinResult, Run } from "@/lib/types";
 import { useAuth } from "../providers/AuthProvider";
+import AuthModal from "./modals/AuthModal";
 import DailyCheckInModal from "./modals/DailyCheckInModal";
 
 const END_RUN_INTENT_KEY = "quadrant_end_run_intent";
@@ -48,6 +49,7 @@ export default function QuadrantApp() {
   const [runHistory, setRunHistory] = useState<Run[]>([]);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [showEndRunConfirm, setShowEndRunConfirm] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [endingRun, setEndingRun] = useState(false);
   const [suppressEndedState, setSuppressEndedState] = useState(false);
   const endRunIntentHandledForRun = useRef<string | null>(null);
@@ -256,7 +258,7 @@ if (!accessToken) {
   if (typeof window !== "undefined") {
     localStorage.setItem(END_RUN_INTENT_KEY, "1");
   }
-  router.push(`/auth?next=${encodeURIComponent("/dashboard")}`);
+  setShowAuth(true);
   return;
 }
     setEndingRun(true);
@@ -305,12 +307,13 @@ if (!accessToken) {
               Account
             </a>
           ) : (
-            <a
-              href={`/auth?next=${encodeURIComponent("/dashboard")}`}
+            <button
+              type="button"
               className="underline"
+              onClick={() => setShowAuth(true)}
             >
               Sign in
-            </a>
+            </button>
           )}
         </div>
 
@@ -436,6 +439,13 @@ if (!accessToken) {
           onClose={() => setShowCheckInModal(false)}
           onCleanSession={() => handleCheckIn("clean")}
           onViolated={() => handleCheckIn("violated")}
+        />
+      ) : null}
+      {showAuth ? (
+        <AuthModal
+          title="Attach to your record"
+          next="/dashboard"
+          onClose={() => setShowAuth(false)}
         />
       ) : null}
     </div>
