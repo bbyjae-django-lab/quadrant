@@ -13,10 +13,13 @@ type PricingClientProps = {
 
 export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
+
   const router = useRouter();
   const searchParams = useSearchParams();
+
   const { isPro, isAuthed, user, session } = useAuth();
-  const [showAuth, setShowAuth] = useState(false);
+
   const upgradeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -28,90 +31,87 @@ export default function PricingClient({ backHref }: PricingClientProps) {
       upgradeButtonRef.current?.focus();
     }
   }, [searchParams]);
+
   const getReturnTo = () => {
-  const returnParam = searchParams?.get("returnTo");
-  let returnTo = returnParam || "/dashboard";
+    const returnParam = searchParams?.get("returnTo");
+    let returnTo = returnParam || "/dashboard";
 
-  if (typeof window !== "undefined") {
-    if (!returnParam) {
-      returnTo =
-        sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
+    if (typeof window !== "undefined") {
+      if (!returnParam) {
+        returnTo =
+          sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
+      }
+      sessionStorage.setItem("quadrant_return_to", returnTo);
     }
-    sessionStorage.setItem("quadrant_return_to", returnTo);
-  }
 
-  return returnTo;
-};
+    return returnTo;
+  };
 
-const startCheckout = async () => {
-  const returnTo = getReturnTo();
+  const startCheckout = async () => {
+    const returnTo = getReturnTo();
 
-  // ✅ Require identity before checkout
-  if (!isAuthed || !user?.id) {
-    setUpgradeNotice("");
-    setShowAuth(true);
-    return;
-  }
-
-  try {
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ returnTo, userId: user.id }),
-    });
-
-    const data = await res.json();
-
-    if (data?.url) {
-      window.location.replace(data.url);
+    // Require identity before checkout
+    if (!isAuthed || !user?.id) {
+      setUpgradeNotice("");
+      setShowAuth(true);
       return;
     }
 
-    setUpgradeNotice(data?.error ? `Checkout error: ${data.error}` : "Unable to start checkout.");
-  } catch {
-    setUpgradeNotice("Unable to start checkout.");
-  }
-};
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ returnTo, userId: user.id }),
+      });
+
+      const data = await res.json();
+
+      if (data?.url) {
+        window.location.replace(data.url);
+        return;
+      }
+
+      setUpgradeNotice(
+        data?.error ? `Checkout error: ${data.error}` : "Unable to start checkout.",
+      );
+    } catch {
+      setUpgradeNotice("Unable to start checkout.");
+    }
+  };
 
   const handleUpgrade = () => {
-  void startCheckout();
-};
-
+    void startCheckout();
+  };
 
   const handleBack = () => {
     router.replace(backHref);
   };
 
   const handleManageBilling = () => {
-    if (typeof window === "undefined") {
-      return;
-    }
     const accessToken = session?.access_token ?? null;
-if (!accessToken) {
-  setUpgradeNotice("Sign in to continue.");
-  return;
-}
-
-fetch("/api/stripe/portal", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${accessToken}`,
-  },
-})
-  .then((res) => res.json())
-  .then((data) => {
-    if (data?.url) {
-      window.location.href = data.url;
+    if (!accessToken) {
+      setUpgradeNotice("Sign in to continue.");
       return;
     }
-    setUpgradeNotice("Unable to open billing.");
-  })
-  .catch(() => {
-    setUpgradeNotice("Unable to open billing.");
-  });
 
+    fetch("/api/stripe/portal", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setUpgradeNotice("Unable to open billing.");
+      })
+      .catch(() => {
+        setUpgradeNotice("Unable to open billing.");
+      });
+  };
 
-    return (
+  return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
         <div className="text-xs text-zinc-500">
@@ -161,7 +161,11 @@ fetch("/api/stripe/portal", {
               disabled={isPro}
               ref={upgradeButtonRef}
             >
-              {isPro ? "You're Pro" : isAuthed ? "Upgrade to Pro" : "Sign in to upgrade"}
+              {isPro
+                ? "You're Pro"
+                : isAuthed
+                  ? "Upgrade to Pro"
+                  : "Sign in to upgrade"}
             </button>
 
             {isPro ? (
@@ -183,7 +187,9 @@ fetch("/api/stripe/portal", {
             {showAuth ? (
               <AuthModal
                 title="Attach Pro to your record"
-                next={`/pricing?intent=upgrade&returnTo=${encodeURIComponent(getReturnTo())}`}
+                next={`/pricing?intent=upgrade&returnTo=${encodeURIComponent(
+                  getReturnTo(),
+                )}`}
                 onClose={() => setShowAuth(false)}
               />
             ) : null}
@@ -193,4 +199,3 @@ fetch("/api/stripe/portal", {
     </div>
   );
 }
-
