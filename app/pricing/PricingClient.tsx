@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
-import AuthModal from "./auth/AuthModal";
+import AuthModal from "../components/modals/AuthModal";
 
 const PRO_PRICE = 49;
 
