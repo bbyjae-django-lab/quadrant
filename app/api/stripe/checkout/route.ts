@@ -49,12 +49,12 @@ export const POST = async (req: Request) => {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: STRIPE_PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
 success_url: `${NEXT_PUBLIC_APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
 cancel_url: `${NEXT_PUBLIC_APP_URL}/billing/cancel`,
 metadata: {
   app: "quadrant",
-  price_id: STRIPE_PRO_PRICE_ID,
+  price_id: STRIPE_PRICE_ID,
   return_to: returnTo,
   user_id: userId,
 },
