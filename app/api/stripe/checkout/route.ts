@@ -5,12 +5,12 @@ export const runtime = "nodejs";
 
 export const POST = async (req: Request) => {
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  const priceId = process.env.STRIPE_PRO_PRICE_ID;
+  const priceId = process.env.STRIPE_PRICE_ID;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   const missing: string[] = [];
   if (!stripeSecret) missing.push("STRIPE_SECRET_KEY");
-  if (!priceId) missing.push("STRIPE_PRO_PRICE_ID");
+  if (!priceId) missing.push("STRIPE_PRICE_ID");
   if (!appUrl) missing.push("NEXT_PUBLIC_APP_URL");
 
     if (missing.length) {
@@ -19,7 +19,7 @@ export const POST = async (req: Request) => {
 
   // 👇 tell TypeScript these are definitely strings
   const STRIPE_SECRET_KEY = stripeSecret as string;
-  const STRIPE_PRO_PRICE_ID = priceId as string;
+  const STRIPE_PRICE_ID = priceId as string;
   const NEXT_PUBLIC_APP_URL = appUrl as string;
 
   const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2024-04-10" });
