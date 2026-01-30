@@ -1,42 +1,44 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "../providers/AuthProvider";
 
 type SuccessClientProps = {
   sessionId: string;
 };
 
 export default function SuccessClient({ sessionId }: SuccessClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const urlSessionId = searchParams.get("session_id") ?? "";
   const effectiveSessionId = sessionId || urlSessionId;
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
-  const [cooldownActive, setCooldownActive] = useState(false);
 
-  const handleResend = async () => {
-    if (!effectiveSessionId || isSending || cooldownActive) {
-      return;
-    }
-    setIsSending(true);
-    setErrorMessage(null);
-    try {
-      const response = await fetch("/api/auth/resend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId: effectiveSessionId }),
-      });
-      if (!response.ok) {
-        setErrorMessage("Unable to resend link.");
-      } else {
-        setCooldownActive(true);
-        window.setTimeout(() => setCooldownActive(false), 10_000);
+  const { refreshEntitlements } = useAuth();
+
+  const [status, setStatus] = useState<"syncing" | "done" | "error">("syncing");
+
+  useEffect(() => {
+    // Webhook should have applied entitlements already.
+    // We refresh the client state so Pro flips immediately.
+    const run = async () => {
+      try {
+        // If you have /api/billing/attach, you can call it here as belt+suspenders.
+        // Otherwise, just refresh entitlements.
+        refreshEntitlements();
+        setStatus("done");
+      } catch {
+        setStatus("error");
       }
-    } catch {
-      setErrorMessage("Unable to resend link.");
-    }
-    setIsSending(false);
+    };
+    run();
+  }, [refreshEntitlements]);
+
+  const handleGoDashboard = () => {
+    const returnTo =
+      (typeof window !== "undefined" && sessionStorage.getItem("quadrant_return_to")) ||
+      "/dashboard";
+    router.replace(returnTo);
   };
 
   return (
@@ -44,32 +46,34 @@ export default function SuccessClient({ sessionId }: SuccessClientProps) {
       <main className="mx-auto flex w-full max-w-xl flex-col gap-6">
         <div className="space-y-2">
           <h1 className="text-2xl font-semibold text-zinc-900">
-            Payment complete.
+            Pro attached.
           </h1>
-          <p className="text-sm text-zinc-600">Check your email to continue.</p>
+          <p className="text-sm text-zinc-600">
+            Your record is now permanent across devices and resets.
+          </p>
         </div>
 
-        <div className="space-y-3 text-sm text-zinc-600">
-          <button
-            type="button"
-            className="text-xs text-zinc-600 underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={handleResend}
-            disabled={!effectiveSessionId || isSending || cooldownActive}
-          >
-            Resend link
+        {status === "syncing" ? (
+          <p className="text-sm text-zinc-600">Updating your access…</p>
+        ) : null}
+
+        {status === "error" ? (
+          <p className="text-sm text-zinc-600">
+            If Pro doesn’t appear immediately, refresh once.
+          </p>
+        ) : null}
+
+        <div className="flex gap-3">
+          <button type="button" className="btn btn-primary" onClick={handleGoDashboard}>
+            Go to dashboard
           </button>
-          {cooldownActive ? (
-            <p className="text-xs text-zinc-500">Try again in a moment.</p>
-          ) : null}
-          {!effectiveSessionId ? (
-            <p className="text-xs text-zinc-500">
-              Missing checkout session. Please refresh.
-            </p>
-          ) : null}
-          {errorMessage ? (
-            <p className="text-xs text-zinc-500">{errorMessage}</p>
-          ) : null}
         </div>
+
+        {!effectiveSessionId ? (
+          <p className="text-xs text-zinc-500">
+            Missing checkout session id (safe to ignore if Pro is active).
+          </p>
+        ) : null}
       </main>
     </div>
   );

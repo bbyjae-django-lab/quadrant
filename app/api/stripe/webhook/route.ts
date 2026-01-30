@@ -139,12 +139,14 @@ export const POST = async (req: Request) => {
       fullSession.customer_email ??
       "";
     returnTo = getSafeReturnTo(fullSession.metadata?.return_to);
-    stripePriceId = fullSession.metadata?.price_id ?? null;
-    stripeCustomerId =
+        stripePriceId = fullSession.metadata?.price_id ?? null;
     userId = (fullSession.metadata?.user_id as string | undefined) ?? null;
+
+    stripeCustomerId =
       typeof fullSession.customer === "string"
         ? fullSession.customer
         : fullSession.customer?.id ?? null;
+
     stripeSubscriptionId =
       typeof fullSession.subscription === "string"
         ? fullSession.subscription
@@ -175,13 +177,10 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ ok: true });
   }
 
-  // ✅ Upgrade the actual user entitlements (source of truth for the app)
-  if (!userId) {
-    console.error("[stripe/webhook] missing user_id metadata for session", session.id);
-    // We will still write pending_entitlements as a fallback, but this should not be considered "done".
-  } else {
+    // ✅ Upgrade the actual user entitlements (source of truth for the app)
+  if (userId) {
     const { error: entitlementsError } = await admin
-      .from("entitlements")
+      .from("user_entitlements")
       .upsert(
         {
           user_id: userId,
@@ -197,10 +196,18 @@ export const POST = async (req: Request) => {
 
     if (entitlementsError) {
       console.error("[stripe/webhook] entitlements upsert failed", entitlementsError);
-      return NextResponse.json({ error: "Entitlements upsert failed" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Entitlements upsert failed" },
+        { status: 500 },
+      );
     }
+
+    // ✅ Since Pro is identity-bound, we’re done.
+    return NextResponse.json({ ok: true });
   }
 
+  // Fallback only (should be rare once checkout requires sign-in)
+  console.error("[stripe/webhook] missing user_id metadata for session", session.id);
 
   const { error: pendingError } = await admin
     .from("pending_entitlements")
@@ -218,8 +225,11 @@ export const POST = async (req: Request) => {
     );
   if (pendingError) {
     console.error("[stripe/webhook] pending entitlements upsert failed", pendingError);
-    return NextResponse.json({ error: "Pending entitlements failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Pending entitlements failed" },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({ ok: true });
-};
+

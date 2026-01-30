@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "../providers/AuthProvider";
-import { getSupabaseClient } from "../lib/supabaseClient";
+import AuthModal from "./auth/AuthModal";
 
 const PRO_PRICE = 49;
 
@@ -15,7 +15,8 @@ export default function PricingClient({ backHref }: PricingClientProps) {
   const [upgradeNotice, setUpgradeNotice] = useState("");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isPro } = useAuth();
+  const { isPro, isAuthed, user } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
   const upgradeButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -27,36 +28,55 @@ export default function PricingClient({ backHref }: PricingClientProps) {
       upgradeButtonRef.current?.focus();
     }
   }, [searchParams]);
-  const startCheckout = () => {
-    const returnParam = searchParams?.get("returnTo");
-    let returnTo = returnParam || "/dashboard";
-    if (typeof window !== "undefined") {
-      if (!returnParam) {
-        returnTo =
-          sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
-      }
-      sessionStorage.setItem("quadrant_return_to", returnTo);
+  const getReturnTo = () => {
+  const returnParam = searchParams?.get("returnTo");
+  let returnTo = returnParam || "/dashboard";
+
+  if (typeof window !== "undefined") {
+    if (!returnParam) {
+      returnTo =
+        sessionStorage.getItem("quadrant_app_return_to") ?? "/dashboard";
     }
-    fetch("/api/stripe/checkout", {
+    sessionStorage.setItem("quadrant_return_to", returnTo);
+  }
+
+  return returnTo;
+};
+
+const startCheckout = async () => {
+  const returnTo = getReturnTo();
+
+  // ✅ Require identity before checkout
+  if (!isAuthed || !user?.id) {
+    setUpgradeNotice("");
+    setShowAuth(true);
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ returnTo }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.url) {
-          window.location.replace(data.url);
-          return;
-        }
-        setUpgradeNotice("Unable to start checkout.");
-      })
-      .catch(() => {
-        setUpgradeNotice("Unable to start checkout.");
-      });
-  };
+      body: JSON.stringify({ returnTo, userId: user.id }),
+    });
+
+    const data = await res.json();
+
+    if (data?.url) {
+      window.location.replace(data.url);
+      return;
+    }
+
+    setUpgradeNotice(data?.error ? `Checkout error: ${data.error}` : "Unable to start checkout.");
+  } catch {
+    setUpgradeNotice("Unable to start checkout.");
+  }
+};
+
   const handleUpgrade = () => {
-    startCheckout();
-  };
+  void startCheckout();
+};
+
 
   const handleBack = () => {
     router.replace(backHref);
@@ -160,6 +180,15 @@ export default function PricingClient({ backHref }: PricingClientProps) {
                 {upgradeNotice}
               </p>
             ) : null}
+
+            {showAuth ? (
+  <AuthModal
+    title="Attach Pro to your record"
+    next={`/pricing?intent=upgrade&returnTo=${encodeURIComponent(getReturnTo())}`}
+    onClose={() => setShowAuth(false)}
+  />
+) : null}
+
           </div>
         </section>
       </main>
