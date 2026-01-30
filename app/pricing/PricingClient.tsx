@@ -111,7 +111,7 @@ fetch("/api/stripe/portal", {
   });
 
 
-  return (
+    return (
     <div className="min-h-screen bg-zinc-50 px-[var(--space-6)] py-[var(--space-16)] text-zinc-900">
       <main className="mx-auto flex w-full max-w-4xl flex-col gap-[var(--space-12)]">
         <div className="text-xs text-zinc-500">
@@ -119,6 +119,7 @@ fetch("/api/stripe/portal", {
             Back
           </button>
         </div>
+
         <section className="space-y-3">
           <h1 className="text-4xl font-semibold tracking-tight text-zinc-900">
             Pricing
@@ -146,11 +147,13 @@ fetch("/api/stripe/portal", {
               <h2 className="text-2xl font-semibold">Pro</h2>
               <p className="text-sm text-zinc-300">${PRO_PRICE} / month</p>
             </div>
+
             <ul className="mt-4 space-y-2 text-sm text-zinc-100">
               <li>A permanent ledger of every run</li>
               <li>Survives resets, devices, and bad weeks</li>
               <li>Proof you followed the rule when it mattered</li>
             </ul>
+
             <button
               type="button"
               className="btn btn-primary mt-4"
@@ -158,8 +161,9 @@ fetch("/api/stripe/portal", {
               disabled={isPro}
               ref={upgradeButtonRef}
             >
-            {isPro ? "You're Pro" : isAuthed ? "Upgrade to Pro" : "Sign in to upgrade"}
+              {isPro ? "You're Pro" : isAuthed ? "Upgrade to Pro" : "Sign in to upgrade"}
             </button>
+
             {isPro ? (
               <button
                 type="button"
@@ -169,6 +173,7 @@ fetch("/api/stripe/portal", {
                 Manage billing
               </button>
             ) : null}
+
             {upgradeNotice ? (
               <p className="mt-3 text-xs font-semibold text-zinc-300">
                 {upgradeNotice}
@@ -176,16 +181,16 @@ fetch("/api/stripe/portal", {
             ) : null}
 
             {showAuth ? (
-  <AuthModal
-    title="Attach Pro to your record"
-    next={`/pricing?intent=upgrade&returnTo=${encodeURIComponent(getReturnTo())}`}
-    onClose={() => setShowAuth(false)}
-  />
-) : null}
-
+              <AuthModal
+                title="Attach Pro to your record"
+                next={`/pricing?intent=upgrade&returnTo=${encodeURIComponent(getReturnTo())}`}
+                onClose={() => setShowAuth(false)}
+              />
+            ) : null}
           </div>
         </section>
       </main>
     </div>
   );
 }
+
